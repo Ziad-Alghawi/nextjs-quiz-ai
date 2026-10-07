@@ -7,8 +7,6 @@ import getUserMatrics from '@/app/actions/getUserMatrics';
 import MetricCard from './metricCard';
 import getHeatMapData from '@/app/actions/getHeatMapData';
 import SubmissionHeatMap from './heatMap';
-import SubscribeBtn from '../billing/SubscribeBtn';
-import { PRICE_ID } from '@/lib/utils';
 
 
 

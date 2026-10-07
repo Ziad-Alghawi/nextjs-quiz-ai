@@ -3,7 +3,7 @@ import Bar from "@/components/Bar";
 import Image from "next/image";
 import { useReward } from "react-rewards";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 

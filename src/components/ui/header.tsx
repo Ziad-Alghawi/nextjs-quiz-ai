@@ -1,4 +1,4 @@
-import { auth, signOut, signIn } from "@/auth";
+import { auth, signOut } from "@/auth";
 import { Button } from "./button";
 import Image from "next/image";
 import Link from "next/link";
