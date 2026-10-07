@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const serverEnvSchema = z.object({
+const baseSchema = z.object({
   DATABASE_URL: z.string().url(),
   AUTH_SECRET: z.string().min(1),
   GOOGLE_CLIENT_ID: z.string().min(1),
@@ -16,10 +16,25 @@ const serverEnvSchema = z.object({
     .transform((url) => url.replace(/\/+$/, "")),
 });
 
+// Emails are printed to the server log by default (development); production sets EMAIL_TRANSPORT=smtp.
+const emailSchema = z.discriminatedUnion("EMAIL_TRANSPORT", [
+  z.object({ EMAIL_TRANSPORT: z.literal("console") }),
+  z.object({
+    EMAIL_TRANSPORT: z.literal("smtp"),
+    SMTP_HOST: z.string().min(1),
+    SMTP_PORT: z.coerce.number().int().positive(),
+    SMTP_USER: z.string().min(1),
+    SMTP_PASSWORD: z.string().min(1),
+    EMAIL_FROM: z.string().min(1),
+  }),
+]);
+
+const serverEnvSchema = baseSchema.and(emailSchema);
+
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
 
 function loadEnv(): ServerEnv {
-  const parsed = serverEnvSchema.safeParse(process.env);
+  const parsed = serverEnvSchema.safeParse({ EMAIL_TRANSPORT: "console", ...process.env });
   if (parsed.success) return parsed.data;
 
   // CI and container image builds compile the app without secrets; the running server validates them.

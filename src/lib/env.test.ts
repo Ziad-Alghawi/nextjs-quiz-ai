@@ -49,4 +49,21 @@ describe("env", () => {
       importEnv({ ...validEnv, GEMINI_API_KEY: undefined, SKIP_ENV_VALIDATION: "true" }),
     ).resolves.toBeDefined();
   });
+
+  it("prints emails to the console unless SMTP is configured", async () => {
+    const env = await importEnv({ ...validEnv, EMAIL_TRANSPORT: undefined });
+    expect(env.EMAIL_TRANSPORT).toBe("console");
+  });
+
+  it("requires the SMTP settings when EMAIL_TRANSPORT is smtp", async () => {
+    const error = await importEnv({
+      ...validEnv,
+      EMAIL_TRANSPORT: "smtp",
+      SMTP_HOST: "smtp.gmail.com",
+      SKIP_ENV_VALIDATION: undefined,
+    }).catch((e: Error) => e);
+
+    expect((error as Error).message).toMatch(/SMTP_PORT/);
+    expect((error as Error).message).toMatch(/EMAIL_FROM/);
+  });
 });
