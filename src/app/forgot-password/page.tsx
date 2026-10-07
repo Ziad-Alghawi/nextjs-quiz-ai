@@ -91,6 +91,10 @@ export default function ForgotPasswordPage() {
             If an account exists for {email}, we sent it a code. It expires in{" "}
             {OTP_EXPIRES_IN_MINUTES} minutes.
           </p>
+          {/* Mail from a Gmail address without our own domain's SPF/DKIM often lands in spam. */}
+          <p className="text-sm text-muted-foreground">
+            Didn&apos;t get the email? Check your spam folder.
+          </p>
           {/* Without a username field, browsers take the code box for one and fill in the email.
               This hidden field tells them the account, so they also save the new password for it. */}
           <input type="email" autoComplete="username" value={email} readOnly hidden />
