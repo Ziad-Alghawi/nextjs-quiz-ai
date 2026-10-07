@@ -14,7 +14,11 @@ type Answer = InferSelectModel<typeof questionAnswers>;
 type Question = InferSelectModel<typeof Dbquestions> & {
   answers: Answer[];
 };
-export type QuizWithQuestions = InferSelectModel<typeof quizzes> & {
+// Only the fields the player shows, so the static sample quiz fits without being a database row.
+export type QuizWithQuestions = Pick<
+  InferSelectModel<typeof quizzes>,
+  "id" | "name" | "description"
+> & {
   questions: Question[];
 };
 

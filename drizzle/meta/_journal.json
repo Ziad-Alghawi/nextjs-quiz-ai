@@ -22,6 +22,13 @@
       "when": 1791345915461,
       "tag": "0002_rename_quizz_to_quiz",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791374257600,
+      "tag": "0003_integrity",
+      "breakpoints": true
     }
   ]
 }

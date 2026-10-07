@@ -6,7 +6,7 @@ import { InferInsertModel } from "drizzle-orm";
 
 type Submission = InferInsertModel<typeof quizSubmissions>;
 
-export async function saveSubmissions(sub: Submission, quizId: number) {
+export async function saveSubmissions(sub: Pick<Submission, "score">, quizId: number) {
   const { score } = sub;
 
   const newSubmission = await db

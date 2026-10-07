@@ -5,7 +5,6 @@ const sampleQuiz: QuizWithQuestions = {
   id: 0,
   name: "React basics",
   description: "A short sample quiz about React.",
-  userId: null,
   questions: [
     {
       id: 1,

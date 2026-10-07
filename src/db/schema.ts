@@ -1,4 +1,5 @@
 import {
+  index,
   timestamp,
   pgTable,
   text,
@@ -75,23 +76,36 @@ export const verificationTokens = pgTable(
 // quiz tables
 ///////////////////////////////////////////
 
-export const quizzes = pgTable("quizzes", {
-  id: serial("id").primaryKey(),
-  name: text("name"),
-  description: text("description"),
-  userId: text("user_id").references(() => users.id),
-});
+export const quizzes = pgTable(
+  "quizzes",
+  {
+    id: serial("id").primaryKey(),
+    name: text("name").notNull(),
+    description: text("description"),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [index("quizzes_user_id_idx").on(table.userId)],
+);
 
 export const quizzesRelations = relations(quizzes, ({ many }) => ({
   questions: many(questions),
   submissions: many(quizSubmissions),
 }));
 
-export const questions = pgTable("questions", {
-  id: serial("id").primaryKey(),
-  questionText: text("question_text"),
-  quizId: integer("quiz_id"),
-});
+export const questions = pgTable(
+  "questions",
+  {
+    id: serial("id").primaryKey(),
+    questionText: text("question_text").notNull(),
+    quizId: integer("quiz_id")
+      .notNull()
+      .references(() => quizzes.id, { onDelete: "cascade" }),
+  },
+  (table) => [index("questions_quiz_id_idx").on(table.quizId)],
+);
 
 export const questionsRelations = relations(questions, ({ one, many }) => ({
   quiz: one(quizzes, {
@@ -101,12 +115,18 @@ export const questionsRelations = relations(questions, ({ one, many }) => ({
   answers: many(questionAnswers),
 }));
 
-export const questionAnswers = pgTable("answers", {
-  id: serial("id").primaryKey(),
-  questionId: integer("question_id"),
-  answerText: text("answer_text"),
-  isCorrect: boolean("is_correct"),
-});
+export const questionAnswers = pgTable(
+  "answers",
+  {
+    id: serial("id").primaryKey(),
+    questionId: integer("question_id")
+      .notNull()
+      .references(() => questions.id, { onDelete: "cascade" }),
+    answerText: text("answer_text").notNull(),
+    isCorrect: boolean("is_correct").default(false).notNull(),
+  },
+  (table) => [index("answers_question_id_idx").on(table.questionId)],
+);
 
 export const questionAnswersRelations = relations(questionAnswers, ({ one }) => ({
   question: one(questions, {
@@ -115,12 +135,18 @@ export const questionAnswersRelations = relations(questionAnswers, ({ one }) => 
   }),
 }));
 
-export const quizSubmissions = pgTable("quiz_submissions", {
-  id: serial("id").primaryKey(),
-  quizId: integer("quiz_id"),
-  score: integer("score"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+export const quizSubmissions = pgTable(
+  "quiz_submissions",
+  {
+    id: serial("id").primaryKey(),
+    quizId: integer("quiz_id")
+      .notNull()
+      .references(() => quizzes.id, { onDelete: "cascade" }),
+    score: integer("score").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [index("quiz_submissions_quiz_id_idx").on(table.quizId)],
+);
 
 export const quizSubmissionsRelations = relations(quizSubmissions, ({ one }) => ({
   quiz: one(quizzes, {
