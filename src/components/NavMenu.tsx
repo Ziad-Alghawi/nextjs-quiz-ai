@@ -24,7 +24,7 @@ export function NavMenu() {
         <DropdownMenuItem>
           <Link href="/quizz/new" className="flex flexr-row">
             <Plus className="mr-2 h-4 w-4" />
-            <span>New Quizz</span>
+            <span>New Quiz</span>
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem>

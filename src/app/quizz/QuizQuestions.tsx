@@ -122,7 +122,7 @@ export default function QuizQuestions(props: props) {
       </div>
       <main className="flex flex-1 justify-center overflow-y-auto px-2">
         {!started ? (
-          <h1 className="mt-10 text-center text-3xl font-bold">Welcome to the quizz page 👋</h1>
+          <h1 className="mt-10 text-center text-3xl font-bold">Welcome to the quiz page 👋</h1>
         ) : (
           <div className="w-full max-w-3xl py-2">
             <h2 className="text-3xl font-bold break-words">

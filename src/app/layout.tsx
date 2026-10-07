@@ -3,8 +3,8 @@ import "./globals.css";
 import Header from "@/components/ui/header";
 
 export const metadata: Metadata = {
-  title: "Quizz Ai",
-  description: "Generated Quizzes And Study Faster Using AI",
+  title: "Quiz AI",
+  description: "Generate quizzes from your documents and study faster with AI.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

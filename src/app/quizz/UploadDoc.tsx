@@ -91,7 +91,7 @@ const UploadDoc = () => {
               Generating...
             </>
           ) : (
-            "Generate Quizz"
+            "Generate Quiz"
           )}
         </Button>
       </form>

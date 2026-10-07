@@ -29,7 +29,7 @@ const UpgradePlan = () => {
       <div className="flex flex-col items-center cursor-pointer w-full h-full">
         <div className="flex-1 flex items-center flex-col">
           <h2 className="text-xl font-bold mb-4">
-            Subscribe to unload Documents and create quizzs
+            Subscribe to upload documents and create quizzes
           </h2>
           <Lock className="w-12 h-12" />
         </div>

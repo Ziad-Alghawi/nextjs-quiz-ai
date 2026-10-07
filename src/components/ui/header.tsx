@@ -27,7 +27,7 @@ const Header = async () => {
     <header>
       <nav className="py-2.5 px-4">
         <div className="flex flex-wrap items-center justify-between mx-auto max-w-screen-xl">
-          <h1 className="text-3xl font-bold">Qizz AI</h1>
+          <h1 className="text-3xl font-bold">Quiz AI</h1>
 
           <div>
             {user ? (

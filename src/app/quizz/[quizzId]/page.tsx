@@ -12,7 +12,7 @@ const page = async ({
   const quiz = await getQuizWithQuestions(parseInt(quizzId));
 
   if (!quizzId || !quiz || quiz.questions.length === 0) {
-    return <div>Quizz not found</div>;
+    return <div>Quiz not found</div>;
   }
 
   return <QuizQuestions quiz={quiz} />;

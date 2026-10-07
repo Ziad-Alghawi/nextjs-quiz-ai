@@ -38,7 +38,7 @@ const QuizSubmission = (props: Props) => {
       </div>
 
       <main className="py-11 flex flex-col gap-4 items-center flex-1 mt-24">
-        <h2 className="text-3xl font-bold">Quizz Complete!</h2>
+        <h2 className="text-3xl font-bold">Quiz Complete!</h2>
         <p>Percentage: {scorePercentage}%</p>
         {scorePercentage === 100 ? (
           <div className="flex flex-col items-center">
