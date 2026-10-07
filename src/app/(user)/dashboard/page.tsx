@@ -3,9 +3,8 @@ import { eq } from "drizzle-orm";
 import { quizzes } from "@/db/schema";
 import { auth } from "@/auth";
 import QuizzesTable, { Quizz } from "./quizzesTable";
-import getUserMatrics from "@/app/actions/getUserMatrics";
+import { getSubmissionActivity, getUserMetrics } from "@/server/services/stats";
 import MetricCard from "./metricCard";
-import getHeatMapData from "@/app/actions/getHeatMapData";
 import SubmissionHeatMap from "./heatMap";
 
 const page = async () => {
@@ -20,8 +19,8 @@ const page = async () => {
   const userQuizzes: Quizz[] = await db.query.quizzes.findMany({
     where: eq(quizzes.userId, userId),
   });
-  const userData = await getUserMatrics();
-  const heatMapData = await getHeatMapData();
+  const userData = await getUserMetrics(userId);
+  const heatMapData = await getSubmissionActivity();
 
   return (
     <div className="mt-4">
