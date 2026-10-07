@@ -1,6 +1,54 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+/* The v3 JavaScript config, loaded as is until the theme moves into CSS. */
+@config "../../tailwind.config.js";
+
+/*
+  Tailwind 4 changed these defaults; until the design tokens replace them, keep the v3 look:
+  the v3 font stack and the v3 values of the palette colors in use (v4 redefined them in OKLCH).
+*/
+@theme {
+  --font-sans:
+    ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+    "Noto Color Emoji";
+  --color-blue-500: #3b82f6;
+  --color-blue-600: #2563eb;
+  --color-blue-900: #1e3a8a;
+  --color-gray-200: #e5e7eb;
+  --color-gray-400: #9ca3af;
+  --color-green-400: #4ade80;
+  --color-green-500: #22c55e;
+  --color-green-600: #16a34a;
+  --color-red-300: #fca5a5;
+  --color-red-500: #ef4444;
+  --color-red-600: #dc2626;
+}
+
+/* Base styles from the official upgrade guide, plus the browser's table cell padding that v4 resets. */
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--color-gray-400);
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  th,
+  td {
+    padding: 1px;
+  }
+}
 
 @layer base {
   :root {

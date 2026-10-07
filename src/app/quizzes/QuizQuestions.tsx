@@ -98,7 +98,7 @@ export default function QuizQuestions(props: props) {
     <div className="flex h-full flex-col overflow-hidden">
       <div className="position-sticky top-0 z-10 w-full shrink-0 py-4 shadow-md">
         <header
-          className="grid grid-cols-[auto,1fr,auto]
+          className="grid grid-cols-[auto_1fr_auto]
           grid-flow-col items-center justify-between py-2 gap-2"
         >
           <Button size="icon" variant="outline" onClick={handlePressPrev}>
@@ -117,7 +117,7 @@ export default function QuizQuestions(props: props) {
           <h1 className="mt-10 text-center text-3xl font-bold">Welcome to the quiz page 👋</h1>
         ) : (
           <div className="w-full max-w-3xl py-2">
-            <h2 className="text-3xl font-bold break-words">
+            <h2 className="text-3xl font-bold wrap-break-word">
               {questions[currentQuestion].questionText}
             </h2>
             <div className="grid grid-cols-1 gap-6 mt-6">
@@ -136,9 +136,9 @@ export default function QuizQuestions(props: props) {
                     variant={variant}
                     size="xl"
                     onClick={() => handleAnswer(answer, questions[currentQuestion].id)}
-                    className="!h-auto min-h-16 px-5 py-4 text-left disabled:opacity-100"
+                    className="h-auto! min-h-16 px-5 py-4 text-left disabled:opacity-100"
                   >
-                    <p className="w-full whitespace-normal break-words leading-relaxed">
+                    <p className="w-full whitespace-normal wrap-break-word leading-relaxed">
                       {answer.answerText}
                     </p>
                   </Button>
