@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { generatedQuizSchema, MAX_PDF_BYTES, pdfUploadSchema, type GeneratedQuiz } from "./quiz";
+import {
+  generatedQuizSchema,
+  MAX_PDF_BYTES,
+  pdfUploadSchema,
+  quizIdSchema,
+  type GeneratedQuiz,
+} from "./quiz";
 
 const answers = (correctCount: number, total = 4) =>
   Array.from({ length: total }, (_, i) => ({
@@ -73,5 +79,15 @@ describe("pdfUploadSchema", () => {
   it("rejects a file without a PDF header, whatever its MIME type", async () => {
     const renamedText = new Blob(["just some notes"], { type: "application/pdf" });
     expect(await firstError(renamedText)).toBe("Only PDF files are supported.");
+  });
+});
+
+describe("quizIdSchema", () => {
+  it("accepts a positive integer from a URL segment", () => {
+    expect(quizIdSchema.parse("42")).toBe(42);
+  });
+
+  it.each(["abc", "12abc", "0", "-3", "1.5", ""])("rejects %j", (input) => {
+    expect(quizIdSchema.safeParse(input).success).toBe(false);
   });
 });

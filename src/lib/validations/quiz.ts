@@ -51,4 +51,7 @@ export const generatedQuizSchema = z.object({
     ),
 });
 
+/** A quiz id from a URL or form: a positive whole number. */
+export const quizIdSchema = z.coerce.number().int().positive();
+
 export type GeneratedQuiz = z.infer<typeof generatedQuizSchema>;

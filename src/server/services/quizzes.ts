@@ -1,5 +1,5 @@
 import "server-only";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { questionAnswers, questions, quizzes } from "@/db/schema";
 import type { GeneratedQuiz } from "@/lib/validations/quiz";
@@ -31,9 +31,10 @@ export async function createQuiz(quiz: GeneratedQuiz, userId: string) {
   });
 }
 
-export function getQuizWithQuestions(quizId: number) {
+/** The quiz with its questions and answers, only if it belongs to the user. */
+export function getQuizWithQuestions(quizId: number, userId: string) {
   return db.query.quizzes.findFirst({
-    where: eq(quizzes.id, quizId),
+    where: and(eq(quizzes.id, quizId), eq(quizzes.userId, userId)),
     with: { questions: { with: { answers: true } } },
   });
 }
