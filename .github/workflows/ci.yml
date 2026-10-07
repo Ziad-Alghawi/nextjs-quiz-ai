@@ -8,6 +8,28 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+
+    # Same Postgres major version and credentials as docker-compose.yml.
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: quiz_ai
+          POSTGRES_PASSWORD: quiz_ai
+          POSTGRES_DB: quiz_ai
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U quiz_ai -d quiz_ai"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgres://quiz_ai:quiz_ai@localhost:5432/quiz_ai
+      # CI has no secrets; the deployed app validates its environment at runtime.
+      SKIP_ENV_VALIDATION: "true"
+
     steps:
       - uses: actions/checkout@v7
 
@@ -22,7 +44,7 @@ jobs:
       - run: npm run typecheck
       - run: npm test
 
+      - run: npm run db:migrate
+      - run: npm run test:db
+
       - run: npm run build
-        env:
-          # CI has no secrets; the deployed app validates its environment at runtime.
-          SKIP_ENV_VALIDATION: "true"
