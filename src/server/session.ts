@@ -1,4 +1,5 @@
 import "server-only";
+import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 
 export type CurrentUser = {
@@ -20,4 +21,11 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     email: user.email ?? null,
     image: user.image ?? null,
   };
+}
+
+/** The signed-in user; otherwise redirects to sign-in, which returns to `returnTo` afterwards. */
+export async function requireUser(returnTo: string): Promise<CurrentUser> {
+  const user = await getCurrentUser();
+  if (!user) redirect(`/api/auth/signin?callbackUrl=${encodeURIComponent(returnTo)}`);
+  return user;
 }
