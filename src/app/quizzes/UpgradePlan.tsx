@@ -1,5 +1,6 @@
 import { Lock, Flame } from "lucide-react";
 import { startCheckout } from "@/app/actions/billing";
+import { PLANS } from "@/lib/plans";
 
 const UpgradePlan = () => {
   return (
@@ -11,7 +12,7 @@ const UpgradePlan = () => {
         <div className="flex flex-col items-center cursor-pointer w-full h-full">
           <div className="flex-1 flex items-center flex-col">
             <h2 className="text-xl font-bold mb-4">
-              Subscribe to upload documents and create quizzes
+              Upgrade to Pro for {PLANS.pro.monthlyQuizzes} quizzes a month
             </h2>
             <Lock className="w-12 h-12" />
           </div>
