@@ -8,7 +8,8 @@ import QuizSubmission from "./QuizSubmission";
 import { InferSelectModel } from "drizzle-orm";
 import { questionAnswers, questions as Dbquestions, quizzes } from "@/db/schema";
 import { useRouter } from "next/navigation";
-import { saveSubmissions } from "../actions/saveSubmissions";
+import { submitQuiz } from "../actions/submitQuiz";
+import { scoreAttempt, type SelectedAnswer } from "@/lib/scoring";
 
 type Answer = InferSelectModel<typeof questionAnswers>;
 type Question = InferSelectModel<typeof Dbquestions> & {
@@ -31,50 +32,36 @@ export default function QuizQuestions(props: props) {
   const { questions } = props.quiz;
   const [started, setStarted] = useState<boolean>(false);
   const [currentQuestion, setCurrentQuestion] = useState<number>(0);
-  const [score, setScore] = useState<number>(0);
-  const [userAnswers, setUserAnswers] = useState<{ questionId: number; answerId: number }[]>([]);
-  const [submitted, setSubmitted] = useState<boolean>(false);
+  const [userAnswers, setUserAnswers] = useState<SelectedAnswer[]>([]);
+  const [result, setResult] = useState<{ score: number; total: number } | null>(null);
   const router = useRouter();
 
   const handleNext = () => {
     if (!started) {
       setStarted(true);
-      return;
-    }
-    if (currentQuestion < questions.length - 1) {
+    } else if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
-    } else {
-      setSubmitted(true);
-      return;
     }
   };
 
   const handleAnswer = (answer: Answer, questionId: number) => {
-    const newUserAnswersArr = [
-      ...userAnswers,
-      {
-        questionId,
-        answerId: answer.id,
-      },
-    ];
-    setUserAnswers(newUserAnswersArr);
-
-    const isCurrentCorrect = answer.isCorrect;
-    if (isCurrentCorrect) {
-      setScore(score + 1);
-    }
+    setUserAnswers([...userAnswers, { questionId, answerId: answer.id }]);
   };
 
   const handleSubmit = async () => {
+    const localResult = scoreAttempt(questions, userAnswers);
     // The sample quiz has no database row to attach a submission to.
-    if (!props.isSample) {
-      try {
-        await saveSubmissions({ score }, props.quiz.id);
-      } catch (e) {
-        console.error("Error saving submission:", e);
-      }
+    if (props.isSample) {
+      setResult(localResult);
+      return;
     }
-    setSubmitted(true);
+    try {
+      setResult(await submitQuiz({ quizId: props.quiz.id, answers: userAnswers }));
+    } catch (e) {
+      console.error("Error saving submission:", e);
+      // Saving failed, but the user still sees how they did.
+      setResult(localResult);
+    }
   };
 
   const handlePressPrev = () => {
@@ -87,7 +74,6 @@ export default function QuizQuestions(props: props) {
     router.push(props.isSample ? "/" : "/dashboard");
   };
 
-  const scorePercentage: number = Math.round((score / questions.length) * 100);
   const selectedAnswer: number | null | undefined = userAnswers.find(
     (item) => item.questionId === questions[currentQuestion].id,
   )?.answerId;
@@ -96,15 +82,17 @@ export default function QuizQuestions(props: props) {
       ? questions[currentQuestion].answers.find((answer) => answer.id === selectedAnswer)?.isCorrect
       : null;
 
-  if (submitted) {
+  if (result) {
     return (
       <QuizSubmission
-        score={score}
-        totalQuestions={questions.length}
-        scorePercentage={scorePercentage}
+        score={result.score}
+        totalQuestions={result.total}
+        scorePercentage={Math.round((result.score / result.total) * 100)}
       />
     );
   }
+
+  const allAnswered = scoreAttempt(questions, userAnswers).complete;
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
@@ -168,12 +156,17 @@ export default function QuizQuestions(props: props) {
               ?.answerText || ""
           }
         />
-        {currentQuestion === questions.length - 1 ? (
-          <Button variant="neo" size="lg" onClick={handleSubmit}>
+        {started && currentQuestion === questions.length - 1 ? (
+          <Button variant="neo" size="lg" onClick={handleSubmit} disabled={!allAnswered}>
             submit
           </Button>
         ) : (
-          <Button variant="neo" size="lg" onClick={handleNext}>
+          <Button
+            variant="neo"
+            size="lg"
+            onClick={handleNext}
+            disabled={started && !selectedAnswer}
+          >
             {!started ? "Start" : "Next"}
           </Button>
         )}
