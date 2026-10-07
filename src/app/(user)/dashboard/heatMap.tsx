@@ -2,13 +2,9 @@
 import React from "react";
 import Tooltip from "@uiw/react-tooltip";
 import HeatMap from "@uiw/react-heat-map";
-import { convertDateToString } from "@/lib/utils";
 
 type Props = {
-  data: {
-    createdAt: Date;
-    count: number;
-  }[];
+  data: { date: string; count: number }[];
 };
 
 const panelColors = {
@@ -20,20 +16,17 @@ const panelColors = {
 };
 
 const SubmissionHeatMap = (props: Props) => {
-  const formattedDates = props.data.map((item) => ({
-    date: convertDateToString(item.createdAt),
-    count: item.count,
-  }));
+  const startDate = new Date();
+  startDate.setFullYear(startDate.getFullYear() - 1);
 
   return (
     <HeatMap
-      value={formattedDates}
+      value={props.data}
       width="100%"
       style={{ color: "#888" }}
-      startDate={new Date("2026/01/01")}
+      startDate={startDate}
       panelColors={panelColors}
       rectRender={(props, data) => {
-        // if (!data.count) return <rect {...props} />;
         return (
           <Tooltip placement="top" content={`count: ${data.count || 0}`}>
             <rect {...props} />

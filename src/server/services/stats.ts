@@ -1,5 +1,5 @@
 import "server-only";
-import { avg, count, eq, sql } from "drizzle-orm";
+import { and, avg, count, eq, gte, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { questions, quizSubmissions, quizzes, users } from "@/db/schema";
 
@@ -38,16 +38,18 @@ export async function getUserMetrics(userId: string) {
   ];
 }
 
-export async function getSubmissionActivity() {
-  const data = await db
-    .select({
-      createdAt: quizSubmissions.createdAt,
-      count: sql<number>`cast(count(${quizSubmissions.id}) as int)`,
-    })
-    .from(quizSubmissions)
-    .innerJoin(quizzes, eq(quizSubmissions.quizId, quizzes.id))
-    .innerJoin(users, eq(quizzes.userId, users.id))
-    .groupBy(quizSubmissions.createdAt);
+/** The user's submissions per day over the last year, dated "YYYY/MM/DD" as the heatmap expects. */
+export async function getSubmissionActivity(userId: string) {
+  const day = sql<string>`to_char(${quizSubmissions.createdAt}, 'YYYY/MM/DD')`;
 
-  return { data };
+  return db
+    .select({ date: day, count: sql<number>`cast(count(*) as int)` })
+    .from(quizSubmissions)
+    .where(
+      and(
+        eq(quizSubmissions.userId, userId),
+        gte(quizSubmissions.createdAt, sql`now() - interval '1 year'`),
+      ),
+    )
+    .groupBy(day);
 }

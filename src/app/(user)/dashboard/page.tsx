@@ -10,7 +10,7 @@ const page = async () => {
 
   const userQuizzes: Quiz[] = await listQuizzes(userId);
   const userData = await getUserMetrics(userId);
-  const heatMapData = await getSubmissionActivity();
+  const activity = await getSubmissionActivity(userId);
 
   return (
     <div className="mt-4">
@@ -24,7 +24,7 @@ const page = async () => {
         ) : null}
       </div>
       <div>
-        {heatMapData ? <SubmissionHeatMap data={heatMapData.data} /> : <p>No data available</p>}
+        <SubmissionHeatMap data={activity} />
       </div>
 
       <QuizzesTable quizzes={userQuizzes} />
