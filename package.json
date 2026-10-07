@@ -25,7 +25,6 @@
     "@langchain/google": "^0.1.6",
     "@radix-ui/react-dropdown-menu": "^2.1.25",
     "@radix-ui/react-slot": "^1.4.0",
-    "@stripe/stripe-js": "^2.4.0",
     "@uiw/react-heat-map": "^2.3.4",
     "@uiw/react-tooltip": "^4.22.3",
     "class-variance-authority": "^0.7.1",

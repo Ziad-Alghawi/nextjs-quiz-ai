@@ -1,35 +1,15 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import { useFormStatus } from "react-dom";
 import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { openBillingPortal } from "@/app/actions/billing";
 
-const ManageSubscription = () => {
-  const router = useRouter();
-  const [loading, setLoading] = useState<boolean>(false);
-
-  const redirectToCustomerPortal = async () => {
-    setLoading(true);
-
-    try {
-      const { url } = await fetch("/api/stripe/create-portal", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }).then((res) => res.json());
-
-      router.push(url);
-    } catch (error) {
-      console.log("Subscribe Button Error:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+// useFormStatus only works in a component rendered inside the form.
+const SubmitButton = () => {
+  const { pending } = useFormStatus();
   return (
-    <Button disabled={loading} onClick={redirectToCustomerPortal}>
-      {loading ? (
+    <Button type="submit" disabled={pending}>
+      {pending ? (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           please wait...
@@ -40,5 +20,11 @@ const ManageSubscription = () => {
     </Button>
   );
 };
+
+const ManageSubscription = () => (
+  <form action={openBillingPortal}>
+    <SubmitButton />
+  </form>
+);
 
 export default ManageSubscription;
