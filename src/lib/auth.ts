@@ -60,6 +60,8 @@ export const auth = betterAuth({
       // Slows down password guessing; each attempt also costs a scrypt hash on the server.
       "/sign-in/email": { window: 5 * 60, max: 5 },
       "/sign-up/email": { window: 60 * 60, max: 5 },
+      // Asks for the current password, so someone with a stolen session could guess it here.
+      "/change-password": { window: 5 * 60, max: 5 },
       // Each request sends an email, and the Gmail account has a daily sending limit.
       "/email-otp/request-password-reset": { window: 15 * 60, max: 3 },
       "/email-otp/request-email-change": { window: 15 * 60, max: 3 },

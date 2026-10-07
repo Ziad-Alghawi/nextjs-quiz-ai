@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  changePasswordSchema,
   confirmEmailChangeSchema,
   fieldErrors,
   PASSWORD_MIN_LENGTH,
@@ -54,6 +55,16 @@ describe("resetPasswordSchema", () => {
     const result = resetPasswordSchema.safeParse({ otp, password: "new password" });
     expect(result.success).toBe(false);
     expect(fieldErrors(result.error!)).toEqual({ otp: "Enter the 6-digit code from the email." });
+  });
+});
+
+describe("changePasswordSchema", () => {
+  it("checks the new password's rules but not the current one's", () => {
+    const result = changePasswordSchema.safeParse({ currentPassword: "old", newPassword: "short" });
+    expect(result.success).toBe(false);
+    expect(fieldErrors(result.error!)).toEqual({
+      newPassword: `Use at least ${PASSWORD_MIN_LENGTH} characters.`,
+    });
   });
 });
 

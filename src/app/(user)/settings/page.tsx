@@ -2,6 +2,7 @@ import { getSignInMethods } from "@/server/services/account";
 import { requireUser } from "@/server/session";
 import { AddPasswordForm } from "./AddPasswordForm";
 import { ChangeEmailForm } from "./ChangeEmailForm";
+import { ChangePasswordForm } from "./ChangePasswordForm";
 import { NameForm } from "./NameForm";
 
 const SettingsPage = async () => {
@@ -23,7 +24,7 @@ const SettingsPage = async () => {
         <h2 className="text-xl font-semibold">Sign-in methods</h2>
         <p className="text-sm">Google: {methods.google ? "connected" : "not connected"}</p>
         {methods.password ? (
-          <p className="text-sm">Password: set</p>
+          <ChangePasswordForm email={user.email} />
         ) : (
           <AddPasswordForm email={user.email} />
         )}
