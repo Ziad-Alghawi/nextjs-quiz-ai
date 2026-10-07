@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { ChatGoogle } from "@langchain/google/node";
 import { HumanMessage } from "@langchain/core/messages";
-import { PDFLoader } from "langchain/document_loaders/fs/pdf";
 import saveQuizz from "./saveToDb";
 import { auth } from "@/auth";
 import { pingDatabase } from "@/db/health";
+import { extractPdfText } from "@/lib/pdf";
 import { generatedQuizSchema, pdfUploadSchema, type GeneratedQuiz } from "@/lib/validations/quiz";
 
 // Gemini needs 10-20 s for a typical document; set explicitly so a lower platform default can't cut it off.
@@ -47,14 +47,7 @@ export async function POST(request: NextRequest) {
     const session = await auth();
     const userId = session?.user?.id;
 
-    const pdfLoader = new PDFLoader(document, {
-      parsedItemSeparator: "",
-    });
-    const docs = await pdfLoader.load();
-
-    const selectedDocuments = docs.filter((doc) => doc.pageContent !== undefined);
-    const texts = selectedDocuments.map((doc) => doc.pageContent);
-    const text = texts.join("\n").trim();
+    const text = await extractPdfText(document);
 
     if (!text) {
       return errorResponse(
