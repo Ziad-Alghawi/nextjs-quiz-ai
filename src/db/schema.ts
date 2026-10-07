@@ -142,10 +142,18 @@ export const quizSubmissions = pgTable(
     quizId: integer("quiz_id")
       .notNull()
       .references(() => quizzes.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
     score: integer("score").notNull(),
+    // Stored with the score so percentages stay right if the quiz is edited later.
+    totalQuestions: integer("total_questions").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  (table) => [index("quiz_submissions_quiz_id_idx").on(table.quizId)],
+  (table) => [
+    index("quiz_submissions_quiz_id_idx").on(table.quizId),
+    index("quiz_submissions_user_id_idx").on(table.userId),
+  ],
 );
 
 export const quizSubmissionsRelations = relations(quizSubmissions, ({ one }) => ({
