@@ -5,6 +5,7 @@ import { AddPasswordForm } from "./AddPasswordForm";
 import { ChangeEmailForm } from "./ChangeEmailForm";
 import { ChangePasswordForm } from "./ChangePasswordForm";
 import { ConnectGoogleButton } from "./ConnectGoogleButton";
+import { DeleteAccountForm } from "./DeleteAccountForm";
 import { NameForm } from "./NameForm";
 
 const SettingsPage = async ({ searchParams }: { searchParams: Promise<{ error?: string }> }) => {
@@ -38,6 +39,10 @@ const SettingsPage = async ({ searchParams }: { searchParams: Promise<{ error?: 
         ) : (
           <AddPasswordForm email={user.email} />
         )}
+      </section>
+      <section className="flex flex-col gap-3 rounded-md border border-red-300 p-4">
+        <h2 className="text-xl font-semibold">Delete account</h2>
+        <DeleteAccountForm hasPassword={methods.password} />
       </section>
     </div>
   );

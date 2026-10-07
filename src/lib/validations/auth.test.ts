@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   changePasswordSchema,
   confirmEmailChangeSchema,
+  deleteAccountSchema,
   fieldErrors,
   PASSWORD_MIN_LENGTH,
   requestEmailChangeSchema,
@@ -65,6 +66,19 @@ describe("changePasswordSchema", () => {
     expect(fieldErrors(result.error!)).toEqual({
       newPassword: `Use at least ${PASSWORD_MIN_LENGTH} characters.`,
     });
+  });
+});
+
+describe("deleteAccountSchema", () => {
+  it("requires the password only for accounts that have one", () => {
+    expect(deleteAccountSchema(false).safeParse({ confirm: "DELETE" }).success).toBe(true);
+    const result = deleteAccountSchema(true).safeParse({ confirm: "DELETE" });
+    expect(fieldErrors(result.error!)).toEqual({ password: "Enter your password." });
+  });
+
+  it("asks to type DELETE", () => {
+    const result = deleteAccountSchema(false).safeParse({ confirm: "delete" });
+    expect(fieldErrors(result.error!)).toEqual({ confirm: "Type DELETE to confirm." });
   });
 });
 

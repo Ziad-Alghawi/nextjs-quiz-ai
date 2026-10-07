@@ -54,6 +54,23 @@ export type RequestEmailChangeInput = z.infer<typeof requestEmailChangeSchema>;
 export const confirmEmailChangeSchema = z.object({ otp: otpSchema });
 export type ConfirmEmailChangeInput = z.infer<typeof confirmEmailChangeSchema>;
 
+export const DELETE_CONFIRMATION = "DELETE";
+
+/** The password is only asked for (and required) when the account has one. */
+export const deleteAccountSchema = (hasPassword: boolean) =>
+  z.object({
+    password: hasPassword
+      ? z.string({ required_error: "Enter your password." }).min(1, "Enter your password.")
+      : z.undefined(),
+    confirm: z
+      .string()
+      .refine(
+        (value) => value.trim() === DELETE_CONFIRMATION,
+        `Type ${DELETE_CONFIRMATION} to confirm.`,
+      ),
+  });
+export type DeleteAccountInput = z.infer<ReturnType<typeof deleteAccountSchema>>;
+
 export type FieldErrors<T> = Partial<Record<keyof T, string>>;
 
 /** The first message per field, for showing next to form inputs. */

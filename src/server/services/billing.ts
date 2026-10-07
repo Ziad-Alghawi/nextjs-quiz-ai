@@ -1,5 +1,6 @@
 import "server-only";
 import { eq } from "drizzle-orm";
+import Stripe from "stripe";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { env } from "@/lib/env";
@@ -41,4 +42,29 @@ export async function createBillingPortalSession(userId: string) {
     customer: await getOrCreateStripeCustomer(userId),
     return_url: `${env.APP_URL}/billing`,
   });
+}
+
+/**
+ * Ends the user's subscriptions right away, before the account is deleted. Throws when Stripe
+ * fails, so the account isn't deleted while a subscription keeps billing.
+ */
+export async function cancelSubscriptions(userId: string) {
+  const user = await db.query.users.findFirst({ where: eq(users.id, userId) });
+  if (!user?.stripeCustomerId) return;
+
+  const subscriptions = stripe.subscriptions.list({
+    customer: user.stripeCustomerId,
+    status: "all",
+  });
+  try {
+    for await (const subscription of subscriptions) {
+      if (subscription.status !== "canceled" && subscription.status !== "incomplete_expired") {
+        await stripe.subscriptions.cancel(subscription.id);
+      }
+    }
+  } catch (error) {
+    // A customer deleted in the Stripe dashboard has no subscriptions left to cancel.
+    if (error instanceof Stripe.errors.StripeError && error.code === "resource_missing") return;
+    throw error;
+  }
 }

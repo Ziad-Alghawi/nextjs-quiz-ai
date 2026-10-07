@@ -13,6 +13,7 @@ import {
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
 } from "@/lib/validations/auth";
+import { cancelSubscriptions } from "@/server/services/billing";
 import { sendEmail } from "@/server/services/mail";
 
 // The code emails the app sends; the plugin's other code types are disabled below.
@@ -62,6 +63,7 @@ export const auth = betterAuth({
       "/sign-up/email": { window: 60 * 60, max: 5 },
       // Asks for the current password, so someone with a stolen session could guess it here.
       "/change-password": { window: 5 * 60, max: 5 },
+      "/delete-user": { window: 5 * 60, max: 5 },
       // Each request sends an email, and the Gmail account has a daily sending limit.
       "/email-otp/request-password-reset": { window: 15 * 60, max: 3 },
       "/email-otp/request-email-change": { window: 15 * 60, max: 3 },
@@ -80,6 +82,13 @@ export const auth = betterAuth({
     // Emails are sent after the response, so an existing account doesn't answer noticeably slower
     // than an unknown email. after() keeps the serverless function alive until the email is sent.
     backgroundTasks: { handler: after },
+  },
+  user: {
+    deleteUser: {
+      enabled: true,
+      // Quizzes, results and sessions go with the user row (ON DELETE CASCADE); Stripe doesn't.
+      beforeDelete: async (user) => cancelSubscriptions(user.id),
+    },
   },
   socialProviders: {
     google: { clientId: env.GOOGLE_CLIENT_ID, clientSecret: env.GOOGLE_CLIENT_SECRET },
