@@ -66,9 +66,9 @@ export async function POST(request: NextRequest) {
           );
     }
 
-    const quizzId = await createQuiz(quiz, userId);
+    const quizId = await createQuiz(quiz, userId);
 
-    return NextResponse.json({ quizzId }, { status: 200 });
+    return NextResponse.json({ quizId }, { status: 200 });
   } catch (error) {
     console.error("Quiz generation failed", error);
     return errorResponse("Something went wrong while generating your quiz. Please try again.", 500);

@@ -1,5 +1,5 @@
 import { getQuizWithQuestions } from "@/server/services/quizzes";
-import QuizzQuestions from "../QuizzQuestions";
+import QuizQuestions from "../QuizQuestions";
 
 const page = async ({
   params,
@@ -9,12 +9,12 @@ const page = async ({
   }>;
 }) => {
   const { quizzId } = await params;
-  const quizz = await getQuizWithQuestions(parseInt(quizzId));
+  const quiz = await getQuizWithQuestions(parseInt(quizzId));
 
-  if (!quizzId || !quizz || quizz.questions.length === 0) {
+  if (!quizzId || !quiz || quiz.questions.length === 0) {
     return <div>Quizz not found</div>;
   }
 
-  return <QuizzQuestions quizz={quizz} />;
+  return <QuizQuestions quiz={quiz} />;
 };
 export default page;

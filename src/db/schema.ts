@@ -72,7 +72,7 @@ export const verificationTokens = pgTable(
   }),
 );
 ///////////////////////////////////////////
-// start of quizz related tables from here
+// quiz tables
 ///////////////////////////////////////////
 
 export const quizzes = pgTable("quizzes", {
@@ -94,7 +94,7 @@ export const questions = pgTable("questions", {
 });
 
 export const questionsRelations = relations(questions, ({ one, many }) => ({
-  quizz: one(quizzes, {
+  quiz: one(quizzes, {
     fields: [questions.quizId],
     references: [quizzes.id],
   }),
@@ -123,7 +123,7 @@ export const quizSubmissions = pgTable("quiz_submissions", {
 });
 
 export const quizSubmissionsRelations = relations(quizSubmissions, ({ one }) => ({
-  quizz: one(quizzes, {
+  quiz: one(quizzes, {
     fields: [quizSubmissions.quizId],
     references: [quizzes.id],
   }),

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { pdfUploadSchema } from "@/lib/validations/quiz";
 
-const successResponseSchema = z.object({ quizzId: z.number() });
+const successResponseSchema = z.object({ quizId: z.number() });
 const errorResponseSchema = z.object({ error: z.string() });
 
 // Responses that never reached our route (e.g. Vercel's 413 or 504 pages) are not JSON.
@@ -44,7 +44,7 @@ const UploadDoc = () => {
       const success = successResponseSchema.safeParse(body);
       if (res.ok && success.success) {
         // Stay in the loading state until the quiz page replaces this one.
-        router.push(`/quizz/${success.data.quizzId}`);
+        router.push(`/quizz/${success.data.quizId}`);
         return;
       }
       setError(getErrorMessage(res.status, body));

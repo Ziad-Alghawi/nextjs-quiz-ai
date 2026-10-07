@@ -1,7 +1,7 @@
-import QuizzQuestions, { type Quizz } from "./QuizzQuestions";
+import QuizQuestions, { type QuizWithQuestions } from "./QuizQuestions";
 
 // A fixed quiz for trying the app without uploading a document. It is never saved.
-const sampleQuizz: Quizz = {
+const sampleQuiz: QuizWithQuestions = {
   id: 0,
   name: "React basics",
   description: "A short sample quiz about React.",
@@ -43,6 +43,6 @@ const sampleQuizz: Quizz = {
   ],
 };
 
-export default function SampleQuizzPage() {
-  return <QuizzQuestions quizz={sampleQuizz} isSample />;
+export default function SampleQuizPage() {
+  return <QuizQuestions quiz={sampleQuiz} isSample />;
 }

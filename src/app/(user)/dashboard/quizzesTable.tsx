@@ -2,10 +2,10 @@ import { quizzes } from "@/db/schema";
 import { InferSelectModel } from "drizzle-orm";
 import Link from "next/link";
 
-export type Quizz = InferSelectModel<typeof quizzes>;
+export type Quiz = InferSelectModel<typeof quizzes>;
 
 type Props = {
-  quizzes: Quizz[];
+  quizzes: Quiz[];
 };
 
 const QuizzesTable = (props: Props) => {
@@ -19,14 +19,14 @@ const QuizzesTable = (props: Props) => {
           </tr>
         </thead>
         <tbody>
-          {props.quizzes.map((quizz: Quizz) => (
-            <tr key={quizz.id}>
+          {props.quizzes.map((quiz: Quiz) => (
+            <tr key={quiz.id}>
               <td>
-                <Link href={`/quizz/${quizz.id}`}>
-                  <p className="text-blue-600 underline">{quizz.name}</p>
+                <Link href={`/quizz/${quiz.id}`}>
+                  <p className="text-blue-600 underline">{quiz.name}</p>
                 </Link>
               </td>
-              <td>{quizz.description}</td>
+              <td>{quiz.description}</td>
             </tr>
           ))}
         </tbody>

@@ -1,5 +1,5 @@
 import { getCurrentUser } from "@/server/session";
-import QuizzesTable, { Quizz } from "./quizzesTable";
+import QuizzesTable, { Quiz } from "./quizzesTable";
 import { listQuizzes } from "@/server/services/quizzes";
 import { getSubmissionActivity, getUserMetrics } from "@/server/services/stats";
 import MetricCard from "./metricCard";
@@ -12,7 +12,7 @@ const page = async () => {
     return <p>User not found</p>;
   }
 
-  const userQuizzes: Quizz[] = await listQuizzes(userId);
+  const userQuizzes: Quiz[] = await listQuizzes(userId);
   const userData = await getUserMetrics(userId);
   const heatMapData = await getSubmissionActivity();
 

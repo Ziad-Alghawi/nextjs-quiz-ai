@@ -12,7 +12,7 @@ type Props = {
   totalQuestions: number;
 };
 
-const QuizzSubmission = (props: Props) => {
+const QuizSubmission = (props: Props) => {
   const { scorePercentage, score, totalQuestions } = props;
   const { reward } = useReward("rewardId", "confetti");
   const router = useRouter();
@@ -69,4 +69,4 @@ const QuizzSubmission = (props: Props) => {
     </div>
   );
 };
-export default QuizzSubmission;
+export default QuizSubmission;

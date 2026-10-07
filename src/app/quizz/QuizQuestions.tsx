@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import ProgressBar from "@/components/ui/progressBar";
 import { ChevronLeft, X } from "lucide-react";
 import ResultCard from "./ResultCard";
-import QuizzSubmission from "./QuizzSubmission";
+import QuizSubmission from "./QuizSubmission";
 import { InferSelectModel } from "drizzle-orm";
 import { questionAnswers, questions as Dbquestions, quizzes } from "@/db/schema";
 import { useRouter } from "next/navigation";
@@ -14,17 +14,17 @@ type Answer = InferSelectModel<typeof questionAnswers>;
 type Question = InferSelectModel<typeof Dbquestions> & {
   answers: Answer[];
 };
-export type Quizz = InferSelectModel<typeof quizzes> & {
+export type QuizWithQuestions = InferSelectModel<typeof quizzes> & {
   questions: Question[];
 };
 
 type props = {
-  quizz: Quizz;
+  quiz: QuizWithQuestions;
   isSample?: boolean;
 };
 
-export default function QuizzQuestions(props: props) {
-  const { questions } = props.quizz;
+export default function QuizQuestions(props: props) {
+  const { questions } = props.quiz;
   const [started, setStarted] = useState<boolean>(false);
   const [currentQuestion, setCurrentQuestion] = useState<number>(0);
   const [score, setScore] = useState<number>(0);
@@ -65,7 +65,7 @@ export default function QuizzQuestions(props: props) {
     // The sample quiz has no database row to attach a submission to.
     if (!props.isSample) {
       try {
-        await saveSubmissions({ score }, props.quizz.id);
+        await saveSubmissions({ score }, props.quiz.id);
       } catch (e) {
         console.error("Error saving submission:", e);
       }
@@ -94,7 +94,7 @@ export default function QuizzQuestions(props: props) {
 
   if (submitted) {
     return (
-      <QuizzSubmission
+      <QuizSubmission
         score={score}
         totalQuestions={questions.length}
         scorePercentage={scorePercentage}
