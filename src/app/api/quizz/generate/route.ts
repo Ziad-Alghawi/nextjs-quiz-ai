@@ -6,6 +6,7 @@ import { PDFLoader } from "langchain/document_loaders/fs/pdf";
 import saveQuizz from "./saveToDb";
 import { auth } from "@/auth";
 import { pingDatabase } from "@/db/health";
+import { generatedQuizSchema, type GeneratedQuiz } from "@/lib/validations/quiz";
 
 const errorResponse = (error: string, status: number) =>
   NextResponse.json({ error }, { status });
@@ -50,36 +51,26 @@ export async function POST(request: NextRequest) {
     const selectedDocuments = docs.filter((doc) => doc.pageContent !== undefined);
     const texts = selectedDocuments.map((doc) => doc.pageContent);
 
-    const prompt = "given the text which is a summary of the document, generate a quiz based on the text. Return json only that contains a quizz object with fields: name, description and questions. The questions is an array of objects with fields: questionText, answers. The answers is an array of objects with fields: answerText, isCorrect.";
+    const prompt = "Generate a multiple-choice quiz about the following document. Give it a short name and a one-sentence description. Each question must have exactly one correct answer.";
 
     const model = new ChatGoogle({
       apiKey: process.env.GEMINI_API_KEY,
       model: "gemini-2.5-flash",
-    });
+    }).withStructuredOutput(generatedQuizSchema);
 
-    let result;
+    let quiz: GeneratedQuiz;
     try {
-      result = await model.invoke([
-        new HumanMessage(prompt + "\n" + texts.join("\n")),
+      quiz = await model.invoke([
+        new HumanMessage(prompt + "\n\n" + texts.join("\n")),
       ]);
     } catch (error) {
       console.error("Quiz generation: model call failed", error);
       return isRateLimitError(error)
         ? errorResponse("The AI service is at its usage limit right now. Please try again in a minute.", 503)
-        : errorResponse("The AI service could not generate a quiz. Please try again.", 502);
+        : errorResponse("The AI could not generate a valid quiz from this document. Please try again.", 502);
     }
 
-    const cleaned = result.text
-      .replace(/```json/g, "")
-      .replace(/```/g, "")
-      .trim();
-
-    const parsed = JSON.parse(cleaned);
-    if (!parsed?.quizz) {
-      return errorResponse("The AI returned an invalid quiz. Please try again.", 502);
-    }
-
-    const { quizzId } = await saveQuizz(parsed.quizz, userId);
+    const { quizzId } = await saveQuizz(quiz, userId);
 
     return NextResponse.json({ quizzId }, { status: 200 });
   } catch (error) {
