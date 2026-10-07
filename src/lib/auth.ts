@@ -20,8 +20,6 @@ export const auth = betterAuth({
       rateLimit: rateLimits,
     },
   }),
-  // users.emailVerified is still Auth.js's timestamp column until it is dropped.
-  user: { fields: { emailVerified: "emailVerifiedFlag" } },
   socialProviders: {
     google: { clientId: env.GOOGLE_CLIENT_ID, clientSecret: env.GOOGLE_CLIENT_SECRET },
   },

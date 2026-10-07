@@ -6,24 +6,18 @@ import {
   timestamp,
   pgTable,
   text,
-  primaryKey,
   integer,
   serial,
   boolean,
 } from "drizzle-orm/pg-core";
-import type { AdapterAccount } from "@auth/core/adapters";
 import { relations } from "drizzle-orm";
 import type { PlanId } from "@/lib/plans";
 
-/////////////////////////////////////////////////////////
-// Provider the authentication form here to be used in the accounts table
 export const users = pgTable("user", {
   id: text("id").notNull().primaryKey(),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
-  // Auth.js's timestamp; dropped once Better Auth has taken over (it uses emailVerifiedFlag).
-  emailVerified: timestamp("emailVerified", { mode: "date" }),
-  emailVerifiedFlag: boolean("email_verified").default(false).notNull(),
+  emailVerified: boolean("email_verified").default(false).notNull(),
   image: text("image"),
   stripeCustomerId: text("stripeCustomerId"),
   subscribed: boolean("subscribed").default(false),
@@ -35,52 +29,7 @@ export const userRelations = relations(users, ({ many }) => ({
   quizzes: many(quizzes),
 }));
 
-export const accounts = pgTable(
-  "account",
-  {
-    userId: text("userId")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    type: text("type").$type<AdapterAccount["type"]>().notNull(),
-    provider: text("provider").notNull(),
-    providerAccountId: text("providerAccountId").notNull(),
-    refresh_token: text("refresh_token"),
-    access_token: text("access_token"),
-    expires_at: integer("expires_at"),
-    token_type: text("token_type"),
-    scope: text("scope"),
-    id_token: text("id_token"),
-    session_state: text("session_state"),
-  },
-  (account) => ({
-    compoundKey: primaryKey({
-      columns: [account.provider, account.providerAccountId],
-    }),
-  }),
-);
-
-export const sessions = pgTable("session", {
-  sessionToken: text("sessionToken").primaryKey(),
-  userId: text("userId")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  expires: timestamp("expires", { mode: "date" }).notNull(),
-});
-
-export const verificationTokens = pgTable(
-  "verificationToken",
-  {
-    identifier: text("identifier").notNull(),
-    token: text("token").notNull(),
-    expires: timestamp("expires", { mode: "date" }).notNull(),
-  },
-  (verificationToken) => ({
-    compositePk: primaryKey({
-      columns: [verificationToken.identifier, verificationToken.token],
-    }),
-  }),
-);
-// Better Auth tables (auth_* so they can live next to the Auth.js tables during the switch).
+// Better Auth tables.
 export const authAccounts = pgTable(
   "auth_account",
   {
