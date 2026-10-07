@@ -6,6 +6,7 @@ import saveQuizz from "./saveToDb";
 import { auth } from "@/auth";
 import { pingDatabase } from "@/db/health";
 import { env } from "@/lib/env";
+import { getQuotaErrorMessage } from "@/lib/gemini-errors";
 import { extractPdfText } from "@/lib/pdf";
 import { generatedQuizSchema, pdfUploadSchema, type GeneratedQuiz } from "@/lib/validations/quiz";
 
@@ -13,10 +14,6 @@ import { generatedQuizSchema, pdfUploadSchema, type GeneratedQuiz } from "@/lib/
 export const maxDuration = 60;
 
 const errorResponse = (error: string, status: number) => NextResponse.json({ error }, { status });
-
-// Gemini reports exhausted quotas and rate limits as HTTP 429.
-const isRateLimitError = (error: unknown) =>
-  typeof error === "object" && error !== null && "statusCode" in error && error.statusCode === 429;
 
 export async function POST(request: NextRequest) {
   try {
@@ -61,11 +58,9 @@ export async function POST(request: NextRequest) {
       quiz = await model.invoke([new HumanMessage(prompt + "\n\n" + text)]);
     } catch (error) {
       console.error("Quiz generation: model call failed", error);
-      return isRateLimitError(error)
-        ? errorResponse(
-            "The AI service is at its usage limit right now. Please try again in a minute.",
-            503,
-          )
+      const quotaMessage = getQuotaErrorMessage(error);
+      return quotaMessage
+        ? errorResponse(quotaMessage, 503)
         : errorResponse(
             "The AI could not generate a valid quiz from this document. Please try again.",
             502,
