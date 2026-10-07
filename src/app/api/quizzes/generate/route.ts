@@ -9,6 +9,7 @@ import { getQuotaErrorMessage } from "@/lib/gemini-errors";
 import { extractPdfText } from "@/lib/pdf";
 import { generatedQuizSchema, pdfUploadSchema, type GeneratedQuiz } from "@/lib/validations/quiz";
 import { createQuiz } from "@/server/services/quizzes";
+import { finishGeneration, GenerationLimitError, reserveGeneration } from "@/server/services/usage";
 
 // Gemini needs 10-20 s for a typical document; set explicitly so a lower platform default can't cut it off.
 export const maxDuration = 60;
@@ -48,31 +49,46 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const prompt =
-      "Generate a multiple-choice quiz about the following document. Give it a short name and a one-sentence description. Each question must have exactly one correct answer.";
-
-    const model = new ChatGoogle({
-      apiKey: env.GEMINI_API_KEY,
-      model: "gemini-2.5-flash",
-    }).withStructuredOutput(generatedQuizSchema);
-
-    let quiz: GeneratedQuiz;
+    // Reserved only after the cheap checks above, right before the call that costs money.
+    let generationId: number;
     try {
-      quiz = await model.invoke([new HumanMessage(prompt + "\n\n" + text)]);
+      generationId = await reserveGeneration(user.id);
     } catch (error) {
-      console.error("Quiz generation: model call failed", error);
-      const quotaMessage = getQuotaErrorMessage(error);
-      return quotaMessage
-        ? errorResponse(quotaMessage, 503)
-        : errorResponse(
-            "The AI could not generate a valid quiz from this document. Please try again.",
-            502,
-          );
+      if (error instanceof GenerationLimitError) return errorResponse(error.message, error.status);
+      throw error;
     }
 
-    const quizId = await createQuiz(quiz, user.id);
+    let succeeded = false;
+    try {
+      const prompt =
+        "Generate a multiple-choice quiz about the following document. Give it a short name and a one-sentence description. Each question must have exactly one correct answer.";
 
-    return NextResponse.json({ quizId }, { status: 200 });
+      const model = new ChatGoogle({
+        apiKey: env.GEMINI_API_KEY,
+        model: "gemini-2.5-flash",
+      }).withStructuredOutput(generatedQuizSchema);
+
+      let quiz: GeneratedQuiz;
+      try {
+        quiz = await model.invoke([new HumanMessage(prompt + "\n\n" + text)]);
+      } catch (error) {
+        console.error("Quiz generation: model call failed", error);
+        const quotaMessage = getQuotaErrorMessage(error);
+        return quotaMessage
+          ? errorResponse(quotaMessage, 503)
+          : errorResponse(
+              "The AI could not generate a valid quiz from this document. Please try again.",
+              502,
+            );
+      }
+
+      const quizId = await createQuiz(quiz, user.id);
+      succeeded = true;
+      return NextResponse.json({ quizId }, { status: 200 });
+    } finally {
+      // Failed attempts don't use up the monthly quota.
+      await finishGeneration(generationId, succeeded ? "succeeded" : "failed");
+    }
   } catch (error) {
     console.error("Quiz generation failed", error);
     return errorResponse("Something went wrong while generating your quiz. Please try again.", 500);

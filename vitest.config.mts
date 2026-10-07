@@ -8,5 +8,7 @@ export default defineConfig({
   },
   test: {
     include: ["src/**/*.test.ts"],
+    // Database tests run separately with npm run test:db (vitest.db.config.mts).
+    exclude: ["src/**/*.db.test.ts"],
   },
 });
