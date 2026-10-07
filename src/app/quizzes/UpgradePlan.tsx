@@ -1,17 +1,12 @@
 "use client";
 import { Lock, Flame } from "lucide-react";
 import { getStripe } from "@/lib/stripe-client";
-import { PRICE_ID } from "@/lib/utils";
 
 const UpgradePlan = () => {
-  const onNavigateToUpgrade = async (price: string) => {
+  const onNavigateToUpgrade = async () => {
     try {
       const { sessionId } = await fetch("/api/stripe/checkout-session", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ price }),
       }).then((res) => res.json());
 
       const stripe = await getStripe();
@@ -23,7 +18,7 @@ const UpgradePlan = () => {
 
   return (
     <button
-      onClick={() => onNavigateToUpgrade(PRICE_ID)}
+      onClick={onNavigateToUpgrade}
       className="rounded-md bg-primary hover:bg-primary-shadow p-10 w-full sm:h-80 sm:w-80 "
     >
       <div className="flex flex-col items-center cursor-pointer w-full h-full">

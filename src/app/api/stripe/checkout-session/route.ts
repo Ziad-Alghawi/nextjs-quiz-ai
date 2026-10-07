@@ -1,86 +1,17 @@
-import { stripe } from "@/lib/stripe";
-import { env } from "@/lib/env";
+import { createCheckoutSession } from "@/server/services/billing";
 import { getCurrentUser } from "@/server/session";
-import { db } from "@/db";
-import { eq } from "drizzle-orm";
-import { users } from "@/db/schema";
 
-export async function POST(req: Request) {
-  const { price, quantity = 1 } = await req.json();
-  const userId = (await getCurrentUser())?.id;
-
-  if (!userId) {
-    return new Response(
-      JSON.stringify({
-        error: "Unauthorized",
-      }),
-      { status: 401 },
-    );
-  }
-  const user = await db.query.users.findFirst({
-    where: eq(users.id, userId),
-  });
-  let customer;
-
-  if (user?.stripeCustomerId) {
-    customer = {
-      id: user.stripeCustomerId,
-    };
-  } else {
-    const customerData: {
-      metadata: {
-        dbId: string;
-      };
-    } = {
-      metadata: {
-        dbId: userId,
-      },
-    };
-
-    const response = await stripe.customers.create(customerData);
-
-    customer = { id: response.id };
-
-    await db.update(users).set({ stripeCustomerId: customer.id }).where(eq(users.id, userId));
+export async function POST() {
+  const user = await getCurrentUser();
+  if (!user) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    const session = await stripe.checkout.sessions.create({
-      success_url: `${env.APP_URL}/billing/payment/success`,
-      customer: customer.id,
-      payment_method_types: ["card"],
-      line_items: [
-        {
-          price,
-          quantity,
-        },
-      ],
-      mode: "subscription",
-    });
-
-    if (session) {
-      return new Response(
-        JSON.stringify({
-          sessionId: session.id,
-        }),
-        { status: 200 },
-      );
-    } else {
-      return new Response(
-        JSON.stringify({
-          error: "Failed to create session",
-        }),
-        { status: 500 },
-      );
-    }
+    const session = await createCheckoutSession(user.id);
+    return Response.json({ sessionId: session.id });
   } catch (error) {
-    console.log("Error creating checkout session:", error);
-
-    return new Response(
-      JSON.stringify({
-        error,
-      }),
-      { status: 500 },
-    );
+    console.error("Error creating checkout session:", error);
+    return Response.json({ error: "Could not start checkout. Please try again." }, { status: 500 });
   }
 }

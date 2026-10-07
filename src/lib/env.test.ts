@@ -8,6 +8,7 @@ const validEnv = {
   GEMINI_API_KEY: "gemini-key",
   STRIPE_SECRET_KEY: "sk_test_123",
   STRIPE_WEBHOOK_SECRET: "whsec_123",
+  STRIPE_PRICE_ID: "price_123",
   APP_URL: "http://localhost:3000/",
 };
 

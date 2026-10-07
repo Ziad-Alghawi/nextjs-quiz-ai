@@ -8,6 +8,7 @@ const serverEnvSchema = z.object({
   GEMINI_API_KEY: z.string().min(1),
   STRIPE_SECRET_KEY: z.string().min(1),
   STRIPE_WEBHOOK_SECRET: z.string().min(1),
+  STRIPE_PRICE_ID: z.string().startsWith("price_"),
   // Public base URL for links that leave the app (Stripe return URLs); a trailing slash is dropped.
   APP_URL: z
     .string()
