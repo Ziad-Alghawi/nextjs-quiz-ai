@@ -3,6 +3,7 @@ import GoogleProvider from "next-auth/providers/google";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { db } from "./db/index";
 import { accounts, sessions, users, verificationTokens } from "./db/schema";
+import { env } from "./lib/env";
 
 export const {
   handlers: { GET, POST },
@@ -10,6 +11,7 @@ export const {
   signIn,
   signOut,
 } = NextAuth({
+  secret: env.AUTH_SECRET,
   // Our schema's tables, not the adapter's built-in copies, so user columns like `subscribed` stay in one place.
   adapter: DrizzleAdapter(db, {
     usersTable: users,
@@ -19,8 +21,8 @@ export const {
   }),
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      clientId: env.GOOGLE_CLIENT_ID,
+      clientSecret: env.GOOGLE_CLIENT_SECRET,
     }),
   ],
   callbacks: {

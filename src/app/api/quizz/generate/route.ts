@@ -5,6 +5,7 @@ import { HumanMessage } from "@langchain/core/messages";
 import saveQuizz from "./saveToDb";
 import { auth } from "@/auth";
 import { pingDatabase } from "@/db/health";
+import { env } from "@/lib/env";
 import { extractPdfText } from "@/lib/pdf";
 import { generatedQuizSchema, pdfUploadSchema, type GeneratedQuiz } from "@/lib/validations/quiz";
 
@@ -26,11 +27,6 @@ export async function POST(request: NextRequest) {
       return errorResponse(upload.error.issues[0].message, 400);
     }
     const document = upload.data;
-
-    if (!process.env.GEMINI_API_KEY) {
-      console.error("Quiz generation: GEMINI_API_KEY is not set");
-      return errorResponse("Quiz generation is not configured on this server.", 500);
-    }
 
     // Checked before the slow model call so an outage doesn't waste a Gemini request.
     if (!(await pingDatabase())) {
@@ -56,7 +52,7 @@ export async function POST(request: NextRequest) {
       "Generate a multiple-choice quiz about the following document. Give it a short name and a one-sentence description. Each question must have exactly one correct answer.";
 
     const model = new ChatGoogle({
-      apiKey: process.env.GEMINI_API_KEY,
+      apiKey: env.GEMINI_API_KEY,
       model: "gemini-2.5-flash",
     }).withStructuredOutput(generatedQuizSchema);
 
