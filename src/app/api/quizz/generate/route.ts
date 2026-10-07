@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { ChatGoogle } from "@langchain/google/node";
 import { HumanMessage } from "@langchain/core/messages";
-import saveQuizz from "./saveToDb";
 import { auth } from "@/auth";
 import { pingDatabase } from "@/db/health";
 import { env } from "@/lib/env";
 import { getQuotaErrorMessage } from "@/lib/gemini-errors";
 import { extractPdfText } from "@/lib/pdf";
 import { generatedQuizSchema, pdfUploadSchema, type GeneratedQuiz } from "@/lib/validations/quiz";
+import { createQuiz } from "@/server/services/quizzes";
 
 // Gemini needs 10-20 s for a typical document; set explicitly so a lower platform default can't cut it off.
 export const maxDuration = 60;
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
           );
     }
 
-    const { quizzId } = await saveQuizz(quiz, userId);
+    const quizzId = await createQuiz(quiz, userId);
 
     return NextResponse.json({ quizzId }, { status: 200 });
   } catch (error) {

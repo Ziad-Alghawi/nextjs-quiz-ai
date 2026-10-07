@@ -1,7 +1,4 @@
-import { db } from "@/db";
-
-import { quizzes } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { getQuizWithQuestions } from "@/server/services/quizzes";
 import QuizzQuestions from "../QuizzQuestions";
 
 const page = async ({
@@ -12,16 +9,7 @@ const page = async ({
   }>;
 }) => {
   const { quizzId } = await params;
-  const quizz = await db.query.quizzes.findFirst({
-    where: eq(quizzes.id, parseInt(quizzId)),
-    with: {
-      questions: {
-        with: {
-          answers: true,
-        },
-      },
-    },
-  });
+  const quizz = await getQuizWithQuestions(parseInt(quizzId));
 
   if (!quizzId || !quizz || quizz.questions.length === 0) {
     return <div>Quizz not found</div>;

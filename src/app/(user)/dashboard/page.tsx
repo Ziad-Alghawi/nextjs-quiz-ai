@@ -1,8 +1,6 @@
-import { db } from "@/db";
-import { eq } from "drizzle-orm";
-import { quizzes } from "@/db/schema";
 import { auth } from "@/auth";
 import QuizzesTable, { Quizz } from "./quizzesTable";
+import { listQuizzes } from "@/server/services/quizzes";
 import { getSubmissionActivity, getUserMetrics } from "@/server/services/stats";
 import MetricCard from "./metricCard";
 import SubmissionHeatMap from "./heatMap";
@@ -15,10 +13,7 @@ const page = async () => {
     return <p>User not found</p>;
   }
 
-  // Fetch quizzes created by the user
-  const userQuizzes: Quizz[] = await db.query.quizzes.findMany({
-    where: eq(quizzes.userId, userId),
-  });
+  const userQuizzes: Quizz[] = await listQuizzes(userId);
   const userData = await getUserMetrics(userId);
   const heatMapData = await getSubmissionActivity();
 
