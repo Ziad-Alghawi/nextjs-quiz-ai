@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   fieldErrors,
   PASSWORD_MIN_LENGTH,
+  resetPasswordSchema,
   safeReturnPath,
   signInSchema,
   signUpSchema,
@@ -37,6 +38,20 @@ describe("signInSchema", () => {
     expect(signInSchema.safeParse({ email: "ada@example.com", password: "short" }).success).toBe(
       true,
     );
+  });
+});
+
+describe("resetPasswordSchema", () => {
+  it("accepts a 6-digit code with surrounding spaces", () => {
+    expect(resetPasswordSchema.parse({ otp: " 012345 ", password: "new password" }).otp).toBe(
+      "012345",
+    );
+  });
+
+  it.each(["12345", "1234567", "12345a", ""])("rejects the code %j", (otp) => {
+    const result = resetPasswordSchema.safeParse({ otp, password: "new password" });
+    expect(result.success).toBe(false);
+    expect(fieldErrors(result.error!)).toEqual({ otp: "Enter the 6-digit code from the email." });
   });
 });
 

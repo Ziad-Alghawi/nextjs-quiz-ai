@@ -39,7 +39,7 @@ export default function SignUpPage({
 
     // An already registered email gets the same answer as a new one (see auth.ts), so this page
     // can't be used to find out who has an account. Everyone continues to the sign-in form.
-    router.push(`/sign-in?registered=1&callbackUrl=${encodeURIComponent(callbackURL)}`);
+    router.push(`/sign-in?notice=registered&callbackUrl=${encodeURIComponent(callbackURL)}`);
   };
 
   return (

@@ -1,8 +1,10 @@
 import { z } from "zod";
 
-// Better Auth's defaults, set explicitly in auth.ts so the forms and the server agree.
+// Used by both the forms and auth.ts, so the browser checks the same rules as the server.
 export const PASSWORD_MIN_LENGTH = 8;
 export const PASSWORD_MAX_LENGTH = 128;
+export const OTP_LENGTH = 6;
+export const OTP_EXPIRES_IN_MINUTES = 10;
 
 const emailSchema = z.string().trim().email("Enter a valid email address.");
 
@@ -30,6 +32,17 @@ export const signInSchema = z.object({
   password: z.string().min(1, "Enter your password."),
 });
 export type SignInInput = z.infer<typeof signInSchema>;
+
+export const requestPasswordResetSchema = z.object({ email: emailSchema });
+export type RequestPasswordResetInput = z.infer<typeof requestPasswordResetSchema>;
+
+const otpMessage = `Enter the ${OTP_LENGTH}-digit code from the email.`;
+
+export const resetPasswordSchema = z.object({
+  otp: z.string().trim().length(OTP_LENGTH, otpMessage).regex(/^\d+$/, otpMessage),
+  password: passwordSchema,
+});
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 
 export type FieldErrors<T> = Partial<Record<keyof T, string>>;
 

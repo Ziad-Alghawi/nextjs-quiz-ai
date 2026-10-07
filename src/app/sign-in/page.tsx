@@ -13,13 +13,23 @@ import {
   type SignInInput,
 } from "@/lib/validations/auth";
 
+// Shown after another page sent the user here; unknown values show nothing.
+const notices = new Map([
+  ["registered", "Thanks for signing up. You can now sign in with your email and password."],
+  [
+    "password-reset",
+    "Your password was changed and you were signed out everywhere. Sign in again.",
+  ],
+]);
+
 export default function SignInPage({
   searchParams,
 }: {
-  searchParams: Promise<{ callbackUrl?: string | string[]; registered?: string }>;
+  searchParams: Promise<{ callbackUrl?: string | string[]; notice?: string }>;
 }) {
   const params = use(searchParams);
   const callbackURL = safeReturnPath(params.callbackUrl);
+  const notice = params.notice ? notices.get(params.notice) : undefined;
   const router = useRouter();
   const [errors, setErrors] = useState<FieldErrors<SignInInput>>({});
   const [error, setError] = useState<string | null>(null);
@@ -50,9 +60,9 @@ export default function SignInPage({
   return (
     <main className="mx-auto mt-24 flex max-w-sm flex-col gap-4 px-4 text-center">
       <h1 className="text-3xl font-bold">Sign in</h1>
-      {params.registered ? (
+      {notice ? (
         <p role="status" className="text-green-600">
-          Thanks for signing up. You can now sign in with your email and password.
+          {notice}
         </p>
       ) : null}
       <form onSubmit={signInWithEmail} noValidate className="flex flex-col gap-3">
@@ -70,6 +80,9 @@ export default function SignInPage({
           autoComplete="current-password"
           error={errors.password}
         />
+        <Link href="/forgot-password" className="self-end text-sm underline">
+          Forgot password?
+        </Link>
         <Button type="submit" disabled={pending}>
           {pending ? "Signing in…" : "Sign in"}
         </Button>
