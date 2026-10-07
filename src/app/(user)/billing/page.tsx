@@ -1,16 +1,17 @@
-import { auth, signIn } from "@/auth";
+import { signIn } from "@/auth";
+import { getCurrentUser } from "@/server/session";
 import { isSubscribed } from "@/server/services/billing";
 import ManageSubscription from "./ManageSubscription";
 
 const Page = async () => {
-  const session = await auth();
+  const user = await getCurrentUser();
 
-  if (!session || !session.user || !session.user.id) {
+  if (!user) {
     signIn();
     return null;
   }
 
-  const subscribed = await isSubscribed(session.user.id);
+  const subscribed = await isSubscribed(user.id);
   const plan = subscribed ? "premium" : "free";
 
   return (

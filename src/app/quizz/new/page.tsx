@@ -1,12 +1,11 @@
 import UploadDoc from "../UploadDoc";
-import { auth } from "@/auth";
+import { getCurrentUser } from "@/server/session";
 import { isSubscribed } from "@/server/services/billing";
 import UpgradePlan from "../UpgradePlan";
 import Link from "next/link";
 
 const page = async () => {
-  const session = await auth();
-  const userId = session?.user?.id;
+  const userId = (await getCurrentUser())?.id;
   const subscribed = userId ? await isSubscribed(userId) : false;
 
   return (

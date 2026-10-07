@@ -1,13 +1,12 @@
 import { stripe } from "@/lib/stripe";
 import { env } from "@/lib/env";
-import { auth } from "@/auth";
+import { getCurrentUser } from "@/server/session";
 import { db } from "@/db";
 import { eq } from "drizzle-orm";
 import { users } from "@/db/schema";
 
 export async function POST() {
-  const session = await auth();
-  const userId = session?.user?.id;
+  const userId = (await getCurrentUser())?.id;
 
   if (!userId) {
     return new Response(

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { ChatGoogle } from "@langchain/google/node";
 import { HumanMessage } from "@langchain/core/messages";
-import { auth } from "@/auth";
+import { getCurrentUser } from "@/server/session";
 import { pingDatabase } from "@/db/health";
 import { env } from "@/lib/env";
 import { getQuotaErrorMessage } from "@/lib/gemini-errors";
@@ -33,8 +33,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const session = await auth();
-    const userId = session?.user?.id;
+    const userId = (await getCurrentUser())?.id;
 
     const text = await extractPdfText(document);
 

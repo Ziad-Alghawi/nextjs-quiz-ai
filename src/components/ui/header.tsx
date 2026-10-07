@@ -1,4 +1,5 @@
-import { auth, signOut } from "@/auth";
+import { signOut } from "@/auth";
+import { getCurrentUser } from "@/server/session";
 import { Button } from "./button";
 import Image from "next/image";
 import Link from "next/link";
@@ -21,7 +22,7 @@ function SignOut() {
 }
 
 const Header = async () => {
-  const session = await auth();
+  const user = await getCurrentUser();
   return (
     <header>
       <nav className="py-2.5 px-4">
@@ -29,15 +30,15 @@ const Header = async () => {
           <h1 className="text-3xl font-bold">Qizz AI</h1>
 
           <div>
-            {session?.user ? (
+            {user ? (
               <div className="flex items-center gap-4">
-                {session.user.name && session.user.image && (
+                {user.name && user.image && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost">
                         <Image
-                          src={session.user.image}
-                          alt={session.user.name}
+                          src={user.image}
+                          alt={user.name}
                           width={32}
                           height={32}
                           className="rounded-full"

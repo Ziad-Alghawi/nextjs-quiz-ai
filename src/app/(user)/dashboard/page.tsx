@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { getCurrentUser } from "@/server/session";
 import QuizzesTable, { Quizz } from "./quizzesTable";
 import { listQuizzes } from "@/server/services/quizzes";
 import { getSubmissionActivity, getUserMetrics } from "@/server/services/stats";
@@ -6,8 +6,7 @@ import MetricCard from "./metricCard";
 import SubmissionHeatMap from "./heatMap";
 
 const page = async () => {
-  const session = await auth();
-  const userId = session?.user?.id;
+  const userId = (await getCurrentUser())?.id;
 
   if (!userId) {
     return <p>User not found</p>;
