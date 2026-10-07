@@ -43,6 +43,9 @@ const UploadDoc = () => {
       const body: unknown = await res.json().catch(() => null);
       const success = successResponseSchema.safeParse(body);
       if (res.ok && success.success) {
+        // The browser keeps this page's server-rendered quota counter for the Back button; a route
+        // handler can't invalidate that cache, so drop it here before leaving.
+        router.refresh();
         // Stay in the loading state until the quiz page replaces this one.
         router.push(`/quizzes/${success.data.quizId}`);
         return;

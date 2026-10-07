@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { scoreAttempt } from "@/lib/scoring";
 import { quizIdSchema } from "@/lib/validations/quiz";
@@ -27,5 +28,7 @@ export async function submitQuiz(input: z.input<typeof submitQuizSchema>) {
   if (!complete) throw new Error("Answer every question before submitting.");
 
   await createSubmission({ quizId, userId: user.id, score, totalQuestions: total });
+  // Also clears the browser's cached dashboard, which the result screen's Back button returns to.
+  revalidatePath("/dashboard");
   return { score, total };
 }
