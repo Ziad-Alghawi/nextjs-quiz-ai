@@ -7,15 +7,15 @@ import { InferInsertModel } from "drizzle-orm";
 type Submission = InferInsertModel<typeof quizzSubmissions>;
 
 export async function saveSubmissions(sub: Submission, quizzId: number) {
-  const { score} = sub;
-
+  const { score } = sub;
 
   const newSubmission = await db
-  .insert(quizzSubmissions)
-  .values({
-    quizzId,
-    score,
-  }).returning({ insertedId: quizzSubmissions.id });
+    .insert(quizzSubmissions)
+    .values({
+      quizzId,
+      score,
+    })
+    .returning({ insertedId: quizzSubmissions.id });
   const submissionId = newSubmission[0].insertedId;
   return submissionId;
 }

@@ -11,15 +11,11 @@ import { generatedQuizSchema, pdfUploadSchema, type GeneratedQuiz } from "@/lib/
 // Gemini needs 10-20 s for a typical document; set explicitly so a lower platform default can't cut it off.
 export const maxDuration = 60;
 
-const errorResponse = (error: string, status: number) =>
-  NextResponse.json({ error }, { status });
+const errorResponse = (error: string, status: number) => NextResponse.json({ error }, { status });
 
 // Gemini reports exhausted quotas and rate limits as HTTP 429.
 const isRateLimitError = (error: unknown) =>
-  typeof error === "object" &&
-  error !== null &&
-  "statusCode" in error &&
-  error.statusCode === 429;
+  typeof error === "object" && error !== null && "statusCode" in error && error.statusCode === 429;
 
 export async function POST(request: NextRequest) {
   try {
@@ -56,7 +52,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const prompt = "Generate a multiple-choice quiz about the following document. Give it a short name and a one-sentence description. Each question must have exactly one correct answer.";
+    const prompt =
+      "Generate a multiple-choice quiz about the following document. Give it a short name and a one-sentence description. Each question must have exactly one correct answer.";
 
     const model = new ChatGoogle({
       apiKey: process.env.GEMINI_API_KEY,
@@ -65,14 +62,18 @@ export async function POST(request: NextRequest) {
 
     let quiz: GeneratedQuiz;
     try {
-      quiz = await model.invoke([
-        new HumanMessage(prompt + "\n\n" + text),
-      ]);
+      quiz = await model.invoke([new HumanMessage(prompt + "\n\n" + text)]);
     } catch (error) {
       console.error("Quiz generation: model call failed", error);
       return isRateLimitError(error)
-        ? errorResponse("The AI service is at its usage limit right now. Please try again in a minute.", 503)
-        : errorResponse("The AI could not generate a valid quiz from this document. Please try again.", 502);
+        ? errorResponse(
+            "The AI service is at its usage limit right now. Please try again in a minute.",
+            503,
+          )
+        : errorResponse(
+            "The AI could not generate a valid quiz from this document. Please try again.",
+            502,
+          );
     }
 
     const { quizzId } = await saveQuizz(quiz, userId);

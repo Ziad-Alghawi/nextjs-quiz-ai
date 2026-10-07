@@ -10,20 +10,18 @@ const getHeatMapData = async () => {
     return;
   }
 
-
   const data = await db
     .select({
       createdAt: quizzSubmissions.createdAt,
       count: sql<number>`cast(count(${quizzSubmissions.id}) as int)`,
     })
 
-  .from(quizzSubmissions)
-  .innerJoin(quizzes, eq(quizzSubmissions.quizzId, quizzes.id))
-  .innerJoin(users, eq(quizzes.userId, users.id))
-  .groupBy(quizzSubmissions.createdAt);
+    .from(quizzSubmissions)
+    .innerJoin(quizzes, eq(quizzSubmissions.quizzId, quizzes.id))
+    .innerJoin(users, eq(quizzes.userId, users.id))
+    .groupBy(quizzSubmissions.createdAt);
 
-
-return { data }; 
-}
+  return { data };
+};
 
 export default getHeatMapData;

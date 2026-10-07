@@ -16,7 +16,6 @@ const getUserMatrics = async () => {
     .from(quizzes)
     .where(eq(quizzes.userId, userId));
 
-
   // get the total number of questions in the quizz
   const numQuestions = await db
     .select({ value: count() })
@@ -24,7 +23,6 @@ const getUserMatrics = async () => {
     .innerJoin(quizzes, eq(questions.quizzId, quizzes.id))
     .innerJoin(users, eq(quizzes.userId, users.id))
     .where(eq(quizzes.userId, userId));
-
 
   // get the total number of submissions for the quizz
 
@@ -43,13 +41,12 @@ const getUserMatrics = async () => {
     .innerJoin(users, eq(quizzes.userId, users.id))
     .where(eq(quizzes.userId, userId));
 
-
   return [
-    { label: "Quizzes", value: numQuizzes[0].value }, { label: "Questions", value: numQuestions[0].value },
+    { label: "Quizzes", value: numQuizzes[0].value },
+    { label: "Questions", value: numQuestions[0].value },
     { label: "Submissions", value: numSubmissions[0].value },
     { label: "Average Score", value: avgScore[0].value },
   ];
-
-}
+};
 
 export default getUserMatrics;

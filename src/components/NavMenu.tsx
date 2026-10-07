@@ -1,8 +1,4 @@
-import {
-  CreditCard,
-  Plus,
-  BarChartBig,
-} from "lucide-react"
+import { CreditCard, Plus, BarChartBig } from "lucide-react";
 
 import {
   DropdownMenuContent,
@@ -10,7 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 
 export function NavMenu() {
@@ -39,5 +35,5 @@ export function NavMenu() {
         </DropdownMenuItem>
       </DropdownMenuGroup>
     </DropdownMenuContent>
-  )
+  );
 }

@@ -7,16 +7,12 @@ import Link from "next/link";
 const page = async () => {
   const session = await auth();
   const userId = session?.user?.id;
-  const subscribed = userId
-    ? await getUserSubscription({ userId })
-    : false;
+  const subscribed = userId ? await getUserSubscription({ userId }) : false;
 
   return (
     <div className="flex flex-col flex-1">
       <main className="pt-11 flex flex-col text-center items-center gap-4 flex-1 mt-24">
-        <h2 className="text-3xl font-bold">
-          What do you want to be quizzed about today?
-        </h2>
+        <h2 className="text-3xl font-bold">What do you want to be quizzed about today?</h2>
         <UploadDoc />
 
         {!userId && (

@@ -1,4 +1,4 @@
-import {db} from "@/db";
+import { db } from "@/db";
 import { quizzes, questions as dbQuestions, questionAnswers } from "@/db/schema";
 import { InferInsertModel } from "drizzle-orm";
 
@@ -16,19 +16,25 @@ interface SaveQuizzData extends Quizz {
 export default async function saveQuizz(quizzData: SaveQuizzData, userId?: string) {
   const { name, description, questions } = quizzData;
   const quizzId = await db.transaction(async (tx) => {
-    const newQuizz = await tx.insert(quizzes).values({
-      name,
-      description,
-      userId: userId ?? null,
-    }).returning({ insertedId: quizzes.id });
+    const newQuizz = await tx
+      .insert(quizzes)
+      .values({
+        name,
+        description,
+        userId: userId ?? null,
+      })
+      .returning({ insertedId: quizzes.id });
 
     const insertedQuizzId = newQuizz[0].insertedId;
 
     for (const question of questions) {
-      const [{ questionId }] = await tx.insert(dbQuestions).values({
-        questionText: question.questionText,
-        quizzId: insertedQuizzId,
-      }).returning({ questionId: dbQuestions.id });
+      const [{ questionId }] = await tx
+        .insert(dbQuestions)
+        .values({
+          questionText: question.questionText,
+          quizzId: insertedQuizzId,
+        })
+        .returning({ questionId: dbQuestions.id });
 
       // Insert answers for the question
       if (question.answers && question.answers.length > 0) {
@@ -38,7 +44,7 @@ export default async function saveQuizz(quizzData: SaveQuizzData, userId?: strin
             answerText: answer.answerText,
             isCorrect: answer.isCorrect,
             questionId,
-          }))
+          })),
         );
       }
     }

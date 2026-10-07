@@ -4,11 +4,12 @@ import { quizzes } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import QuizzQuestions from "../QuizzQuestions";
 
-const page = async ({params}: {
+const page = async ({
+  params,
+}: {
   params: Promise<{
     quizzId: string;
-  }>
-
+  }>;
 }) => {
   const { quizzId } = await params;
   const quizz = await db.query.quizzes.findFirst({
@@ -17,17 +18,15 @@ const page = async ({params}: {
       questions: {
         with: {
           answers: true,
-        }
-      }
-    }
+        },
+      },
+    },
   });
 
-  if(!quizzId || !quizz || quizz.questions.length === 0) {
-    return <div>Quizz not found</div>
+  if (!quizzId || !quizz || quizz.questions.length === 0) {
+    return <div>Quizz not found</div>;
   }
 
-  return (
-    <QuizzQuestions quizz={quizz} />
-  )
-}
+  return <QuizzQuestions quizz={quizz} />;
+};
 export default page;

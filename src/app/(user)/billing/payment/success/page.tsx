@@ -1,20 +1,20 @@
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import  Link  from "next/link";
+import Link from "next/link";
 
 const Page = () => {
   return (
-    <Alert variant="default" >
+    <Alert variant="default">
       <AlertTitle className="mb-3 text-xl text-green-400">Payment Successful!</AlertTitle>
       <AlertDescription>
-      Your account has been upgraded. You can now create unlimited quizzes and access all premium features. <br />
-      <Link href="/dashboard" className="text-sm text-blue-500 underline">
-        Go to Dashboard    
-      </Link> to generate more quizzes 
-
+        Your account has been upgraded. You can now create unlimited quizzes and access all premium
+        features. <br />
+        <Link href="/dashboard" className="text-sm text-blue-500 underline">
+          Go to Dashboard
+        </Link>{" "}
+        to generate more quizzes
       </AlertDescription>
     </Alert>
-  )
-
-}
+  );
+};
 
 export default Page;

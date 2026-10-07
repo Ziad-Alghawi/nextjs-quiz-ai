@@ -23,7 +23,7 @@ export const users = pgTable("user", {
 });
 
 export const userRelations = relations(users, ({ many }) => ({
-  quizzes: many(quizzes)
+  quizzes: many(quizzes),
 }));
 
 export const accounts = pgTable(
@@ -43,11 +43,11 @@ export const accounts = pgTable(
     id_token: text("id_token"),
     session_state: text("session_state"),
   },
-    (account) => ({
+  (account) => ({
     compoundKey: primaryKey({
       columns: [account.provider, account.providerAccountId],
     }),
-  })
+  }),
 );
 
 export const sessions = pgTable("session", {
@@ -56,7 +56,7 @@ export const sessions = pgTable("session", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   expires: timestamp("expires", { mode: "date" }).notNull(),
-})
+});
 
 export const verificationTokens = pgTable(
   "verificationToken",
@@ -69,7 +69,7 @@ export const verificationTokens = pgTable(
     compositePk: primaryKey({
       columns: [verificationToken.identifier, verificationToken.token],
     }),
-  }), 
+  }),
 );
 ///////////////////////////////////////////
 // start of quizz related tables from here
@@ -81,8 +81,6 @@ export const quizzes = pgTable("quizzes", {
   description: text("description"),
   userId: text("user_id").references(() => users.id),
 });
-
-
 
 export const quizzesRelations = relations(quizzes, ({ many }) => ({
   questions: many(questions),
