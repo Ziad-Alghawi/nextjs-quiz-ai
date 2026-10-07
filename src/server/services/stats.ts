@@ -1,45 +1,33 @@
 import "server-only";
 import { and, count, eq, gte, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { questions, quizSubmissions, quizzes, users } from "@/db/schema";
+import { questions, quizSubmissions, quizzes } from "@/db/schema";
 
 export async function getUserMetrics(userId: string) {
-  const numQuizzes = await db
-    .select({ value: count() })
-    .from(quizzes)
-    .where(eq(quizzes.userId, userId));
-
-  const numQuestions = await db
-    .select({ value: count() })
-    .from(questions)
-    .innerJoin(quizzes, eq(questions.quizId, quizzes.id))
-    .innerJoin(users, eq(quizzes.userId, users.id))
-    .where(eq(quizzes.userId, userId));
-
-  const numSubmissions = await db
-    .select({ value: count() })
-    .from(quizSubmissions)
-    .innerJoin(quizzes, eq(quizSubmissions.quizId, quizzes.id))
-    .innerJoin(users, eq(quizzes.userId, users.id))
-    .where(eq(quizzes.userId, userId));
-
-  const avgScore = await db
-    // Average of each attempt's percentage, so a 3/4 and a 3/10 aren't both counted as "3".
-    .select({
-      value: sql<
-        number | null
-      >`cast(round(avg(${quizSubmissions.score} * 100.0 / nullif(${quizSubmissions.totalQuestions}, 0))) as int)`,
-    })
-    .from(quizSubmissions)
-    .innerJoin(quizzes, eq(quizSubmissions.quizId, quizzes.id))
-    .innerJoin(users, eq(quizzes.userId, users.id))
-    .where(eq(quizzes.userId, userId));
+  const [[quizCount], [questionCount], [submissionStats]] = await Promise.all([
+    db.select({ value: count() }).from(quizzes).where(eq(quizzes.userId, userId)),
+    db
+      .select({ value: count() })
+      .from(questions)
+      .innerJoin(quizzes, eq(questions.quizId, quizzes.id))
+      .where(eq(quizzes.userId, userId)),
+    db
+      .select({
+        count: count(),
+        // Average of each attempt's percentage, so a 3/4 and a 3/10 aren't both counted as "3".
+        averagePercent: sql<
+          number | null
+        >`cast(round(avg(${quizSubmissions.score} * 100.0 / nullif(${quizSubmissions.totalQuestions}, 0))) as int)`,
+      })
+      .from(quizSubmissions)
+      .where(eq(quizSubmissions.userId, userId)),
+  ]);
 
   return [
-    { label: "Quizzes", value: numQuizzes[0].value },
-    { label: "Questions", value: numQuestions[0].value },
-    { label: "Submissions", value: numSubmissions[0].value },
-    { label: "Average Score", value: avgScore[0].value, unit: "%" },
+    { label: "Quizzes", value: quizCount.value },
+    { label: "Questions", value: questionCount.value },
+    { label: "Submissions", value: submissionStats.count },
+    { label: "Average Score", value: submissionStats.averagePercent, unit: "%" },
   ];
 }
 

@@ -1,5 +1,5 @@
 import { requireUser } from "@/server/session";
-import QuizzesTable, { Quiz } from "./quizzesTable";
+import QuizzesTable from "./quizzesTable";
 import { listQuizzes } from "@/server/services/quizzes";
 import { getSubmissionActivity, getUserMetrics } from "@/server/services/stats";
 import MetricCard from "./metricCard";
@@ -8,9 +8,11 @@ import SubmissionHeatMap from "./heatMap";
 const page = async () => {
   const { id: userId } = await requireUser("/dashboard");
 
-  const userQuizzes: Quiz[] = await listQuizzes(userId);
-  const userData = await getUserMetrics(userId);
-  const activity = await getSubmissionActivity(userId);
+  const [userQuizzes, userData, activity] = await Promise.all([
+    listQuizzes(userId),
+    getUserMetrics(userId),
+    getSubmissionActivity(userId),
+  ]);
 
   return (
     <div className="mt-4">
