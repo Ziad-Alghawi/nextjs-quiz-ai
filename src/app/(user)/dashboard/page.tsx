@@ -27,7 +27,6 @@ const page = async () => {
   });
   const userData = await getUserMatrics();
   const heatMapData = await getHeatMapData();
-  console.log(heatMapData);
 
   return (
     <div className="mt-4">

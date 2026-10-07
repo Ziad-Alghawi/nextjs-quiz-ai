@@ -10,7 +10,6 @@ import {
 } from "drizzle-orm/pg-core";
 import type { AdapterAccount } from "@auth/core/adapters";
 import { relations } from "drizzle-orm";
-import { stripe } from "@/lib/stripe";
 
 /////////////////////////////////////////////////////////
 // Provider the authentication form here to be used in the accounts table

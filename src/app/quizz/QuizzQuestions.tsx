@@ -9,7 +9,6 @@ import { InferSelectModel } from "drizzle-orm";
 import { questionAnswers, questions as Dbquestions, quizzes } from "@/db/schema";
 import { useRouter } from "next/navigation";
 import { saveSubmissions } from "../actions/saveSubmissions";
-import { set } from "zod";
 
 type Answer = InferSelectModel<typeof questionAnswers>;
 type Question = InferSelectModel<typeof Dbquestions> & {
@@ -62,7 +61,7 @@ export default function QuizzQuestions(props: props) {
 
   const handleSubmit = async () => {
     try {
-      const subId = await saveSubmissions({ score }, props.quizz.id);
+      await saveSubmissions({ score }, props.quizz.id);
     } catch (e) {
       console.error("Error saving submission:", e);
     }
