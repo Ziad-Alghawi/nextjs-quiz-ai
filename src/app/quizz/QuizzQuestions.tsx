@@ -14,12 +14,13 @@ type Answer = InferSelectModel<typeof questionAnswers>;
 type Question = InferSelectModel<typeof Dbquestions> & {
   answers: Answer[];
 }
-type Quizz = InferSelectModel<typeof quizzes> & {
+export type Quizz = InferSelectModel<typeof quizzes> & {
   questions: Question[];
 }
 
 type props = {
   quizz: Quizz;
+  isSample?: boolean;
 }
 
 
@@ -60,10 +61,13 @@ export default function QuizzQuestions(props: props) {
   }
 
   const handleSubmit = async () => {
-    try {
-      await saveSubmissions({ score }, props.quizz.id);
-    } catch (e) {
-      console.error("Error saving submission:", e);
+    // The sample quiz has no database row to attach a submission to.
+    if (!props.isSample) {
+      try {
+        await saveSubmissions({ score }, props.quizz.id);
+      } catch (e) {
+        console.error("Error saving submission:", e);
+      }
     }
     setSubmitted(true);
   }
@@ -75,7 +79,7 @@ export default function QuizzQuestions(props: props) {
   }
 
   const handleExit = () => {
-    router.push('/dashboard');
+    router.push(props.isSample ? '/' : '/dashboard');
   }
 
   const scorePercentage: number = Math.round((score / questions.length) * 100);
