@@ -1,4 +1,4 @@
-import { quizzes, questions, users, quizzSubmissions } from "@/db/schema";
+import { quizzes, questions, users, quizSubmissions } from "@/db/schema";
 import { auth } from "@/auth";
 import { count, eq, avg } from "drizzle-orm";
 import { db } from "@/db";
@@ -20,7 +20,7 @@ const getUserMatrics = async () => {
   const numQuestions = await db
     .select({ value: count() })
     .from(questions)
-    .innerJoin(quizzes, eq(questions.quizzId, quizzes.id))
+    .innerJoin(quizzes, eq(questions.quizId, quizzes.id))
     .innerJoin(users, eq(quizzes.userId, users.id))
     .where(eq(quizzes.userId, userId));
 
@@ -28,16 +28,16 @@ const getUserMatrics = async () => {
 
   const numSubmissions = await db
     .select({ value: count() })
-    .from(quizzSubmissions)
-    .innerJoin(quizzes, eq(quizzSubmissions.quizzId, quizzes.id))
+    .from(quizSubmissions)
+    .innerJoin(quizzes, eq(quizSubmissions.quizId, quizzes.id))
     .innerJoin(users, eq(quizzes.userId, users.id))
     .where(eq(quizzes.userId, userId));
 
   // get the average score for the quizz
   const avgScore = await db
-    .select({ value: avg(quizzSubmissions.score) })
-    .from(quizzSubmissions)
-    .innerJoin(quizzes, eq(quizzSubmissions.quizzId, quizzes.id))
+    .select({ value: avg(quizSubmissions.score) })
+    .from(quizSubmissions)
+    .innerJoin(quizzes, eq(quizSubmissions.quizId, quizzes.id))
     .innerJoin(users, eq(quizzes.userId, users.id))
     .where(eq(quizzes.userId, userId));
 

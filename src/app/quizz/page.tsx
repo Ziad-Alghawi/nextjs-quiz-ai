@@ -9,7 +9,7 @@ const sampleQuizz: Quizz = {
   questions: [
     {
       id: 1,
-      quizzId: 0,
+      quizId: 0,
       questionText: "What is your level of understanding React?",
       answers: [
         { id: 1, questionId: 1, answerText: "Beginner", isCorrect: true },
@@ -20,7 +20,7 @@ const sampleQuizz: Quizz = {
     },
     {
       id: 2,
-      quizzId: 0,
+      quizId: 0,
       questionText: "What is the virtual DOM in React?",
       answers: [
         { id: 5, questionId: 2, answerText: "A representation of the real DOM", isCorrect: true },
@@ -31,7 +31,7 @@ const sampleQuizz: Quizz = {
     },
     {
       id: 3,
-      quizzId: 0,
+      quizId: 0,
       questionText: "What is JSX in React?",
       answers: [
         { id: 9, questionId: 3, answerText: "A syntax extension for JavaScript", isCorrect: true },

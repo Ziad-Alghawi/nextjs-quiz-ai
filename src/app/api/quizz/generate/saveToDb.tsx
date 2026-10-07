@@ -32,7 +32,7 @@ export default async function saveQuizz(quizzData: SaveQuizzData, userId?: strin
         .insert(dbQuestions)
         .values({
           questionText: question.questionText,
-          quizzId: insertedQuizzId,
+          quizId: insertedQuizzId,
         })
         .returning({ questionId: dbQuestions.id });
 

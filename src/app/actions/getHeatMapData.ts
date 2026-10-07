@@ -1,4 +1,4 @@
-import { quizzes, users, quizzSubmissions } from "@/db/schema";
+import { quizzes, users, quizSubmissions } from "@/db/schema";
 import { auth } from "@/auth";
 import { eq, sql } from "drizzle-orm";
 import { db } from "@/db";
@@ -12,14 +12,14 @@ const getHeatMapData = async () => {
 
   const data = await db
     .select({
-      createdAt: quizzSubmissions.createdAt,
-      count: sql<number>`cast(count(${quizzSubmissions.id}) as int)`,
+      createdAt: quizSubmissions.createdAt,
+      count: sql<number>`cast(count(${quizSubmissions.id}) as int)`,
     })
 
-    .from(quizzSubmissions)
-    .innerJoin(quizzes, eq(quizzSubmissions.quizzId, quizzes.id))
+    .from(quizSubmissions)
+    .innerJoin(quizzes, eq(quizSubmissions.quizId, quizzes.id))
     .innerJoin(users, eq(quizzes.userId, users.id))
-    .groupBy(quizzSubmissions.createdAt);
+    .groupBy(quizSubmissions.createdAt);
 
   return { data };
 };

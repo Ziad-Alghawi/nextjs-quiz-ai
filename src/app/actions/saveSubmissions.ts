@@ -1,21 +1,21 @@
 "use server";
 
 import { db } from "@/db";
-import { quizzSubmissions } from "@/db/schema";
+import { quizSubmissions } from "@/db/schema";
 import { InferInsertModel } from "drizzle-orm";
 
-type Submission = InferInsertModel<typeof quizzSubmissions>;
+type Submission = InferInsertModel<typeof quizSubmissions>;
 
-export async function saveSubmissions(sub: Submission, quizzId: number) {
+export async function saveSubmissions(sub: Submission, quizId: number) {
   const { score } = sub;
 
   const newSubmission = await db
-    .insert(quizzSubmissions)
+    .insert(quizSubmissions)
     .values({
-      quizzId,
+      quizId,
       score,
     })
-    .returning({ insertedId: quizzSubmissions.id });
+    .returning({ insertedId: quizSubmissions.id });
   const submissionId = newSubmission[0].insertedId;
   return submissionId;
 }
