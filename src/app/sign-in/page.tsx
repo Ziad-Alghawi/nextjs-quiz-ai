@@ -45,7 +45,16 @@ export default function SignInPage({
     setPending(true);
     const { error } = await authClient.signIn.email(parsed.data);
     setPending(false);
-    if (error) return setError(authErrorMessage(error, "Invalid email or password."));
+    // Sign-up answers "thanks" even for a registered email (so it doesn't reveal accounts); people who
+    // first used Google then land here without a password, so point them to their two options.
+    if (error) {
+      return setError(
+        authErrorMessage(
+          error,
+          "Invalid email or password. If you signed up with Google, use Continue with Google, or Forgot password to set a password.",
+        ),
+      );
+    }
 
     router.replace(callbackURL);
     router.refresh();
