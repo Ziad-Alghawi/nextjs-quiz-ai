@@ -90,7 +90,7 @@ export const quizzesRelations = relations(quizzes, ({ many }) => ({
 export const questions = pgTable("questions", {
   id: serial("id").primaryKey(),
   questionText: text("question_text"),
-  quizzId: integer("quizz_id"),
+  quizzId: integer("quiz_id"),
 });
 
 export const questionsRelations = relations(questions, ({ one, many }) => ({
@@ -115,9 +115,9 @@ export const questionAnswersRelations = relations(questionAnswers, ({ one }) => 
   }),
 }));
 
-export const quizzSubmissions = pgTable("quizz_submissions", {
+export const quizzSubmissions = pgTable("quiz_submissions", {
   id: serial("id").primaryKey(),
-  quizzId: integer("quizz_id"),
+  quizzId: integer("quiz_id"),
   score: integer("score"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

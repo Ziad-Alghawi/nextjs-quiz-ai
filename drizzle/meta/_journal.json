@@ -15,6 +15,13 @@
       "when": 1791341306530,
       "tag": "0001_user_subscribed_default",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791345915461,
+      "tag": "0002_rename_quizz_to_quiz",
+      "breakpoints": true
     }
   ]
 }
