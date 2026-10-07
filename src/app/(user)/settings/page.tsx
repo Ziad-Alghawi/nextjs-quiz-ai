@@ -1,6 +1,7 @@
 import { getSignInMethods } from "@/server/services/account";
 import { requireUser } from "@/server/session";
 import { AddPasswordForm } from "./AddPasswordForm";
+import { ChangeEmailForm } from "./ChangeEmailForm";
 import { NameForm } from "./NameForm";
 
 const SettingsPage = async () => {
@@ -15,6 +16,7 @@ const SettingsPage = async () => {
         <p className="text-sm">
           Email: <span className="font-medium">{user.email}</span>
         </p>
+        <ChangeEmailForm currentEmail={user.email} />
         <NameForm name={user.name} />
       </section>
       <section className="flex flex-col gap-3 rounded-md border p-4">

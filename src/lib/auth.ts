@@ -15,6 +15,20 @@ import {
 } from "@/lib/validations/auth";
 import { sendEmail } from "@/server/services/mail";
 
+// The code emails the app sends; the plugin's other code types are disabled below.
+const otpEmails: Partial<Record<string, { subject: string; ignoreNote: string }>> = {
+  "forget-password": {
+    subject: "Your Quiz AI password reset code",
+    ignoreNote:
+      "If you didn't ask to reset your password, you can ignore this email; your password stays the same.",
+  },
+  "change-email": {
+    subject: "Confirm your new Quiz AI email address",
+    ignoreNote:
+      "If you didn't ask to use this address for Quiz AI, you can ignore this email; nothing changes.",
+  },
+};
+
 export const auth = betterAuth({
   baseURL: env.APP_URL,
   secret: env.AUTH_SECRET,
@@ -48,10 +62,11 @@ export const auth = betterAuth({
       "/sign-up/email": { window: 60 * 60, max: 5 },
       // Each request sends an email, and the Gmail account has a daily sending limit.
       "/email-otp/request-password-reset": { window: 15 * 60, max: 3 },
+      "/email-otp/request-email-change": { window: 15 * 60, max: 3 },
     },
   },
   // The email OTP plugin also offers passwordless sign-in, email verification and a deprecated
-  // reset endpoint; the app only uses codes for password reset, so the rest is switched off.
+  // reset endpoint; the app only uses codes for password reset and email change.
   disabledPaths: [
     "/sign-in/email-otp",
     "/email-otp/send-verification-otp",
@@ -81,15 +96,18 @@ export const auth = betterAuth({
       // Only a hash is stored, so a database leak doesn't expose usable codes.
       storeOTP: "hashed",
       disableSignUp: true,
+      // The code goes to the new address, which proves the user can receive mail there.
+      changeEmail: { enabled: true },
       async sendVerificationOTP({ email, otp, type }) {
-        if (type !== "forget-password") throw new Error(`Unexpected email code type: ${type}`);
+        const purpose = otpEmails[type];
+        if (!purpose) throw new Error(`Unexpected email code type: ${type}`);
         await sendEmail({
           to: email,
-          subject: "Your Quiz AI password reset code",
+          subject: purpose.subject,
           text: [
             `Your code: ${otp}`,
             `It expires in ${OTP_EXPIRES_IN_MINUTES} minutes.`,
-            "If you didn't ask to reset your password, you can ignore this email; your password stays the same.",
+            purpose.ignoreNote,
           ].join("\n\n"),
         });
       },

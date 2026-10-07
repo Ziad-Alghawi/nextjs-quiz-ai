@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  confirmEmailChangeSchema,
   fieldErrors,
   PASSWORD_MIN_LENGTH,
+  requestEmailChangeSchema,
   resetPasswordSchema,
   safeReturnPath,
   signInSchema,
@@ -52,6 +54,16 @@ describe("resetPasswordSchema", () => {
     const result = resetPasswordSchema.safeParse({ otp, password: "new password" });
     expect(result.success).toBe(false);
     expect(fieldErrors(result.error!)).toEqual({ otp: "Enter the 6-digit code from the email." });
+  });
+});
+
+describe("email change schemas", () => {
+  it("trims the new address and uses the same code rules as the password reset", () => {
+    expect(requestEmailChangeSchema.parse({ newEmail: " new@example.com " }).newEmail).toBe(
+      "new@example.com",
+    );
+    expect(confirmEmailChangeSchema.safeParse({ otp: "12345" }).success).toBe(false);
+    expect(confirmEmailChangeSchema.parse({ otp: "123456" }).otp).toBe("123456");
   });
 });
 

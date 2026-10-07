@@ -37,12 +37,16 @@ export const requestPasswordResetSchema = z.object({ email: emailSchema });
 export type RequestPasswordResetInput = z.infer<typeof requestPasswordResetSchema>;
 
 const otpMessage = `Enter the ${OTP_LENGTH}-digit code from the email.`;
+const otpSchema = z.string().trim().length(OTP_LENGTH, otpMessage).regex(/^\d+$/, otpMessage);
 
-export const resetPasswordSchema = z.object({
-  otp: z.string().trim().length(OTP_LENGTH, otpMessage).regex(/^\d+$/, otpMessage),
-  password: passwordSchema,
-});
+export const resetPasswordSchema = z.object({ otp: otpSchema, password: passwordSchema });
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+
+export const requestEmailChangeSchema = z.object({ newEmail: emailSchema });
+export type RequestEmailChangeInput = z.infer<typeof requestEmailChangeSchema>;
+
+export const confirmEmailChangeSchema = z.object({ otp: otpSchema });
+export type ConfirmEmailChangeInput = z.infer<typeof confirmEmailChangeSchema>;
 
 export type FieldErrors<T> = Partial<Record<keyof T, string>>;
 
