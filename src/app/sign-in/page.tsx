@@ -5,6 +5,7 @@ import { use, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { TextField } from "@/components/ui/text-field";
 import { authClient, authErrorMessage } from "@/lib/auth-client";
+import { googleErrorMessage } from "@/lib/oauth-errors";
 import {
   fieldErrors,
   safeReturnPath,
@@ -25,14 +26,15 @@ const notices = new Map([
 export default function SignInPage({
   searchParams,
 }: {
-  searchParams: Promise<{ callbackUrl?: string | string[]; notice?: string }>;
+  searchParams: Promise<{ callbackUrl?: string | string[]; notice?: string; error?: string }>;
 }) {
   const params = use(searchParams);
   const callbackURL = safeReturnPath(params.callbackUrl);
   const notice = params.notice ? notices.get(params.notice) : undefined;
   const router = useRouter();
   const [errors, setErrors] = useState<FieldErrors<SignInInput>>({});
-  const [error, setError] = useState<string | null>(null);
+  // Set when Google sent the user back here with an error.
+  const [error, setError] = useState(params.error ? googleErrorMessage(params.error) : null);
   const [pending, setPending] = useState(false);
 
   const signInWithEmail = async (event: FormEvent<HTMLFormElement>) => {
@@ -62,8 +64,12 @@ export default function SignInPage({
 
   const signInWithGoogle = async () => {
     setError(null);
-    const { error } = await authClient.signIn.social({ provider: "google", callbackURL });
-    if (error) setError("Google sign-in failed. Please try again.");
+    const { error } = await authClient.signIn.social({
+      provider: "google",
+      callbackURL,
+      errorCallbackURL: `/sign-in?callbackUrl=${encodeURIComponent(callbackURL)}`,
+    });
+    if (error) setError(googleErrorMessage());
   };
 
   return (
