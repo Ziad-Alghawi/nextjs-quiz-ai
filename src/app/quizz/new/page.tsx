@@ -1,13 +1,13 @@
 import UploadDoc from "../UploadDoc";
 import { auth } from "@/auth";
-import { getUserSubscription } from "@/app/actions/userSubscriptions";
+import { isSubscribed } from "@/server/services/billing";
 import UpgradePlan from "../UpgradePlan";
 import Link from "next/link";
 
 const page = async () => {
   const session = await auth();
   const userId = session?.user?.id;
-  const subscribed = userId ? await getUserSubscription({ userId }) : false;
+  const subscribed = userId ? await isSubscribed(userId) : false;
 
   return (
     <div className="flex flex-col flex-1">

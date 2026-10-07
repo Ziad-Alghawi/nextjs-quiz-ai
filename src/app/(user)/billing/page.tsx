@@ -1,7 +1,5 @@
 import { auth, signIn } from "@/auth";
-import { db } from "@/db";
-import { eq } from "drizzle-orm";
-import { users } from "@/db/schema";
+import { isSubscribed } from "@/server/services/billing";
 import ManageSubscription from "./ManageSubscription";
 
 const Page = async () => {
@@ -12,11 +10,7 @@ const Page = async () => {
     return null;
   }
 
-  const user = await db.query.users.findFirst({
-    where: eq(users.id, session.user.id),
-  });
-
-  const subscribed = user?.subscribed ?? false;
+  const subscribed = await isSubscribed(session.user.id);
   const plan = subscribed ? "premium" : "free";
 
   return (

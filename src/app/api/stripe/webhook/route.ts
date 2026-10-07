@@ -1,7 +1,7 @@
 import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { env } from "@/lib/env";
-import { createSubscription, deleteSubscription } from "@/app/actions/userSubscriptions";
+import { setSubscribed } from "@/server/services/billing";
 
 const relevantEvents = new Set([
   "checkout.session.completed",
@@ -27,19 +27,19 @@ export async function POST(req: Request) {
         const data = event.data.object as Stripe.Checkout.Session;
 
         if (typeof data.customer === "string") {
-          await createSubscription({ stripeCustomerId: data.customer });
+          await setSubscribed(data.customer, true);
         }
         break;
       }
       case "customer.subscription.created":
       case "customer.subscription.updated": {
         const data = event.data.object as Stripe.Subscription;
-        await createSubscription({ stripeCustomerId: data.customer as string });
+        await setSubscribed(data.customer as string, true);
         break;
       }
       case "customer.subscription.deleted": {
         const data = event.data.object as Stripe.Subscription;
-        await deleteSubscription({ stripeCustomerId: data.customer as string });
+        await setSubscribed(data.customer as string, false);
         break;
       }
       default: {
