@@ -33,22 +33,27 @@ const Header = async () => {
           <div>
             {user ? (
               <div className="flex items-center gap-4">
-                {user.name && user.image && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" aria-label="Account menu">
+                      {/* Email sign-ups have no profile picture; show the name's first letter. */}
+                      {user.image ? (
                         <Image
                           src={user.image}
-                          alt={user.name}
+                          alt=""
                           width={32}
                           height={32}
                           className="rounded-full"
                         />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <NavMenu />
-                  </DropdownMenu>
-                )}
+                      ) : (
+                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
+                          {user.name.charAt(0).toUpperCase()}
+                        </span>
+                      )}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <NavMenu />
+                </DropdownMenu>
                 <SignOut />
               </div>
             ) : (
