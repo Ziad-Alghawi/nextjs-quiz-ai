@@ -5,6 +5,7 @@ import { z } from "zod";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import { pdfUploadSchema } from "@/lib/validations/quiz";
 
 const successResponseSchema = z.object({ quizzId: z.number() });
 const errorResponseSchema = z.object({ error: z.string() });
@@ -26,14 +27,15 @@ const UploadDoc = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!document) {
-      setError("Please upload the document first");
+    const upload = await pdfUploadSchema.safeParseAsync(document);
+    if (!upload.success) {
+      setError(upload.error.issues[0].message);
       return;
     }
     setError(null);
     setIsLoading(true);
     const formData = new FormData();
-    formData.append("pdf", document);
+    formData.append("pdf", upload.data);
     try {
       const res = await fetch("/api/quizz/generate", {
         method: "POST",
@@ -62,6 +64,7 @@ const UploadDoc = () => {
             {document && document?.name ? document?.name : "Drag a file"}
           </div>
           <input type="file" id="document"
+            accept="application/pdf,.pdf"
             disabled={isLoading}
             className="relative block w-full h-full z-50 opacity-0"
             onChange={(e) => {

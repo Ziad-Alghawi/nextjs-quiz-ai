@@ -6,7 +6,10 @@ import { PDFLoader } from "langchain/document_loaders/fs/pdf";
 import saveQuizz from "./saveToDb";
 import { auth } from "@/auth";
 import { pingDatabase } from "@/db/health";
-import { generatedQuizSchema, type GeneratedQuiz } from "@/lib/validations/quiz";
+import { generatedQuizSchema, pdfUploadSchema, type GeneratedQuiz } from "@/lib/validations/quiz";
+
+// Gemini needs 10-20 s for a typical document; set explicitly so a lower platform default can't cut it off.
+export const maxDuration = 60;
 
 const errorResponse = (error: string, status: number) =>
   NextResponse.json({ error }, { status });
@@ -21,11 +24,12 @@ const isRateLimitError = (error: unknown) =>
 export async function POST(request: NextRequest) {
   try {
     const body = await request.formData();
-    const document = body.get("pdf");
+    const upload = await pdfUploadSchema.safeParseAsync(body.get("pdf"));
 
-    if (!(document instanceof Blob) || document.size === 0) {
-      return errorResponse("Please upload a valid PDF file", 400);
+    if (!upload.success) {
+      return errorResponse(upload.error.issues[0].message, 400);
     }
+    const document = upload.data;
 
     if (!process.env.GEMINI_API_KEY) {
       console.error("Quiz generation: GEMINI_API_KEY is not set");
@@ -50,6 +54,14 @@ export async function POST(request: NextRequest) {
 
     const selectedDocuments = docs.filter((doc) => doc.pageContent !== undefined);
     const texts = selectedDocuments.map((doc) => doc.pageContent);
+    const text = texts.join("\n").trim();
+
+    if (!text) {
+      return errorResponse(
+        "We couldn't find any text in this PDF. Scanned documents aren't supported yet.",
+        422,
+      );
+    }
 
     const prompt = "Generate a multiple-choice quiz about the following document. Give it a short name and a one-sentence description. Each question must have exactly one correct answer.";
 
@@ -61,7 +73,7 @@ export async function POST(request: NextRequest) {
     let quiz: GeneratedQuiz;
     try {
       quiz = await model.invoke([
-        new HumanMessage(prompt + "\n\n" + texts.join("\n")),
+        new HumanMessage(prompt + "\n\n" + text),
       ]);
     } catch (error) {
       console.error("Quiz generation: model call failed", error);
