@@ -29,6 +29,16 @@ export const auth = betterAuth({
     // account, so the sign-up form can't be used to check who has an account.
     autoSignIn: false,
   },
+  // On by default in production only. Limits are per client IP (x-forwarded-for, which Vercel sets
+  // itself) and path. Counters live in Postgres because serverless instances don't share memory.
+  rateLimit: {
+    storage: "database",
+    customRules: {
+      // Slows down password guessing; each attempt also costs a scrypt hash on the server.
+      "/sign-in/email": { window: 5 * 60, max: 5 },
+      "/sign-up/email": { window: 60 * 60, max: 5 },
+    },
+  },
   socialProviders: {
     google: { clientId: env.GOOGLE_CLIENT_ID, clientSecret: env.GOOGLE_CLIENT_SECRET },
   },

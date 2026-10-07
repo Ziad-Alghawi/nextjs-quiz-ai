@@ -7,5 +7,5 @@ export const authClient = createAuthClient();
  * answers "invalid email or password" without saying which part was wrong.
  */
 export function authErrorMessage(error: { status: number }, fallback: string) {
-  return error.status === 429 ? "Too many attempts. Please wait a minute and try again." : fallback;
+  return error.status === 429 ? "Too many attempts. Please try again in a few minutes." : fallback;
 }
