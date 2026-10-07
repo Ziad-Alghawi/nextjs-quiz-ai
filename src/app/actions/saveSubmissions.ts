@@ -2,8 +2,7 @@
 
 import { db } from "@/db";
 import { quizzSubmissions } from "@/db/schema";
-import { auth } from "@/auth";
-import { InferInsertModel, eq } from "drizzle-orm";
+import { InferInsertModel } from "drizzle-orm";
 
 type Submission = InferInsertModel<typeof quizzSubmissions>;
 

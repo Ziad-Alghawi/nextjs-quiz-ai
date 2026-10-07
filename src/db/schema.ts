@@ -6,7 +6,6 @@ import {
   integer,
   serial,
   boolean,
-  pgEnum,
 } from "drizzle-orm/pg-core";
 import type { AdapterAccount } from "@auth/core/adapters";
 import { relations } from "drizzle-orm";
@@ -85,7 +84,7 @@ export const quizzes = pgTable("quizzes", {
 
 
 
-export const quizzesRelations = relations(quizzes, ({ many, one }) => ({
+export const quizzesRelations = relations(quizzes, ({ many }) => ({
   questions: many(questions),
   submissions: many(quizzSubmissions),
 }));
@@ -125,7 +124,7 @@ export const quizzSubmissions = pgTable("quizz_submissions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const quizzSubmissionsRelations = relations(quizzSubmissions, ({ one, many }) => ({
+export const quizzSubmissionsRelations = relations(quizzSubmissions, ({ one }) => ({
   quizz: one(quizzes, {
     fields: [quizzSubmissions.quizzId],
     references: [quizzes.id],

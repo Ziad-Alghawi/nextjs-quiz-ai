@@ -1,4 +1,4 @@
-import { quizzes, questions, questionAnswers, users, quizzSubmissions } from "@/db/schema";
+import { quizzes, questions, users, quizzSubmissions } from "@/db/schema";
 import { auth } from "@/auth";
 import { count, eq, avg } from "drizzle-orm";
 import { db } from "@/db";
