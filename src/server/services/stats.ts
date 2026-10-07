@@ -1,5 +1,5 @@
 import "server-only";
-import { and, avg, count, eq, gte, sql } from "drizzle-orm";
+import { and, count, eq, gte, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { questions, quizSubmissions, quizzes, users } from "@/db/schema";
 
@@ -24,7 +24,12 @@ export async function getUserMetrics(userId: string) {
     .where(eq(quizzes.userId, userId));
 
   const avgScore = await db
-    .select({ value: avg(quizSubmissions.score) })
+    // Average of each attempt's percentage, so a 3/4 and a 3/10 aren't both counted as "3".
+    .select({
+      value: sql<
+        number | null
+      >`cast(round(avg(${quizSubmissions.score} * 100.0 / nullif(${quizSubmissions.totalQuestions}, 0))) as int)`,
+    })
     .from(quizSubmissions)
     .innerJoin(quizzes, eq(quizSubmissions.quizId, quizzes.id))
     .innerJoin(users, eq(quizzes.userId, users.id))
@@ -34,7 +39,7 @@ export async function getUserMetrics(userId: string) {
     { label: "Quizzes", value: numQuizzes[0].value },
     { label: "Questions", value: numQuestions[0].value },
     { label: "Submissions", value: numSubmissions[0].value },
-    { label: "Average Score", value: avgScore[0].value },
+    { label: "Average Score", value: avgScore[0].value, unit: "%" },
   ];
 }
 

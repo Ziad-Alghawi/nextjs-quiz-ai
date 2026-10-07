@@ -18,7 +18,12 @@ const page = async () => {
         {userData && userData.length > 0 ? (
           <>
             {userData.map((metric) => (
-              <MetricCard key={metric.label} label={metric.label} value={metric.value} />
+              <MetricCard
+                key={metric.label}
+                label={metric.label}
+                value={metric.value}
+                unit={metric.unit}
+              />
             ))}
           </>
         ) : null}
