@@ -22,7 +22,7 @@ const QuizzesTable = (props: Props) => {
           {props.quizzes.map((quiz: Quiz) => (
             <tr key={quiz.id}>
               <td>
-                <Link href={`/quizz/${quiz.id}`}>
+                <Link href={`/quizzes/${quiz.id}`}>
                   <p className="text-blue-600 underline">{quiz.name}</p>
                 </Link>
               </td>

@@ -14,7 +14,7 @@ export default function Home() {
             <h1 className="text-3xl font-bold">Get quizzed about anything!</h1>
             <h3 className="text-sm">Upload documents, and easily generate your quizzes with AI.</h3>
             <Button variant="neo" className="mt-4 h-14 text-white" asChild>
-              <Link href="quizz/new">Get Started</Link>
+              <Link href="/quizzes/new">Get Started</Link>
             </Button>
           </div>
         </div>

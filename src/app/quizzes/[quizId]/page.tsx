@@ -5,13 +5,13 @@ const page = async ({
   params,
 }: {
   params: Promise<{
-    quizzId: string;
+    quizId: string;
   }>;
 }) => {
-  const { quizzId } = await params;
-  const quiz = await getQuizWithQuestions(parseInt(quizzId));
+  const { quizId } = await params;
+  const quiz = await getQuizWithQuestions(parseInt(quizId));
 
-  if (!quizzId || !quiz || quiz.questions.length === 0) {
+  if (!quizId || !quiz || quiz.questions.length === 0) {
     return <div>Quiz not found</div>;
   }
 

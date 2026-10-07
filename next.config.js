@@ -13,6 +13,14 @@ const nextConfig = {
       },
     ],
   },
+  // The quiz pages used to live under the misspelled /quizz; keep old links and bookmarks working.
+  async redirects() {
+    return [
+      { source: "/quizz", destination: "/quizzes/sample", permanent: true },
+      { source: "/quizz/new", destination: "/quizzes/new", permanent: true },
+      { source: "/quizz/:quizId", destination: "/quizzes/:quizId", permanent: true },
+    ];
+  },
 };
 
 module.exports = nextConfig;

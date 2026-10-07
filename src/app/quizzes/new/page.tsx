@@ -17,7 +17,7 @@ const page = async () => {
         {!userId && (
           <p className="text-sm text-muted-foreground">
             Want to save your quizzes?{" "}
-            <Link href="/api/auth/signin?callbackUrl=/quizz/new" className="underline">
+            <Link href="/api/auth/signin?callbackUrl=/quizzes/new" className="underline">
               Sign in
             </Link>
           </p>

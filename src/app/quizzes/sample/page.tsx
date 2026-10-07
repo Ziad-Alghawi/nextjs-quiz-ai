@@ -1,4 +1,4 @@
-import QuizQuestions, { type QuizWithQuestions } from "./QuizQuestions";
+import QuizQuestions, { type QuizWithQuestions } from "../QuizQuestions";
 
 // A fixed quiz for trying the app without uploading a document. It is never saved.
 const sampleQuiz: QuizWithQuestions = {

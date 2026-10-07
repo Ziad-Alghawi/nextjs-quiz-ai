@@ -36,7 +36,7 @@ const UploadDoc = () => {
     const formData = new FormData();
     formData.append("pdf", upload.data);
     try {
-      const res = await fetch("/api/quizz/generate", {
+      const res = await fetch("/api/quizzes/generate", {
         method: "POST",
         body: formData,
       });
@@ -44,7 +44,7 @@ const UploadDoc = () => {
       const success = successResponseSchema.safeParse(body);
       if (res.ok && success.success) {
         // Stay in the loading state until the quiz page replaces this one.
-        router.push(`/quizz/${success.data.quizId}`);
+        router.push(`/quizzes/${success.data.quizId}`);
         return;
       }
       setError(getErrorMessage(res.status, body));
