@@ -1,0 +1,21 @@
+# Local development database (same major version as production: Postgres 17).
+# Start it with `npm run db:up`; the app itself runs with `npm run dev`.
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: quiz_ai
+      POSTGRES_PASSWORD: quiz_ai
+      POSTGRES_DB: quiz_ai
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U quiz_ai -d quiz_ai"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  db-data:

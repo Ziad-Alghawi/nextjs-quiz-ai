@@ -7,8 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "db:up": "docker compose up -d --wait db",
+    "db:down": "docker compose down",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "db:migrate:supabase": "node --env-file=.env.supabase ./node_modules/drizzle-kit/bin.cjs migrate",
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
