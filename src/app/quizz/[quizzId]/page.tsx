@@ -5,12 +5,12 @@ import { eq } from "drizzle-orm";
 import QuizzQuestions from "../QuizzQuestions";
 
 const page = async ({params}: {
-  params: {
+  params: Promise<{
     quizzId: string;
-  }
+  }>
 
 }) => {
-  const quizzId = params.quizzId;
+  const { quizzId } = await params;
   const quizz = await db.query.quizzes.findFirst({
     where: eq(quizzes.id, parseInt(quizzId)),
     with: {
