@@ -43,6 +43,13 @@
       "when": 1791375607608,
       "tag": "0005_quiz_generations",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791378706028,
+      "tag": "0006_better_auth_tables",
+      "breakpoints": true
     }
   ]
 }

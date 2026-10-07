@@ -41,7 +41,9 @@ const limitError = (promise: Promise<unknown>) =>
 
 beforeEach(async () => {
   await db.delete(users).where(eq(users.id, USER)); // cascades to its generations
-  await db.insert(users).values({ id: USER, email: `${USER}@example.com`, subscribed: false });
+  await db
+    .insert(users)
+    .values({ id: USER, name: "Usage test", email: `${USER}@example.com`, subscribed: false });
 });
 
 afterAll(async () => {
