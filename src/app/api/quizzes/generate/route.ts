@@ -33,7 +33,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const userId = (await getCurrentUser())?.id;
+    // After the database check: with the database down, every visitor looks signed out.
+    const user = await getCurrentUser();
+    if (!user) {
+      return errorResponse("Please sign in to generate a quiz.", 401);
+    }
 
     const text = await extractPdfText(document);
 
@@ -66,7 +70,7 @@ export async function POST(request: NextRequest) {
           );
     }
 
-    const quizId = await createQuiz(quiz, userId);
+    const quizId = await createQuiz(quiz, user.id);
 
     return NextResponse.json({ quizId }, { status: 200 });
   } catch (error) {

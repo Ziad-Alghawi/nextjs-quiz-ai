@@ -5,11 +5,11 @@ import { questionAnswers, questions, quizzes } from "@/db/schema";
 import type { GeneratedQuiz } from "@/lib/validations/quiz";
 
 /** Stores a generated quiz with its questions and answers in one transaction. */
-export async function createQuiz(quiz: GeneratedQuiz, userId?: string) {
+export async function createQuiz(quiz: GeneratedQuiz, userId: string) {
   return db.transaction(async (tx) => {
     const [{ quizId }] = await tx
       .insert(quizzes)
-      .values({ name: quiz.name, description: quiz.description, userId: userId ?? null })
+      .values({ name: quiz.name, description: quiz.description, userId })
       .returning({ quizId: quizzes.id });
 
     for (const question of quiz.questions) {

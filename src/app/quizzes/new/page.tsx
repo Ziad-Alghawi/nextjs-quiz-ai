@@ -1,12 +1,11 @@
 import UploadDoc from "../UploadDoc";
-import { getCurrentUser } from "@/server/session";
+import { requireUser } from "@/server/session";
 import { isSubscribed } from "@/server/services/billing";
 import UpgradePlan from "../UpgradePlan";
-import Link from "next/link";
 
 const page = async () => {
-  const userId = (await getCurrentUser())?.id;
-  const subscribed = userId ? await isSubscribed(userId) : false;
+  const user = await requireUser("/quizzes/new");
+  const subscribed = await isSubscribed(user.id);
 
   return (
     <div className="flex flex-col flex-1">
@@ -14,16 +13,7 @@ const page = async () => {
         <h2 className="text-3xl font-bold">What do you want to be quizzed about today?</h2>
         <UploadDoc />
 
-        {!userId && (
-          <p className="text-sm text-muted-foreground">
-            Want to save your quizzes?{" "}
-            <Link href="/api/auth/signin?callbackUrl=/quizzes/new" className="underline">
-              Sign in
-            </Link>
-          </p>
-        )}
-
-        {userId && !subscribed && (
+        {!subscribed && (
           <div className="w-full max-w-sm mt-4">
             <UpgradePlan />
           </div>
