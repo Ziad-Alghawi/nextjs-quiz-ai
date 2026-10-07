@@ -91,6 +91,9 @@ export default function ForgotPasswordPage() {
             If an account exists for {email}, we sent it a code. It expires in{" "}
             {OTP_EXPIRES_IN_MINUTES} minutes.
           </p>
+          {/* Without a username field, browsers take the code box for one and fill in the email.
+              This hidden field tells them the account, so they also save the new password for it. */}
+          <input type="email" autoComplete="username" value={email} readOnly hidden />
           <TextField
             label="Code"
             name="otp"

@@ -70,7 +70,7 @@ export default function SignInPage({
           label="Email"
           name="email"
           type="email"
-          autoComplete="email"
+          autoComplete="username"
           error={errors.email}
         />
         <TextField
