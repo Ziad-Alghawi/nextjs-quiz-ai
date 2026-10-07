@@ -1,5 +1,5 @@
-import { signOut } from "@/auth";
-import { getCurrentUser } from "@/server/session";
+import { redirect } from "next/navigation";
+import { getCurrentUser, signOut } from "@/server/session";
 import { Button } from "./button";
 import Image from "next/image";
 import Link from "next/link";
@@ -12,6 +12,7 @@ function SignOut() {
       action={async () => {
         "use server";
         await signOut();
+        redirect("/");
       }}
     >
       <Button type="submit" variant="ghost">
@@ -51,7 +52,7 @@ const Header = async () => {
                 <SignOut />
               </div>
             ) : (
-              <Link href="/api/auth/signin">
+              <Link href="/sign-in">
                 <Button variant="link" className="rounded-xl border ">
                   Sign in
                 </Button>
