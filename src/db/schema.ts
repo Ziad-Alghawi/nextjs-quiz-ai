@@ -1,5 +1,6 @@
 import {
   index,
+  pgEnum,
   timestamp,
   pgTable,
   text,
@@ -10,6 +11,7 @@ import {
 } from "drizzle-orm/pg-core";
 import type { AdapterAccount } from "@auth/core/adapters";
 import { relations } from "drizzle-orm";
+import type { PlanId } from "@/lib/plans";
 
 /////////////////////////////////////////////////////////
 // Provider the authentication form here to be used in the accounts table
@@ -162,3 +164,21 @@ export const quizSubmissionsRelations = relations(quizSubmissions, ({ one }) => 
     references: [quizzes.id],
   }),
 }));
+
+export const generationStatus = pgEnum("generation_status", ["pending", "succeeded", "failed"]);
+
+// One row per quiz generation attempt. Quotas count these rows rather than quizzes, so deleting a
+// quiz doesn't give a generation back.
+export const quizGenerations = pgTable(
+  "quiz_generations",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    plan: text("plan").$type<PlanId>().notNull(),
+    status: generationStatus("status").default("pending").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [index("quiz_generations_user_id_created_at_idx").on(table.userId, table.createdAt)],
+);
