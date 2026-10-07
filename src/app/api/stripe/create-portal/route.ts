@@ -1,4 +1,5 @@
 import { stripe } from "@/lib/stripe";
+import { env } from "@/lib/env";
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { eq } from "drizzle-orm";
@@ -56,11 +57,9 @@ export async function POST() {
     customer = { id: response.id };
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-
   const portalSession = await stripe.billingPortal.sessions.create({
     customer: customer.id,
-    return_url: `${baseUrl}/billing`,
+    return_url: `${env.APP_URL}/billing`,
   });
 
   return new Response(JSON.stringify({ url: portalSession.url }), {

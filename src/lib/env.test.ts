@@ -6,6 +6,9 @@ const validEnv = {
   GOOGLE_CLIENT_ID: "client-id",
   GOOGLE_CLIENT_SECRET: "client-secret",
   GEMINI_API_KEY: "gemini-key",
+  STRIPE_SECRET_KEY: "sk_test_123",
+  STRIPE_WEBHOOK_SECRET: "whsec_123",
+  APP_URL: "http://localhost:3000/",
 };
 
 // env.ts validates when it is imported, so each test imports a fresh copy.
@@ -23,6 +26,7 @@ describe("env", () => {
   it("returns the validated variables", async () => {
     const env = await importEnv(validEnv);
     expect(env.DATABASE_URL).toBe(validEnv.DATABASE_URL);
+    expect(env.APP_URL).toBe("http://localhost:3000");
   });
 
   it("names every missing or invalid variable without printing values", async () => {

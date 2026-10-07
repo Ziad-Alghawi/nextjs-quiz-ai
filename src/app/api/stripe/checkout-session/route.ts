@@ -1,4 +1,5 @@
 import { stripe } from "@/lib/stripe";
+import { env } from "@/lib/env";
 import { auth } from "@/auth";
 import { db } from "@/db";
 import { eq } from "drizzle-orm";
@@ -44,11 +45,9 @@ export async function POST(req: Request) {
     await db.update(users).set({ stripeCustomerId: customer.id }).where(eq(users.id, userId));
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-
   try {
     const session = await stripe.checkout.sessions.create({
-      success_url: `${baseUrl}/billing/payment/success`,
+      success_url: `${env.APP_URL}/billing/payment/success`,
       customer: customer.id,
       payment_method_types: ["card"],
       line_items: [

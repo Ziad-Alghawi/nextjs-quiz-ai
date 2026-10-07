@@ -6,6 +6,13 @@ const serverEnvSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().min(1),
   GOOGLE_CLIENT_SECRET: z.string().min(1),
   GEMINI_API_KEY: z.string().min(1),
+  STRIPE_SECRET_KEY: z.string().min(1),
+  STRIPE_WEBHOOK_SECRET: z.string().min(1),
+  // Public base URL for links that leave the app (Stripe return URLs); a trailing slash is dropped.
+  APP_URL: z
+    .string()
+    .url()
+    .transform((url) => url.replace(/\/+$/, "")),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;

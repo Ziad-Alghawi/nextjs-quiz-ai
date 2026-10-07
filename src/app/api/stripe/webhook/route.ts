@@ -1,5 +1,6 @@
 import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
+import { env } from "@/lib/env";
 import { createSubscription, deleteSubscription } from "@/app/actions/userSubscriptions";
 
 const relevantEvents = new Set([
@@ -12,20 +13,11 @@ const relevantEvents = new Set([
 export async function POST(req: Request) {
   const body = await req.text();
   const sig = req.headers.get("stripe-signature") as string;
-  const webHookSecret =
-    process.env.NODE_ENV === "production"
-      ? process.env.STRIPE_WEBHOOK_SECRET
-      : process.env.STRIPE_WEBHOOK_LOCAL_SECRET || process.env.STRIPE_WEBHOOK_LOCAL_SERCRET;
-
-  if (!webHookSecret) {
-    throw new Error("STRIPE_WEBHOOK_SECRET is not defined");
-  }
-
   if (!sig) {
     return new Response(JSON.stringify({ error: "Missing stripe signature" }), { status: 400 });
   }
 
-  const event = stripe.webhooks.constructEvent(body, sig, webHookSecret);
+  const event = stripe.webhooks.constructEvent(body, sig, env.STRIPE_WEBHOOK_SECRET);
 
   console.log("stripe webhook event:", event.type);
 
