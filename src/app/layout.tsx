@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
+import { Geist } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/ui/header";
+
+// Self-hosted by Next at build time: no request to Google from the visitor's browser.
+const geistSans = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
 
 export const metadata: Metadata = {
   title: "Quiz AI",
@@ -9,8 +13,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className={"dark"}>
+    <html lang="en" className={geistSans.variable}>
+      <body>
         <Header />
         {children}
       </body>
