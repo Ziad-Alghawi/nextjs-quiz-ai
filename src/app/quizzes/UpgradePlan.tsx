@@ -7,7 +7,7 @@ const UpgradePlan = () => {
     <form action={startCheckout}>
       <button
         type="submit"
-        className="rounded-md bg-primary hover:bg-primary-shadow p-10 w-full sm:h-80 sm:w-80 "
+        className="rounded-md bg-primary text-primary-foreground hover:bg-primary-shadow p-10 w-full sm:h-80 sm:w-80 "
       >
         <div className="flex flex-col items-center cursor-pointer w-full h-full">
           <div className="flex-1 flex items-center flex-col">

@@ -23,7 +23,7 @@ const SubmissionHeatMap = (props: Props) => {
     <HeatMap
       value={props.data}
       width="100%"
-      style={{ color: "#888" }}
+      style={{ color: "var(--muted-foreground)" }}
       startDate={startDate}
       panelColors={panelColors}
       rectRender={(props, data) => {

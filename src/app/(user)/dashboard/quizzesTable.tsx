@@ -14,8 +14,8 @@ const QuizzesTable = (props: Props) => {
       <table className="table-auto">
         <thead>
           <tr>
-            <th className="text-[#6c7381] text-left">Name</th>
-            <th className="text-[#6c7381] text-left">Description</th>
+            <th className="text-muted-foreground text-left">Name</th>
+            <th className="text-muted-foreground text-left">Description</th>
           </tr>
         </thead>
         <tbody>
@@ -23,7 +23,7 @@ const QuizzesTable = (props: Props) => {
             <tr key={quiz.id}>
               <td>
                 <Link href={`/quizzes/${quiz.id}`}>
-                  <p className="text-blue-600 underline">{quiz.name}</p>
+                  <p className="text-primary underline">{quiz.name}</p>
                 </Link>
               </td>
               <td>{quiz.description}</td>
