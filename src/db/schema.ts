@@ -19,7 +19,8 @@ export const users = pgTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").default(false).notNull(),
   image: text("image"),
-  stripeCustomerId: text("stripeCustomerId"),
+  // One Stripe customer per user; the unique index also serves the webhook, which looks users up by it.
+  stripeCustomerId: text("stripeCustomerId").unique(),
   subscribed: boolean("subscribed").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
