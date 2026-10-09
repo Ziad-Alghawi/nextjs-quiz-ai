@@ -3,11 +3,20 @@ import Stripe from "stripe";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
 import { users } from "@/db/schema";
-import { cancelSubscriptions } from "./billing";
+import { cancelSubscriptions, createBillingPortalSession } from "./billing";
 
-const stripeMock = vi.hoisted(() => ({ list: vi.fn(), cancel: vi.fn() }));
+const stripeMock = vi.hoisted(() => ({
+  list: vi.fn(),
+  cancel: vi.fn(),
+  createCustomer: vi.fn(),
+  createPortalSession: vi.fn(),
+}));
 vi.mock("@/lib/stripe", () => ({
-  stripe: { subscriptions: { list: stripeMock.list, cancel: stripeMock.cancel } },
+  stripe: {
+    subscriptions: { list: stripeMock.list, cancel: stripeMock.cancel },
+    customers: { create: stripeMock.createCustomer },
+    billingPortal: { sessions: { create: stripeMock.createPortalSession } },
+  },
 }));
 
 const USER = "billing-db-test-user";
@@ -38,6 +47,25 @@ beforeEach(async () => {
 
 afterAll(async () => {
   await db.delete(users).where(eq(users.id, USER));
+});
+
+describe("Stripe customer", () => {
+  it("is created once with an idempotency key, then reused", async () => {
+    await addUser(null);
+    stripeMock.createCustomer.mockResolvedValue({ id: "cus_new" });
+    stripeMock.createPortalSession.mockResolvedValue({ url: "https://billing.example" });
+
+    await createBillingPortalSession(USER);
+    await createBillingPortalSession(USER);
+
+    // The key makes a parallel second request (double click) get the same customer from Stripe.
+    expect(stripeMock.createCustomer.mock.calls).toEqual([
+      [{ metadata: { dbId: USER } }, { idempotencyKey: `customer-${USER}` }],
+    ]);
+    expect(stripeMock.createPortalSession).toHaveBeenLastCalledWith(
+      expect.objectContaining({ customer: "cus_new" }),
+    );
+  });
 });
 
 describe("cancelSubscriptions", () => {

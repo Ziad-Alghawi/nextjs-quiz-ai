@@ -32,7 +32,12 @@ async function getOrCreateStripeCustomer(userId: string) {
   const savedId = await getSavedCustomerId(userId);
   if (savedId) return savedId;
 
-  const customer = await stripe.customers.create({ metadata: { dbId: userId } });
+  // Two requests at once (a double click) would both find no saved id. With the same idempotency
+  // key, Stripe returns the first customer to the second request instead of creating another one.
+  const customer = await stripe.customers.create(
+    { metadata: { dbId: userId } },
+    { idempotencyKey: `customer-${userId}` },
+  );
   await db.update(users).set({ stripeCustomerId: customer.id }).where(eq(users.id, userId));
   return customer.id;
 }
