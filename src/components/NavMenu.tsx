@@ -9,34 +9,35 @@ import {
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 
+// asChild makes each menu item the link itself, so choosing it with the keyboard navigates too.
 export function NavMenu() {
   return (
     <DropdownMenuContent className="w-56">
       <DropdownMenuLabel>My Account</DropdownMenuLabel>
       <DropdownMenuSeparator />
       <DropdownMenuGroup>
-        <DropdownMenuItem>
-          <Link href="/dashboard" className="flex flexr-row">
-            <BarChartBig className="mr-2 h-4 w-4" />
-            <span>Dashboard</span>
+        <DropdownMenuItem asChild>
+          <Link href="/dashboard">
+            <BarChartBig />
+            Dashboard
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem>
-          <Link href="/quizzes/new" className="flex flexr-row">
-            <Plus className="mr-2 h-4 w-4" />
-            <span>New Quiz</span>
+        <DropdownMenuItem asChild>
+          <Link href="/quizzes/new">
+            <Plus />
+            New Quiz
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem>
-          <Link href="/billing" className="flex flexr-row">
-            <CreditCard className="mr-2 h-4 w-4" />
-            <span>Billing</span>
+        <DropdownMenuItem asChild>
+          <Link href="/billing">
+            <CreditCard />
+            Billing
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem>
-          <Link href="/settings" className="flex flexr-row">
-            <Settings className="mr-2 h-4 w-4" />
-            <span>Settings</span>
+        <DropdownMenuItem asChild>
+          <Link href="/settings">
+            <Settings />
+            Settings
           </Link>
         </DropdownMenuItem>
       </DropdownMenuGroup>
