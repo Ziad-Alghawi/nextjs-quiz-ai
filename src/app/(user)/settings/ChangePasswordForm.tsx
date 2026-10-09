@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { FormError } from "@/components/ui/form-error";
 import { TextField } from "@/components/ui/text-field";
 import { useZodForm } from "@/hooks/use-zod-form";
 import { authClient, authErrorMessage } from "@/lib/auth-client";
@@ -65,11 +66,7 @@ export function ChangePasswordForm({ email }: { email: string }) {
           </p>
         ) : null}
       </div>
-      {error ? (
-        <p role="alert" className="text-sm text-red-500">
-          {error}
-        </p>
-      ) : null}
+      <FormError>{error}</FormError>
     </form>
   );
 }

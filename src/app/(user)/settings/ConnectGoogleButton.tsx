@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { FormError } from "@/components/ui/form-error";
 import { authClient } from "@/lib/auth-client";
 import { googleErrorMessage } from "@/lib/oauth-errors";
 
@@ -23,11 +24,7 @@ export function ConnectGoogleButton() {
       <Button variant="outline" onClick={connect}>
         Connect Google
       </Button>
-      {error ? (
-        <p role="alert" className="text-sm text-red-500">
-          {error}
-        </p>
-      ) : null}
+      <FormError>{error}</FormError>
     </div>
   );
 }

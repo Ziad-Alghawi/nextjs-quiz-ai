@@ -29,8 +29,9 @@ const SettingsPage = async ({ searchParams }: { searchParams: Promise<{ error?: 
         <h2 className="text-xl font-semibold">Sign-in methods</h2>
         <p className="text-sm">Google: {methods.google ? "connected" : "not connected"}</p>
         {methods.google ? null : <ConnectGoogleButton />}
+        {/* A hint about what to do next rather than a failure, so it isn't shown in red. */}
         {googleError && !methods.google ? (
-          <p role="alert" className="text-sm text-red-500">
+          <p role="status" className="text-sm text-muted-foreground">
             {googleErrorMessage(googleError)}
           </p>
         ) : null}
