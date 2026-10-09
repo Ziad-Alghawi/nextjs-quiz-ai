@@ -3,7 +3,7 @@
 @plugin "tailwindcss-animate";
 
 /*
-  Design tokens. Neutral slate surfaces with one accent color (indigo, from the owl's night sky).
+  Design tokens. Neutral slate surfaces with one accent color, blue.
   Light by default; dark when the operating system asks for it. Components should use the token
   names (bg-primary, text-muted-foreground, border-border…) rather than raw palette colors, so both
   modes keep enough contrast.
@@ -17,9 +17,9 @@
   --card-foreground: oklch(0.129 0.042 264.695);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.511 0.262 276.966);
+  --primary: oklch(0.546 0.245 262.881);
   --primary-foreground: oklch(0.985 0 0);
-  --primary-shadow: oklch(0.398 0.195 277.366);
+  --primary-shadow: oklch(0.424 0.199 265.638);
   --secondary: oklch(0.968 0.007 247.896);
   --secondary-foreground: oklch(0.208 0.042 265.755);
   --muted: oklch(0.968 0.007 247.896);
@@ -30,7 +30,7 @@
   --destructive-foreground: oklch(0.985 0 0);
   --border: oklch(0.929 0.013 255.508);
   --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.585 0.233 277.117);
+  --ring: oklch(0.623 0.214 259.815);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -42,9 +42,9 @@
     --card-foreground: oklch(0.984 0.003 247.858);
     --popover: oklch(0.208 0.042 265.755);
     --popover-foreground: oklch(0.984 0.003 247.858);
-    --primary: oklch(0.673 0.182 276.935);
+    --primary: oklch(0.707 0.165 254.624);
     --primary-foreground: oklch(0.129 0.042 264.695);
-    --primary-shadow: oklch(0.511 0.262 276.966);
+    --primary-shadow: oklch(0.546 0.245 262.881);
     --secondary: oklch(0.279 0.041 260.031);
     --secondary-foreground: oklch(0.984 0.003 247.858);
     --muted: oklch(0.279 0.041 260.031);
@@ -55,7 +55,7 @@
     --destructive-foreground: oklch(0.129 0.042 264.695);
     --border: oklch(1 0 0 / 10%);
     --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.673 0.182 276.935);
+    --ring: oklch(0.707 0.165 254.624);
   }
 }
 
