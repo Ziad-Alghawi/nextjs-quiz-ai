@@ -31,9 +31,9 @@ export async function getUserMetrics(userId: string) {
   ];
 }
 
-/** The user's submissions per day over the last year, dated "YYYY/MM/DD" as the heatmap expects. */
+/** The user's submissions per day (UTC dates, YYYY-MM-DD) over the last year. */
 export async function getSubmissionActivity(userId: string) {
-  const day = sql<string>`to_char(${quizSubmissions.createdAt}, 'YYYY/MM/DD')`;
+  const day = sql<string>`to_char(${quizSubmissions.createdAt}, 'YYYY-MM-DD')`;
 
   return db
     .select({ date: day, count: sql<number>`cast(count(*) as int)` })

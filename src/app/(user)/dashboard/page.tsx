@@ -1,42 +1,44 @@
-import { requireUser } from "@/server/session";
-import QuizzesTable from "./quizzesTable";
+import { Plus } from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardTitle } from "@/components/ui/card";
 import { listQuizzes } from "@/server/services/quizzes";
 import { getSubmissionActivity, getUserMetrics } from "@/server/services/stats";
-import MetricCard from "./metricCard";
-import SubmissionHeatMap from "./heatMap";
+import { requireUser } from "@/server/session";
+import { ActivityHeatmap } from "./activity-heatmap";
+import { MetricCard } from "./metric-card";
+import { QuizzesTable } from "./quizzes-table";
 
-const page = async () => {
+export default async function DashboardPage() {
   const { id: userId } = await requireUser("/dashboard");
 
-  const [userQuizzes, userData, activity] = await Promise.all([
+  const [quizzes, metrics, activity] = await Promise.all([
     listQuizzes(userId),
     getUserMetrics(userId),
     getSubmissionActivity(userId),
   ]);
 
   return (
-    <div className="mt-4">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        {userData && userData.length > 0 ? (
-          <>
-            {userData.map((metric) => (
-              <MetricCard
-                key={metric.label}
-                label={metric.label}
-                value={metric.value}
-                unit={metric.unit}
-              />
-            ))}
-          </>
-        ) : null}
+    <div className="flex flex-col gap-6 p-4">
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-3xl font-semibold tracking-tight">Dashboard</h1>
+        <Button className="gap-2" asChild>
+          <Link href="/quizzes/new">
+            <Plus className="size-4" aria-hidden />
+            New quiz
+          </Link>
+        </Button>
       </div>
-      <div>
-        <SubmissionHeatMap data={activity} />
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        {metrics.map((metric) => (
+          <MetricCard key={metric.label} {...metric} />
+        ))}
       </div>
-
-      <QuizzesTable quizzes={userQuizzes} />
+      <Card>
+        <CardTitle>Activity</CardTitle>
+        <ActivityHeatmap activity={activity} today={new Date().toISOString().slice(0, 10)} />
+      </Card>
+      <QuizzesTable quizzes={quizzes} />
     </div>
   );
-};
-
-export default page;
+}
