@@ -13,22 +13,32 @@ const submitQuizSchema = z.object({
   answers: z.array(z.object({ questionId: z.number().int(), answerId: z.number().int() })).max(100),
 });
 
+type SubmitQuizResult =
+  { status: "saved"; score: number; total: number } | { status: "error"; error: string };
+
 /** Scores the chosen answers on the server and stores the result. */
-export async function submitQuiz(input: z.input<typeof submitQuizSchema>) {
+export async function submitQuiz(
+  input: z.input<typeof submitQuizSchema>,
+): Promise<SubmitQuizResult> {
+  // Not requireUser(): redirecting to sign-in here would throw away the answers on the screen.
   const user = await getCurrentUser();
-  if (!user) throw new Error("Sign in to save your result.");
+  if (!user) {
+    return { status: "error", error: "Your session has expired. Sign in again to save results." };
+  }
 
   // Server Actions are public endpoints, so the arguments are untrusted input.
-  const { quizId, answers } = submitQuizSchema.parse(input);
+  const parsed = submitQuizSchema.safeParse(input);
+  if (!parsed.success) return { status: "error", error: "Your answers couldn't be read." };
+  const { quizId, answers } = parsed.data;
 
   const quiz = await getQuizWithQuestions(quizId, user.id);
-  if (!quiz) throw new Error("Quiz not found.");
+  if (!quiz) return { status: "error", error: "This quiz doesn't exist anymore." };
 
   const { score, total, complete } = scoreAttempt(quiz.questions, answers);
-  if (!complete) throw new Error("Answer every question before submitting.");
+  if (!complete) return { status: "error", error: "Answer every question before submitting." };
 
   await createSubmission({ quizId, userId: user.id, score, totalQuestions: total });
   // Also clears the browser's cached dashboard, which the result screen's Back button returns to.
   revalidatePath("/dashboard");
-  return { score, total };
+  return { status: "saved", score, total };
 }

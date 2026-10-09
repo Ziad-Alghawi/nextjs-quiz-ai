@@ -23,6 +23,8 @@ export default function QuizQuestions(props: props) {
   const [currentQuestion, setCurrentQuestion] = useState<number>(0);
   const [userAnswers, setUserAnswers] = useState<SelectedAnswer[]>([]);
   const [result, setResult] = useState<{ score: number; total: number } | null>(null);
+  // Set when the result could not be saved; the score is still shown.
+  const [saveError, setSaveError] = useState<string | null>(null);
   const router = useRouter();
 
   const handleNext = () => {
@@ -45,12 +47,14 @@ export default function QuizQuestions(props: props) {
       return;
     }
     try {
-      setResult(await submitQuiz({ quizId: props.quiz.id, answers: userAnswers }));
-    } catch (e) {
-      console.error("Error saving submission:", e);
-      // Saving failed, but the user still sees how they did.
-      setResult(localResult);
+      const saved = await submitQuiz({ quizId: props.quiz.id, answers: userAnswers });
+      if (saved.status === "saved") return setResult(saved);
+      setSaveError(saved.error);
+    } catch {
+      setSaveError("Please try again later.");
     }
+    // Not saved, but the user still sees how they did.
+    setResult(localResult);
   };
 
   const handlePressPrev = () => {
@@ -77,6 +81,7 @@ export default function QuizQuestions(props: props) {
         score={result.score}
         totalQuestions={result.total}
         scorePercentage={Math.round((result.score / result.total) * 100)}
+        saveError={saveError}
       />
     );
   }

@@ -10,10 +10,11 @@ type Props = {
   scorePercentage: number;
   score: number;
   totalQuestions: number;
+  saveError: string | null;
 };
 
 const QuizSubmission = (props: Props) => {
-  const { scorePercentage, score, totalQuestions } = props;
+  const { scorePercentage, score, totalQuestions, saveError } = props;
   const { reward } = useReward("rewardId", "confetti");
   const router = useRouter();
 
@@ -40,6 +41,11 @@ const QuizSubmission = (props: Props) => {
       <main className="py-11 flex flex-col gap-4 items-center flex-1 mt-24">
         <h2 className="text-3xl font-bold">Quiz Complete!</h2>
         <p>Percentage: {scorePercentage}%</p>
+        {saveError ? (
+          <p role="alert" className="text-destructive">
+            Your result couldn&apos;t be saved. {saveError}
+          </p>
+        ) : null}
         {scorePercentage === 100 ? (
           <div className="flex flex-col items-center">
             <p>Congratulations! 🎉</p>
