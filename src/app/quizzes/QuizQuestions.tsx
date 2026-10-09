@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import ProgressBar from "@/components/ui/progressBar";
+import { Progress } from "@/components/ui/progress";
 import { ChevronLeft, X } from "lucide-react";
 import ResultCard from "./ResultCard";
 import QuizSubmission from "./QuizSubmission";
@@ -99,7 +99,7 @@ export default function QuizQuestions(props: props) {
             <ChevronLeft />
           </Button>
 
-          <ProgressBar value={(currentQuestion / questions.length) * 100} />
+          <Progress value={(currentQuestion / questions.length) * 100} label="Quiz progress" />
 
           <Button size="icon" variant="outline" onClick={handleExit}>
             <X />
