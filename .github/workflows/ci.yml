@@ -1,8 +1,9 @@
 name: CI
 
 on:
+  # Every branch push, so phase branches are checked before they reach main.
   push:
-    branches: [main]
+    branches: ["**"]
   pull_request:
 
 jobs:
