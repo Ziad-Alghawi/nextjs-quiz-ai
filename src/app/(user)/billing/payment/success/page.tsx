@@ -4,9 +4,7 @@ import Link from "next/link";
 const Page = () => {
   return (
     <Alert variant="default">
-      <AlertTitle className="mb-3 text-xl text-green-700 dark:text-green-400">
-        Payment Successful!
-      </AlertTitle>
+      <AlertTitle className="mb-3 text-xl text-success">Payment Successful!</AlertTitle>
       <AlertDescription>
         Your account has been upgraded. You can now create unlimited quizzes and access all premium
         features. <br />

@@ -23,7 +23,7 @@ export function NameForm({ name }: { name: string }) {
           {pending ? "Saving…" : "Save name"}
         </Button>
         {state.status === "saved" && !pending ? (
-          <p role="status" className="text-sm text-green-600">
+          <p role="status" className="text-sm text-success">
             Saved.
           </p>
         ) : null}

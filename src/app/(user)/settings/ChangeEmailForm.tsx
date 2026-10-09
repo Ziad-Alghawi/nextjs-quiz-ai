@@ -59,7 +59,7 @@ export function ChangeEmailForm({ currentEmail }: { currentEmail: string }) {
     return (
       <div className="flex flex-col items-start gap-2">
         {changedTo ? (
-          <p role="status" className="text-sm text-green-600">
+          <p role="status" className="text-sm text-success">
             Your email is now {changedTo}. Use it to sign in.
           </p>
         ) : null}

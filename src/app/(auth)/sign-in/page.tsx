@@ -64,7 +64,7 @@ export default function SignInPage({
         description="Welcome back. Sign in to continue with your quizzes."
       />
       {notice ? (
-        <p role="status" className="rounded-md bg-secondary px-3 py-2 text-sm text-green-600">
+        <p role="status" className="rounded-md bg-secondary px-3 py-2 text-sm text-success">
           {notice}
         </p>
       ) : null}

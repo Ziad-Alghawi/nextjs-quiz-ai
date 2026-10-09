@@ -61,7 +61,7 @@ export function ChangePasswordForm({ email }: { email: string }) {
           {pending ? "Changing…" : "Change password"}
         </Button>
         {saved ? (
-          <p role="status" className="text-sm text-green-600">
+          <p role="status" className="text-sm text-success">
             Password changed. Your other devices were signed out.
           </p>
         ) : null}
