@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/ui/form-error";
 import { TextField } from "@/components/ui/text-field";
 import { useZodForm } from "@/hooks/use-zod-form";
+import { AuthHeading } from "../auth-heading";
 import { authClient, authErrorMessage } from "@/lib/auth-client";
 import { googleErrorMessage } from "@/lib/oauth-errors";
 import { safeReturnPath, signInSchema } from "@/lib/validations/auth";
@@ -66,14 +67,17 @@ export default function SignInPage({
   };
 
   return (
-    <main className="mx-auto mt-24 flex max-w-sm flex-col gap-4 px-4 text-center">
-      <h1 className="text-3xl font-bold">Sign in</h1>
+    <>
+      <AuthHeading
+        title="Sign in"
+        description="Welcome back. Sign in to continue with your quizzes."
+      />
       {notice ? (
-        <p role="status" className="text-green-600">
+        <p role="status" className="rounded-md bg-secondary px-3 py-2 text-sm text-green-600">
           {notice}
         </p>
       ) : null}
-      <form onSubmit={signInWithEmail} noValidate className="flex flex-col gap-3">
+      <form onSubmit={signInWithEmail} noValidate className="flex flex-col gap-4">
         <TextField
           label="Email"
           name="email"
@@ -81,16 +85,21 @@ export default function SignInPage({
           autoComplete="username"
           error={errors.email}
         />
-        <TextField
-          label="Password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          error={errors.password}
-        />
-        <Link href="/forgot-password" className="self-end text-sm underline">
-          Forgot password?
-        </Link>
+        <div className="flex flex-col gap-1">
+          <TextField
+            label="Password"
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            error={errors.password}
+          />
+          <Link
+            href="/forgot-password"
+            className="self-end text-sm font-medium text-primary hover:underline"
+          >
+            Forgot password?
+          </Link>
+        </div>
         <Button type="submit" disabled={pending}>
           {pending ? "Signing in…" : "Sign in"}
         </Button>
@@ -99,15 +108,15 @@ export default function SignInPage({
         Continue with Google
       </Button>
       <FormError>{error}</FormError>
-      <p className="text-sm">
+      <p className="text-center text-sm text-muted-foreground">
         No account yet?{" "}
         <Link
           href={`/sign-up?callbackUrl=${encodeURIComponent(callbackURL)}`}
-          className="underline"
+          className="font-medium text-primary hover:underline"
         >
           Sign up
         </Link>
       </p>
-    </main>
+    </>
   );
 }

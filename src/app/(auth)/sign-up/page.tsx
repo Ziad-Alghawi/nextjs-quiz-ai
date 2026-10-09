@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/ui/form-error";
 import { TextField } from "@/components/ui/text-field";
 import { useZodForm } from "@/hooks/use-zod-form";
+import { AuthHeading } from "../auth-heading";
 import { authClient, authErrorMessage } from "@/lib/auth-client";
 import { PASSWORD_MIN_LENGTH, safeReturnPath, signUpSchema } from "@/lib/validations/auth";
 
@@ -31,9 +32,12 @@ export default function SignUpPage({
   });
 
   return (
-    <main className="mx-auto mt-24 flex max-w-sm flex-col gap-4 px-4 text-center">
-      <h1 className="text-3xl font-bold">Create an account</h1>
-      <form onSubmit={signUp} noValidate className="flex flex-col gap-3">
+    <>
+      <AuthHeading
+        title="Create an account"
+        description="Sign up for free and turn your PDFs into quizzes."
+      />
+      <form onSubmit={signUp} noValidate className="flex flex-col gap-4">
         <TextField label="Name" name="name" autoComplete="name" error={errors.name} />
         <TextField
           label="Email"
@@ -55,15 +59,15 @@ export default function SignUpPage({
         </Button>
       </form>
       <FormError>{error}</FormError>
-      <p className="text-sm">
+      <p className="text-center text-sm text-muted-foreground">
         Already have an account?{" "}
         <Link
           href={`/sign-in?callbackUrl=${encodeURIComponent(callbackURL)}`}
-          className="underline"
+          className="font-medium text-primary hover:underline"
         >
           Sign in
         </Link>
       </p>
-    </main>
+    </>
   );
 }

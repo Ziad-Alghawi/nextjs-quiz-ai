@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/ui/form-error";
 import { TextField } from "@/components/ui/text-field";
 import { useZodForm } from "@/hooks/use-zod-form";
+import { AuthHeading } from "../auth-heading";
 import { authClient, authErrorMessage } from "@/lib/auth-client";
 import {
   OTP_EXPIRES_IN_MINUTES,
@@ -43,11 +44,13 @@ export default function ForgotPasswordPage() {
   const error = codeRequest.error ?? passwordReset.error;
 
   return (
-    <main className="mx-auto mt-24 flex max-w-sm flex-col gap-4 px-4 text-center">
-      <h1 className="text-3xl font-bold">Reset your password</h1>
+    <>
+      <AuthHeading
+        title="Reset your password"
+        description={`We'll email you a ${OTP_LENGTH}-digit code to set a new password.`}
+      />
       {email === null ? (
-        <form onSubmit={codeRequest.onSubmit} noValidate className="flex flex-col gap-3">
-          <p className="text-sm">We&apos;ll email you a {OTP_LENGTH}-digit code.</p>
+        <form onSubmit={codeRequest.onSubmit} noValidate className="flex flex-col gap-4">
           <TextField
             label="Email"
             name="email"
@@ -60,15 +63,17 @@ export default function ForgotPasswordPage() {
           </Button>
         </form>
       ) : (
-        <form onSubmit={passwordReset.onSubmit} noValidate className="flex flex-col gap-3">
-          <p role="status" className="text-sm">
-            If an account exists for {email}, we sent it a code. It expires in{" "}
-            {OTP_EXPIRES_IN_MINUTES} minutes.
-          </p>
-          {/* Mail from a Gmail address without our own domain's SPF/DKIM often lands in spam. */}
-          <p className="text-sm text-muted-foreground">
-            Didn&apos;t get the email? Check your spam folder.
-          </p>
+        <form onSubmit={passwordReset.onSubmit} noValidate className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1 rounded-md bg-secondary px-3 py-2 text-sm">
+            <p role="status">
+              If an account exists for {email}, we sent it a code. It expires in{" "}
+              {OTP_EXPIRES_IN_MINUTES} minutes.
+            </p>
+            {/* Mail from a Gmail address without our own domain's SPF/DKIM often lands in spam. */}
+            <p className="text-muted-foreground">
+              Didn&apos;t get the email? Check your spam folder.
+            </p>
+          </div>
           {/* Without a username field, browsers take the code box for one and fill in the email.
               This hidden field tells them the account, so they also save the new password for it. */}
           <input type="email" autoComplete="username" value={email} readOnly hidden />
@@ -97,11 +102,11 @@ export default function ForgotPasswordPage() {
         </form>
       )}
       <FormError>{error}</FormError>
-      <p className="text-sm">
-        <Link href="/sign-in" className="underline">
+      <p className="text-center text-sm">
+        <Link href="/sign-in" className="font-medium text-primary hover:underline">
           Back to sign in
         </Link>
       </p>
-    </main>
+    </>
   );
 }
