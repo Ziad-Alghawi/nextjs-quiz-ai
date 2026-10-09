@@ -31,13 +31,18 @@ const countsTowardQuota = or(
 
 const thisMonth = gte(quizGenerations.createdAt, sql`date_trunc('month', now())`);
 
-export async function getMonthlyUsage(userId: string) {
-  const plan = await getPlan(userId);
-  const [{ used }] = await db
+/** Generations that count toward this month's quota; also used inside the reserving transaction. */
+async function countUsedThisMonth(executor: Pick<typeof db, "select">, userId: string) {
+  const [{ used }] = await executor
     .select({ used: count() })
     .from(quizGenerations)
     .where(and(eq(quizGenerations.userId, userId), thisMonth, countsTowardQuota));
+  return used;
+}
 
+export async function getMonthlyUsage(userId: string) {
+  const plan = await getPlan(userId);
+  const used = await countUsedThisMonth(db, userId);
   return { plan, used, limit: PLANS[plan].monthlyQuizzes };
 }
 
@@ -52,11 +57,7 @@ export async function reserveGeneration(userId: string) {
   return db.transaction(async (tx) => {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${userId}))`);
 
-    const [{ used }] = await tx
-      .select({ used: count() })
-      .from(quizGenerations)
-      .where(and(eq(quizGenerations.userId, userId), thisMonth, countsTowardQuota));
-    if (used >= monthlyQuizzes) {
+    if ((await countUsedThisMonth(tx, userId)) >= monthlyQuizzes) {
       const upgrade = plan === "free" ? " Upgrade to Pro for more." : "";
       throw new GenerationLimitError(
         `You've used all ${monthlyQuizzes} quizzes of the ${label} plan this month.${upgrade}`,
