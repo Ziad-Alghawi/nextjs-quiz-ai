@@ -5,23 +5,12 @@ import ProgressBar from "@/components/ui/progressBar";
 import { ChevronLeft, X } from "lucide-react";
 import ResultCard from "./ResultCard";
 import QuizSubmission from "./QuizSubmission";
-import { InferSelectModel } from "drizzle-orm";
-import { questionAnswers, questions as Dbquestions, quizzes } from "@/db/schema";
 import { useRouter } from "next/navigation";
 import { submitQuiz } from "../actions/submitQuiz";
 import { scoreAttempt, type SelectedAnswer } from "@/lib/scoring";
+import type { QuizWithQuestions } from "@/server/services/quizzes";
 
-type Answer = InferSelectModel<typeof questionAnswers>;
-type Question = InferSelectModel<typeof Dbquestions> & {
-  answers: Answer[];
-};
-// Only the fields the player shows, so the static sample quiz fits without being a database row.
-export type QuizWithQuestions = Pick<
-  InferSelectModel<typeof quizzes>,
-  "id" | "name" | "description"
-> & {
-  questions: Question[];
-};
+type Answer = QuizWithQuestions["questions"][number]["answers"][number];
 
 type props = {
   quiz: QuizWithQuestions;

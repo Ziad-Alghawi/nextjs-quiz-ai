@@ -1,11 +1,8 @@
-import { quizzes } from "@/db/schema";
-import { InferSelectModel } from "drizzle-orm";
 import Link from "next/link";
-
-export type Quiz = InferSelectModel<typeof quizzes>;
+import type { QuizSummary } from "@/server/services/quizzes";
 
 type Props = {
-  quizzes: Quiz[];
+  quizzes: QuizSummary[];
 };
 
 const QuizzesTable = (props: Props) => {
@@ -19,7 +16,7 @@ const QuizzesTable = (props: Props) => {
           </tr>
         </thead>
         <tbody>
-          {props.quizzes.map((quiz: Quiz) => (
+          {props.quizzes.map((quiz) => (
             <tr key={quiz.id}>
               <td>
                 <Link href={`/quizzes/${quiz.id}`}>

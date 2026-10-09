@@ -1,5 +1,5 @@
 import "server-only";
-import { and, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { questionAnswers, questions, quizzes } from "@/db/schema";
 import type { GeneratedQuiz } from "@/lib/validations/quiz";
@@ -33,14 +33,38 @@ export async function createQuiz(quiz: GeneratedQuiz, userId: string) {
   });
 }
 
-/** The quiz with its questions and answers, only if it belongs to the user. */
+/**
+ * The quiz with its questions and answers in the order they were created, only if it belongs to the
+ * user. Without orderBy, Postgres may return the rows in a different order on every load.
+ */
 export function getQuizWithQuestions(quizId: number, userId: string) {
   return db.query.quizzes.findFirst({
+    columns: { id: true, name: true, description: true },
     where: and(eq(quizzes.id, quizId), eq(quizzes.userId, userId)),
-    with: { questions: { with: { answers: true } } },
+    with: {
+      questions: {
+        columns: { id: true, questionText: true },
+        orderBy: asc(questions.id),
+        with: {
+          answers: {
+            columns: { id: true, answerText: true, isCorrect: true },
+            orderBy: asc(questionAnswers.id),
+          },
+        },
+      },
+    },
   });
 }
 
+export type QuizWithQuestions = NonNullable<Awaited<ReturnType<typeof getQuizWithQuestions>>>;
+
+/** The user's quizzes, newest first. */
 export function listQuizzes(userId: string) {
-  return db.query.quizzes.findMany({ where: eq(quizzes.userId, userId) });
+  return db.query.quizzes.findMany({
+    columns: { id: true, name: true, description: true },
+    where: eq(quizzes.userId, userId),
+    orderBy: desc(quizzes.createdAt),
+  });
 }
+
+export type QuizSummary = Awaited<ReturnType<typeof listQuizzes>>[number];
