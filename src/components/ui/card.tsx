@@ -15,6 +15,11 @@ export function Card({ className, ...props }: ComponentProps<"section">) {
   );
 }
 
-export function CardTitle({ className, ...props }: ComponentProps<"h2">) {
-  return <h2 className={cn("text-lg font-semibold", className)} {...props} />;
+/** The card's heading; `as` keeps the heading levels right when the card sits under a section heading. */
+export function CardTitle({
+  as: Heading = "h2",
+  className,
+  ...props
+}: ComponentProps<"h2"> & { as?: "h2" | "h3" }) {
+  return <Heading className={cn("text-lg font-semibold", className)} {...props} />;
 }
