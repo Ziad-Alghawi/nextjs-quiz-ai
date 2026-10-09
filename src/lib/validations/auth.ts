@@ -32,25 +32,20 @@ export const signInSchema = z.object({
 });
 
 export const requestPasswordResetSchema = z.object({ email: emailSchema });
-export type RequestPasswordResetInput = z.infer<typeof requestPasswordResetSchema>;
 
 const otpMessage = `Enter the ${OTP_LENGTH}-digit code from the email.`;
 const otpSchema = z.string().trim().length(OTP_LENGTH, otpMessage).regex(/^\d+$/, otpMessage);
 
 export const resetPasswordSchema = z.object({ otp: otpSchema, password: passwordSchema });
-export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 
 export const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, "Enter your current password."),
   newPassword: passwordSchema,
 });
-export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 
 export const requestEmailChangeSchema = z.object({ newEmail: emailSchema });
-export type RequestEmailChangeInput = z.infer<typeof requestEmailChangeSchema>;
 
 export const confirmEmailChangeSchema = z.object({ otp: otpSchema });
-export type ConfirmEmailChangeInput = z.infer<typeof confirmEmailChangeSchema>;
 
 export const DELETE_CONFIRMATION = "DELETE";
 
@@ -67,19 +62,6 @@ export const deleteAccountSchema = (hasPassword: boolean) =>
         `Type ${DELETE_CONFIRMATION} to confirm.`,
       ),
   });
-export type DeleteAccountInput = z.infer<ReturnType<typeof deleteAccountSchema>>;
-
-export type FieldErrors<T> = Partial<Record<keyof T, string>>;
-
-/** The first message per field, for showing next to form inputs. */
-export function fieldErrors<T>(error: z.ZodError<T>): FieldErrors<T> {
-  const errors: FieldErrors<T> = {};
-  for (const issue of error.issues) {
-    const field = issue.path[0] as keyof T;
-    errors[field] ??= issue.message;
-  }
-  return errors;
-}
 
 // Only same-site paths, so the link can't be used to send people to another website after sign-in.
 export const safeReturnPath = (path: string | string[] | null | undefined) =>

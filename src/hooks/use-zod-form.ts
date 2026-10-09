@@ -1,7 +1,7 @@
 "use client";
 import { useState, type FormEvent } from "react";
 import type { z } from "zod";
-import { fieldErrors, type FieldErrors } from "@/lib/validations/auth";
+import { fieldErrors, type FieldErrors } from "@/lib/validations/form";
 
 /** What a submit handler reports back to the form; nothing means it succeeded. */
 type SubmitOutcome<Values> = { error: string } | { fieldErrors: FieldErrors<Values> } | void;

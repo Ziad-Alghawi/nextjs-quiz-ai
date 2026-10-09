@@ -3,7 +3,6 @@ import {
   changePasswordSchema,
   confirmEmailChangeSchema,
   deleteAccountSchema,
-  fieldErrors,
   PASSWORD_MIN_LENGTH,
   requestEmailChangeSchema,
   resetPasswordSchema,
@@ -11,6 +10,7 @@ import {
   signInSchema,
   signUpSchema,
 } from "./auth";
+import { fieldErrors } from "./form";
 
 describe("signUpSchema", () => {
   it("accepts a valid registration and trims name and email", () => {

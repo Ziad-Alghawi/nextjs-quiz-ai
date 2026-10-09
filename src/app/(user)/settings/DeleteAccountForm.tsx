@@ -1,51 +1,37 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { TextField } from "@/components/ui/text-field";
+import { useZodForm } from "@/hooks/use-zod-form";
 import { authClient, authErrorMessage } from "@/lib/auth-client";
-import {
-  DELETE_CONFIRMATION,
-  deleteAccountSchema,
-  fieldErrors,
-  type DeleteAccountInput,
-  type FieldErrors,
-} from "@/lib/validations/auth";
+import { DELETE_CONFIRMATION, deleteAccountSchema } from "@/lib/validations/auth";
 
 export function DeleteAccountForm({ hasPassword }: { hasPassword: boolean }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [errors, setErrors] = useState<FieldErrors<DeleteAccountInput>>({});
-  const [error, setError] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
-
-  const deleteAccount = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError(null);
-    const parsed = deleteAccountSchema(hasPassword).safeParse(
-      Object.fromEntries(new FormData(event.currentTarget)),
-    );
-    if (!parsed.success) return setErrors(fieldErrors(parsed.error));
-    setErrors({});
-
-    setPending(true);
+  const {
+    errors,
+    error,
+    pending,
+    onSubmit: deleteAccount,
+  } = useZodForm(deleteAccountSchema(hasPassword), async ({ password }) => {
     // Without a password, Better Auth accepts only a session from the last 24 hours.
-    const { error } = await authClient.deleteUser({ password: parsed.data.password });
-    setPending(false);
+    const { error } = await authClient.deleteUser({ password });
+    if (error?.code === "INVALID_PASSWORD") {
+      return { fieldErrors: { password: "This isn't your password." } };
+    }
+    if (error?.code === "SESSION_EXPIRED") {
+      return { error: "For your security, sign out and sign in again, then delete the account." };
+    }
     if (error) {
-      if (error.code === "INVALID_PASSWORD") {
-        return setErrors({ password: "This isn't your password." });
-      }
-      if (error.code === "SESSION_EXPIRED") {
-        return setError("For your security, sign out and sign in again, then delete the account.");
-      }
-      return setError(
-        authErrorMessage(error, "Your account was not deleted. Please try again later."),
-      );
+      return {
+        error: authErrorMessage(error, "Your account was not deleted. Please try again later."),
+      };
     }
     router.replace("/");
     router.refresh();
-  };
+  });
 
   if (!open) {
     return (

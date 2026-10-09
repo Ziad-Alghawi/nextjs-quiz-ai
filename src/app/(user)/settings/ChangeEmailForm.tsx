@@ -1,22 +1,16 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { TextField } from "@/components/ui/text-field";
+import { useZodForm } from "@/hooks/use-zod-form";
 import { authClient, authErrorMessage } from "@/lib/auth-client";
 import {
   confirmEmailChangeSchema,
-  fieldErrors,
   OTP_EXPIRES_IN_MINUTES,
   OTP_LENGTH,
   requestEmailChangeSchema,
-  type ConfirmEmailChangeInput,
-  type FieldErrors,
-  type RequestEmailChangeInput,
 } from "@/lib/validations/auth";
-
-const formData = (event: FormEvent<HTMLFormElement>) =>
-  Object.fromEntries(new FormData(event.currentTarget));
 
 /** Changes the email in two steps: request a code for the new address, then enter it. */
 export function ChangeEmailForm({ currentEmail }: { currentEmail: string }) {
@@ -24,61 +18,41 @@ export function ChangeEmailForm({ currentEmail }: { currentEmail: string }) {
   const [open, setOpen] = useState(false);
   // Set once a code was requested; the second step confirms this address.
   const [newEmail, setNewEmail] = useState<string | null>(null);
-  const [errors, setErrors] = useState<
-    FieldErrors<RequestEmailChangeInput & ConfirmEmailChangeInput>
-  >({});
-  const [error, setError] = useState<string | null>(null);
   const [changedTo, setChangedTo] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
 
-  const close = () => {
-    setOpen(false);
-    setNewEmail(null);
-    setErrors({});
-    setError(null);
-  };
-
-  const requestCode = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError(null);
-    const parsed = requestEmailChangeSchema.safeParse(formData(event));
-    if (!parsed.success) return setErrors(fieldErrors(parsed.error));
-    if (parsed.data.newEmail.toLowerCase() === currentEmail.toLowerCase()) {
-      return setErrors({ newEmail: "This is already your email address." });
+  const codeRequest = useZodForm(requestEmailChangeSchema, async (data) => {
+    if (data.newEmail.toLowerCase() === currentEmail.toLowerCase()) {
+      return { fieldErrors: { newEmail: "This is already your email address." } };
     }
-    setErrors({});
-
-    setPending(true);
-    const { error } = await authClient.emailOtp.requestEmailChange(parsed.data);
-    setPending(false);
+    const { error } = await authClient.emailOtp.requestEmailChange(data);
     if (error)
-      return setError(authErrorMessage(error, "Sending the code failed. Please try again."));
-    setNewEmail(parsed.data.newEmail);
-  };
+      return { error: authErrorMessage(error, "Sending the code failed. Please try again.") };
+    setNewEmail(data.newEmail);
+  });
 
-  const confirm = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const confirmation = useZodForm(confirmEmailChangeSchema, async ({ otp }) => {
     if (!newEmail) return;
-    setError(null);
-    const parsed = confirmEmailChangeSchema.safeParse(formData(event));
-    if (!parsed.success) return setErrors(fieldErrors(parsed.error));
-    setErrors({});
-
-    setPending(true);
-    const { error } = await authClient.emailOtp.changeEmail({ newEmail, otp: parsed.data.otp });
-    setPending(false);
+    const { error } = await authClient.emailOtp.changeEmail({ newEmail, otp });
     if (error) {
-      return setError(
-        authErrorMessage(
+      return {
+        error: authErrorMessage(
           error,
           "This code is wrong or has expired. Check it or request a new one.",
         ),
-      );
+      };
     }
     close();
     setChangedTo(newEmail);
     router.refresh();
-  };
+  });
+  const error = codeRequest.error ?? confirmation.error;
+
+  function close() {
+    setOpen(false);
+    setNewEmail(null);
+    codeRequest.reset();
+    confirmation.reset();
+  }
 
   if (!open) {
     return (
@@ -98,7 +72,7 @@ export function ChangeEmailForm({ currentEmail }: { currentEmail: string }) {
   return (
     <div className="flex flex-col gap-3">
       {newEmail === null ? (
-        <form onSubmit={requestCode} noValidate className="flex flex-col gap-3">
+        <form onSubmit={codeRequest.onSubmit} noValidate className="flex flex-col gap-3">
           <p className="text-sm">
             We&apos;ll send a {OTP_LENGTH}-digit code to the new address. After the change you sign
             in with it.
@@ -108,11 +82,11 @@ export function ChangeEmailForm({ currentEmail }: { currentEmail: string }) {
             name="newEmail"
             type="email"
             autoComplete="email"
-            error={errors.newEmail}
+            error={codeRequest.errors.newEmail}
           />
           <div className="flex gap-3">
-            <Button type="submit" disabled={pending}>
-              {pending ? "Sending…" : "Send code"}
+            <Button type="submit" disabled={codeRequest.pending}>
+              {codeRequest.pending ? "Sending…" : "Send code"}
             </Button>
             <Button type="button" variant="ghost" onClick={close}>
               Cancel
@@ -120,7 +94,7 @@ export function ChangeEmailForm({ currentEmail }: { currentEmail: string }) {
           </div>
         </form>
       ) : (
-        <form onSubmit={confirm} noValidate className="flex flex-col gap-3">
+        <form onSubmit={confirmation.onSubmit} noValidate className="flex flex-col gap-3">
           {/* Addresses that already belong to an account get no code, without saying so here. */}
           <p role="status" className="text-sm">
             If {newEmail} isn&apos;t used by another account, we sent it a code. It expires in{" "}
@@ -135,11 +109,11 @@ export function ChangeEmailForm({ currentEmail }: { currentEmail: string }) {
             inputMode="numeric"
             autoComplete="one-time-code"
             maxLength={OTP_LENGTH}
-            error={errors.otp}
+            error={confirmation.errors.otp}
           />
           <div className="flex gap-3">
-            <Button type="submit" disabled={pending}>
-              {pending ? "Confirming…" : "Confirm new email"}
+            <Button type="submit" disabled={confirmation.pending}>
+              {confirmation.pending ? "Confirming…" : "Confirm new email"}
             </Button>
             <Button type="button" variant="ghost" onClick={close}>
               Cancel
