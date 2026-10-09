@@ -28,7 +28,9 @@ const Header = async () => {
     <header>
       <nav className="py-2.5 px-4">
         <div className="flex flex-wrap items-center justify-between mx-auto max-w-(--breakpoint-xl)">
-          <h1 className="text-3xl font-bold">Quiz AI</h1>
+          <Link href="/" className="text-3xl font-bold">
+            Quiz AI
+          </Link>
 
           <div>
             {user ? (
