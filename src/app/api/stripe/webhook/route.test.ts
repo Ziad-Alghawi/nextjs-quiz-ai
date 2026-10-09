@@ -8,18 +8,7 @@ const WEBHOOK_SECRET = "whsec_test_secret";
 let POST: (req: Request) => Promise<Response>;
 
 beforeAll(async () => {
-  const env = {
-    DATABASE_URL: "postgres://u:p@localhost:5432/db",
-    AUTH_SECRET: "secret",
-    GOOGLE_CLIENT_ID: "id",
-    GOOGLE_CLIENT_SECRET: "secret",
-    GEMINI_API_KEY: "key",
-    STRIPE_SECRET_KEY: "sk_test_123",
-    STRIPE_WEBHOOK_SECRET: WEBHOOK_SECRET,
-    STRIPE_PRICE_ID: "price_123",
-    APP_URL: "http://localhost:3000",
-  };
-  for (const [name, value] of Object.entries(env)) vi.stubEnv(name, value);
+  vi.stubEnv("STRIPE_WEBHOOK_SECRET", WEBHOOK_SECRET);
   ({ POST } = await import("./route"));
 });
 

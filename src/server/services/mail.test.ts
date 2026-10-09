@@ -4,22 +4,10 @@ const sendMail = vi.fn();
 const createTransport = vi.fn(() => ({ sendMail }));
 vi.mock("nodemailer", () => ({ default: { createTransport } }));
 
-const baseEnv = {
-  DATABASE_URL: "postgres://u:p@localhost:5432/db",
-  AUTH_SECRET: "secret",
-  GOOGLE_CLIENT_ID: "id",
-  GOOGLE_CLIENT_SECRET: "secret",
-  GEMINI_API_KEY: "key",
-  STRIPE_SECRET_KEY: "sk_test_123",
-  STRIPE_WEBHOOK_SECRET: "whsec_123",
-  STRIPE_PRICE_ID: "price_123",
-  APP_URL: "http://localhost:3000",
-};
-
 // The transport is chosen when the module loads, so each test imports a fresh copy.
 const importMail = async (vars: Record<string, string | undefined>) => {
   vi.resetModules();
-  for (const [name, value] of Object.entries({ ...baseEnv, ...vars })) vi.stubEnv(name, value);
+  for (const [name, value] of Object.entries(vars)) vi.stubEnv(name, value);
   return import("./mail");
 };
 

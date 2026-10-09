@@ -1,18 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const validEnv = {
-  DATABASE_URL: "postgres://quiz_ai:quiz_ai@localhost:5432/quiz_ai",
-  AUTH_SECRET: "secret",
-  GOOGLE_CLIENT_ID: "client-id",
-  GOOGLE_CLIENT_SECRET: "client-secret",
-  GEMINI_API_KEY: "gemini-key",
-  STRIPE_SECRET_KEY: "sk_test_123",
-  STRIPE_WEBHOOK_SECRET: "whsec_123",
-  STRIPE_PRICE_ID: "price_123",
-  APP_URL: "http://localhost:3000/",
-};
-
-// env.ts validates when it is imported, so each test imports a fresh copy.
+// env.ts validates when it is imported, so each test imports a fresh copy. The valid baseline comes
+// from test.env in vitest.config.mts; each test changes only the variables it is about.
 const importEnv = async (vars: Record<string, string | undefined>) => {
   vi.resetModules();
   for (const [name, value] of Object.entries(vars)) vi.stubEnv(name, value);
@@ -25,14 +14,13 @@ afterEach(() => {
 
 describe("env", () => {
   it("returns the validated variables", async () => {
-    const env = await importEnv(validEnv);
-    expect(env.DATABASE_URL).toBe(validEnv.DATABASE_URL);
+    const env = await importEnv({ APP_URL: "http://localhost:3000/" });
+    expect(env.DATABASE_URL).toBe(process.env.DATABASE_URL);
     expect(env.APP_URL).toBe("http://localhost:3000");
   });
 
   it("names every missing or invalid variable without printing values", async () => {
     const error = await importEnv({
-      ...validEnv,
       DATABASE_URL: "not a url",
       GEMINI_API_KEY: undefined,
       SKIP_ENV_VALIDATION: undefined,
@@ -46,18 +34,17 @@ describe("env", () => {
 
   it("does not throw when validation is skipped for builds", async () => {
     await expect(
-      importEnv({ ...validEnv, GEMINI_API_KEY: undefined, SKIP_ENV_VALIDATION: "true" }),
+      importEnv({ GEMINI_API_KEY: undefined, SKIP_ENV_VALIDATION: "true" }),
     ).resolves.toBeDefined();
   });
 
   it("prints emails to the console unless SMTP is configured", async () => {
-    const env = await importEnv({ ...validEnv, EMAIL_TRANSPORT: undefined });
+    const env = await importEnv({ EMAIL_TRANSPORT: undefined });
     expect(env.EMAIL_TRANSPORT).toBe("console");
   });
 
   it("requires the SMTP settings when EMAIL_TRANSPORT is smtp", async () => {
     const error = await importEnv({
-      ...validEnv,
       EMAIL_TRANSPORT: "smtp",
       SMTP_HOST: "smtp.gmail.com",
       SKIP_ENV_VALIDATION: undefined,
