@@ -12,14 +12,25 @@ export async function setSubscribed(stripeCustomerId: string, subscribed: boolea
 }
 
 export async function isSubscribed(userId: string) {
-  const user = await db.query.users.findFirst({ where: eq(users.id, userId) });
+  const user = await db.query.users.findFirst({
+    columns: { subscribed: true },
+    where: eq(users.id, userId),
+  });
   return user?.subscribed ?? false;
+}
+
+async function getSavedCustomerId(userId: string) {
+  const user = await db.query.users.findFirst({
+    columns: { stripeCustomerId: true },
+    where: eq(users.id, userId),
+  });
+  return user?.stripeCustomerId ?? null;
 }
 
 /** The user's Stripe customer id; the customer is created and saved on first use. */
 async function getOrCreateStripeCustomer(userId: string) {
-  const user = await db.query.users.findFirst({ where: eq(users.id, userId) });
-  if (user?.stripeCustomerId) return user.stripeCustomerId;
+  const savedId = await getSavedCustomerId(userId);
+  if (savedId) return savedId;
 
   const customer = await stripe.customers.create({ metadata: { dbId: userId } });
   await db.update(users).set({ stripeCustomerId: customer.id }).where(eq(users.id, userId));
@@ -49,11 +60,11 @@ export async function createBillingPortalSession(userId: string) {
  * fails, so the account isn't deleted while a subscription keeps billing.
  */
 export async function cancelSubscriptions(userId: string) {
-  const user = await db.query.users.findFirst({ where: eq(users.id, userId) });
-  if (!user?.stripeCustomerId) return;
+  const customerId = await getSavedCustomerId(userId);
+  if (!customerId) return;
 
   const subscriptions = stripe.subscriptions.list({
-    customer: user.stripeCustomerId,
+    customer: customerId,
     status: "all",
   });
   try {
