@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use } from "react";
 import { Button } from "@/components/ui/button";
+import { FormError } from "@/components/ui/form-error";
 import { TextField } from "@/components/ui/text-field";
 import { useZodForm } from "@/hooks/use-zod-form";
 import { authClient, authErrorMessage } from "@/lib/auth-client";
@@ -53,11 +54,7 @@ export default function SignUpPage({
           {pending ? "Creating account…" : "Sign up"}
         </Button>
       </form>
-      {error ? (
-        <p role="alert" className="text-red-500">
-          {error}
-        </p>
-      ) : null}
+      <FormError>{error}</FormError>
       <p className="text-sm">
         Already have an account?{" "}
         <Link

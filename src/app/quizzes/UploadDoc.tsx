@@ -3,6 +3,7 @@ import { useState } from "react";
 import { z } from "zod";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { FormError } from "@/components/ui/form-error";
 import { useRouter } from "next/navigation";
 import { pdfUploadSchema } from "@/lib/validations/quiz";
 
@@ -79,11 +80,7 @@ const UploadDoc = () => {
             }}
           />
         </label>
-        {error ? (
-          <p role="alert" className="text-red-500 mt-2">
-            {error}
-          </p>
-        ) : null}
+        <FormError className="mt-2">{error}</FormError>
         <p role="status" aria-live="polite" className="text-sm text-muted-foreground mt-2">
           {isLoading ? "Generating your quiz. This can take up to a minute." : null}
         </p>

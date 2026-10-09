@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use } from "react";
 import { Button } from "@/components/ui/button";
+import { FormError } from "@/components/ui/form-error";
 import { TextField } from "@/components/ui/text-field";
 import { useZodForm } from "@/hooks/use-zod-form";
 import { authClient, authErrorMessage } from "@/lib/auth-client";
@@ -97,11 +98,7 @@ export default function SignInPage({
       <Button variant="outline" onClick={signInWithGoogle}>
         Continue with Google
       </Button>
-      {error ? (
-        <p role="alert" className="text-red-500">
-          {error}
-        </p>
-      ) : null}
+      <FormError>{error}</FormError>
       <p className="text-sm">
         No account yet?{" "}
         <Link
