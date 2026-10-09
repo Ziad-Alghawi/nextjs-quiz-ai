@@ -1,6 +1,7 @@
 import { getSignInMethods } from "@/server/services/account";
 import { googleErrorMessage } from "@/lib/oauth-errors";
 import { requireUser } from "@/server/session";
+import { Card, CardTitle } from "@/components/ui/card";
 import { AddPasswordForm } from "./AddPasswordForm";
 import { ChangeEmailForm } from "./ChangeEmailForm";
 import { ChangePasswordForm } from "./ChangePasswordForm";
@@ -17,16 +18,16 @@ const SettingsPage = async ({ searchParams }: { searchParams: Promise<{ error?: 
   return (
     <div className="flex flex-col gap-6 p-4">
       <h1 className="text-4xl">Settings</h1>
-      <section className="flex flex-col gap-3 rounded-md border p-4">
-        <h2 className="text-xl font-semibold">Profile</h2>
+      <Card>
+        <CardTitle>Profile</CardTitle>
         <p className="text-sm">
           Email: <span className="font-medium">{user.email}</span>
         </p>
         <ChangeEmailForm currentEmail={user.email} />
         <NameForm name={user.name} />
-      </section>
-      <section className="flex flex-col gap-3 rounded-md border p-4">
-        <h2 className="text-xl font-semibold">Sign-in methods</h2>
+      </Card>
+      <Card>
+        <CardTitle>Sign-in methods</CardTitle>
         <p className="text-sm">Google: {methods.google ? "connected" : "not connected"}</p>
         {methods.google ? null : <ConnectGoogleButton />}
         {/* A hint about what to do next rather than a failure, so it isn't shown in red. */}
@@ -40,11 +41,11 @@ const SettingsPage = async ({ searchParams }: { searchParams: Promise<{ error?: 
         ) : (
           <AddPasswordForm email={user.email} />
         )}
-      </section>
-      <section className="flex flex-col gap-3 rounded-md border border-red-300 p-4">
-        <h2 className="text-xl font-semibold">Delete account</h2>
+      </Card>
+      <Card className="border-destructive/40">
+        <CardTitle>Delete account</CardTitle>
         <DeleteAccountForm hasPassword={methods.password} />
-      </section>
+      </Card>
     </div>
   );
 };
