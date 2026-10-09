@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { GoogleIcon } from "@/components/icons/google-icon";
 import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/ui/form-error";
 import { authClient } from "@/lib/auth-client";
@@ -21,7 +22,8 @@ export function ConnectGoogleButton() {
 
   return (
     <div className="flex flex-col items-start gap-2">
-      <Button variant="outline" onClick={connect}>
+      <Button variant="outline" className="gap-2" onClick={connect}>
+        <GoogleIcon className="size-4" />
         Connect Google
       </Button>
       <FormError>{error}</FormError>

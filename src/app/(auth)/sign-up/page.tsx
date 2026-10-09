@@ -7,6 +7,7 @@ import { FormError } from "@/components/ui/form-error";
 import { TextField } from "@/components/ui/text-field";
 import { useZodForm } from "@/hooks/use-zod-form";
 import { AuthHeading } from "../auth-heading";
+import { GoogleSignIn } from "../google-sign-in";
 import { authClient, authErrorMessage } from "@/lib/auth-client";
 import { PASSWORD_MIN_LENGTH, safeReturnPath, signUpSchema } from "@/lib/validations/auth";
 
@@ -20,6 +21,7 @@ export default function SignUpPage({
   const {
     errors,
     error,
+    setError,
     pending,
     onSubmit: signUp,
   } = useZodForm(signUpSchema, async (account) => {
@@ -58,6 +60,7 @@ export default function SignUpPage({
           {pending ? "Creating account…" : "Sign up"}
         </Button>
       </form>
+      <GoogleSignIn callbackURL={callbackURL} onError={setError} />
       <FormError>{error}</FormError>
       <p className="text-center text-sm text-muted-foreground">
         Already have an account?{" "}

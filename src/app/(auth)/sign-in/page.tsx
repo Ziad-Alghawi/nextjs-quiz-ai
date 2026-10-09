@@ -7,6 +7,7 @@ import { FormError } from "@/components/ui/form-error";
 import { TextField } from "@/components/ui/text-field";
 import { useZodForm } from "@/hooks/use-zod-form";
 import { AuthHeading } from "../auth-heading";
+import { GoogleSignIn } from "../google-sign-in";
 import { authClient, authErrorMessage } from "@/lib/auth-client";
 import { googleErrorMessage } from "@/lib/oauth-errors";
 import { safeReturnPath, signInSchema } from "@/lib/validations/auth";
@@ -56,16 +57,6 @@ export default function SignInPage({
     params.error ? googleErrorMessage(params.error) : null,
   );
 
-  const signInWithGoogle = async () => {
-    setError(null);
-    const { error } = await authClient.signIn.social({
-      provider: "google",
-      callbackURL,
-      errorCallbackURL: `/sign-in?callbackUrl=${encodeURIComponent(callbackURL)}`,
-    });
-    if (error) setError(googleErrorMessage());
-  };
-
   return (
     <>
       <AuthHeading
@@ -104,9 +95,7 @@ export default function SignInPage({
           {pending ? "Signing in…" : "Sign in"}
         </Button>
       </form>
-      <Button variant="outline" onClick={signInWithGoogle}>
-        Continue with Google
-      </Button>
+      <GoogleSignIn callbackURL={callbackURL} onError={setError} />
       <FormError>{error}</FormError>
       <p className="text-center text-sm text-muted-foreground">
         No account yet?{" "}
