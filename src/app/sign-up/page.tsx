@@ -1,18 +1,12 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { use, useState, type FormEvent } from "react";
+import { use } from "react";
 import { Button } from "@/components/ui/button";
 import { TextField } from "@/components/ui/text-field";
+import { useZodForm } from "@/hooks/use-zod-form";
 import { authClient, authErrorMessage } from "@/lib/auth-client";
-import {
-  fieldErrors,
-  PASSWORD_MIN_LENGTH,
-  safeReturnPath,
-  signUpSchema,
-  type FieldErrors,
-  type SignUpInput,
-} from "@/lib/validations/auth";
+import { PASSWORD_MIN_LENGTH, safeReturnPath, signUpSchema } from "@/lib/validations/auth";
 
 export default function SignUpPage({
   searchParams,
@@ -21,26 +15,19 @@ export default function SignUpPage({
 }) {
   const callbackURL = safeReturnPath(use(searchParams).callbackUrl);
   const router = useRouter();
-  const [errors, setErrors] = useState<FieldErrors<SignUpInput>>({});
-  const [error, setError] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
-
-  const signUp = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError(null);
-    const parsed = signUpSchema.safeParse(Object.fromEntries(new FormData(event.currentTarget)));
-    if (!parsed.success) return setErrors(fieldErrors(parsed.error));
-    setErrors({});
-
-    setPending(true);
-    const { error } = await authClient.signUp.email(parsed.data);
-    setPending(false);
-    if (error) return setError(authErrorMessage(error, "Sign-up failed. Please try again."));
+  const {
+    errors,
+    error,
+    pending,
+    onSubmit: signUp,
+  } = useZodForm(signUpSchema, async (account) => {
+    const { error } = await authClient.signUp.email(account);
+    if (error) return { error: authErrorMessage(error, "Sign-up failed. Please try again.") };
 
     // An already registered email gets the same answer as a new one (see auth.ts), so this page
     // can't be used to find out who has an account. Everyone continues to the sign-in form.
     router.push(`/sign-in?notice=registered&callbackUrl=${encodeURIComponent(callbackURL)}`);
-  };
+  });
 
   return (
     <main className="mx-auto mt-24 flex max-w-sm flex-col gap-4 px-4 text-center">

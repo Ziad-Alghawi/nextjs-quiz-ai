@@ -24,14 +24,12 @@ export const signUpSchema = z.object({
   email: emailSchema,
   password: passwordSchema,
 });
-export type SignUpInput = z.infer<typeof signUpSchema>;
 
 // No length rules here: a too-short password is simply wrong and gets the generic error.
 export const signInSchema = z.object({
   email: emailSchema,
   password: z.string().min(1, "Enter your password."),
 });
-export type SignInInput = z.infer<typeof signInSchema>;
 
 export const requestPasswordResetSchema = z.object({ email: emailSchema });
 export type RequestPasswordResetInput = z.infer<typeof requestPasswordResetSchema>;

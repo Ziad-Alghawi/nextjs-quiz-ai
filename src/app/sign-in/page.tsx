@@ -1,18 +1,13 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { use, useState, type FormEvent } from "react";
+import { use } from "react";
 import { Button } from "@/components/ui/button";
 import { TextField } from "@/components/ui/text-field";
+import { useZodForm } from "@/hooks/use-zod-form";
 import { authClient, authErrorMessage } from "@/lib/auth-client";
 import { googleErrorMessage } from "@/lib/oauth-errors";
-import {
-  fieldErrors,
-  safeReturnPath,
-  signInSchema,
-  type FieldErrors,
-  type SignInInput,
-} from "@/lib/validations/auth";
+import { safeReturnPath, signInSchema } from "@/lib/validations/auth";
 
 // Shown after another page sent the user here; unknown values show nothing.
 const notices = new Map([
@@ -32,35 +27,32 @@ export default function SignInPage({
   const callbackURL = safeReturnPath(params.callbackUrl);
   const notice = params.notice ? notices.get(params.notice) : undefined;
   const router = useRouter();
-  const [errors, setErrors] = useState<FieldErrors<SignInInput>>({});
-  // Set when Google sent the user back here with an error.
-  const [error, setError] = useState(params.error ? googleErrorMessage(params.error) : null);
-  const [pending, setPending] = useState(false);
-
-  const signInWithEmail = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError(null);
-    const parsed = signInSchema.safeParse(Object.fromEntries(new FormData(event.currentTarget)));
-    if (!parsed.success) return setErrors(fieldErrors(parsed.error));
-    setErrors({});
-
-    setPending(true);
-    const { error } = await authClient.signIn.email(parsed.data);
-    setPending(false);
-    // Sign-up answers "thanks" even for a registered email (so it doesn't reveal accounts); people who
-    // first used Google then land here without a password, so point them to their two options.
-    if (error) {
-      return setError(
-        authErrorMessage(
-          error,
-          "Invalid email or password. If you signed up with Google, use Continue with Google, or Forgot password to set a password.",
-        ),
-      );
-    }
-
-    router.replace(callbackURL);
-    router.refresh();
-  };
+  const {
+    errors,
+    error,
+    setError,
+    pending,
+    onSubmit: signInWithEmail,
+  } = useZodForm(
+    signInSchema,
+    async (credentials) => {
+      const { error } = await authClient.signIn.email(credentials);
+      // Sign-up answers "thanks" even for a registered email (so it doesn't reveal accounts); people
+      // who first used Google then land here without a password, so point them to their two options.
+      if (error) {
+        return {
+          error: authErrorMessage(
+            error,
+            "Invalid email or password. If you signed up with Google, use Continue with Google, or Forgot password to set a password.",
+          ),
+        };
+      }
+      router.replace(callbackURL);
+      router.refresh();
+    },
+    // Set when Google sent the user back here with an error.
+    params.error ? googleErrorMessage(params.error) : null,
+  );
 
   const signInWithGoogle = async () => {
     setError(null);
