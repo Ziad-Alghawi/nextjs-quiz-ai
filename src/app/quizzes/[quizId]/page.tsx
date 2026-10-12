@@ -26,8 +26,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: quiz.name };
 }
 
-const page = async ({ params }: Props) => {
+const page = async ({
+  params,
+  searchParams,
+}: Props & { searchParams: Promise<{ notice?: string }> }) => {
   const quiz = await loadQuiz((await params).quizId);
-  return <QuizQuestions quiz={quiz} />;
+  // Set by the upload form when the document was longer than the text limit.
+  const { notice } = await searchParams;
+
+  return (
+    <>
+      {notice === "truncated" && (
+        <p role="status" className="mt-4 text-center text-sm text-muted-foreground">
+          Only the first part of this long PDF was used.
+        </p>
+      )}
+      <QuizQuestions quiz={quiz} />
+    </>
+  );
 };
 export default page;

@@ -6,7 +6,7 @@ import { getCurrentUser } from "@/server/session";
 import { pingDatabase } from "@/db/health";
 import { env } from "@/lib/env";
 import { getQuotaErrorMessage } from "@/lib/gemini-errors";
-import { extractPdfText } from "@/lib/pdf";
+import { extractPdfText, limitDocumentText } from "@/lib/pdf";
 import { generatedQuizSchema, pdfUploadSchema, type GeneratedQuiz } from "@/lib/validations/quiz";
 import { createQuiz } from "@/server/services/quizzes";
 import { finishGeneration, GenerationLimitError, reserveGeneration } from "@/server/services/usage";
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
       return errorResponse("Please sign in to generate a quiz.", 401);
     }
 
-    const text = await extractPdfText(document);
+    const { text, truncated } = limitDocumentText(await extractPdfText(document));
 
     if (!text) {
       return errorResponse(
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
 
       const quizId = await createQuiz(quiz, user.id);
       succeeded = true;
-      return NextResponse.json({ quizId }, { status: 200 });
+      return NextResponse.json({ quizId, truncated }, { status: 200 });
     } finally {
       // Failed attempts don't use up the monthly quota.
       await finishGeneration(generationId, succeeded ? "succeeded" : "failed");

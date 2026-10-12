@@ -7,7 +7,7 @@ import { FormError } from "@/components/ui/form-error";
 import { useRouter } from "next/navigation";
 import { pdfUploadSchema } from "@/lib/validations/quiz";
 
-const successResponseSchema = z.object({ quizId: z.number() });
+const successResponseSchema = z.object({ quizId: z.number(), truncated: z.boolean() });
 const errorResponseSchema = z.object({ error: z.string() });
 
 // Responses that never reached our route (e.g. Vercel's 413 or 504 pages) are not JSON.
@@ -48,7 +48,8 @@ const UploadDoc = () => {
         // handler can't invalidate that cache, so drop it here before leaving.
         router.refresh();
         // Stay in the loading state until the quiz page replaces this one.
-        router.push(`/quizzes/${success.data.quizId}`);
+        const { quizId, truncated } = success.data;
+        router.push(`/quizzes/${quizId}${truncated ? "?notice=truncated" : ""}`);
         return;
       }
       setError(getErrorMessage(res.status, body));
