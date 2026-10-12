@@ -2,6 +2,7 @@ import { getSignInMethods } from "@/server/services/account";
 import { googleErrorMessage } from "@/lib/oauth-errors";
 import { requireUser } from "@/server/session";
 import { Card, CardTitle } from "@/components/ui/card";
+import { PageHeading } from "@/components/ui/page-heading";
 import { AddPasswordForm } from "./AddPasswordForm";
 import { ChangeEmailForm } from "./ChangeEmailForm";
 import { ChangePasswordForm } from "./ChangePasswordForm";
@@ -17,7 +18,7 @@ const SettingsPage = async ({ searchParams }: { searchParams: Promise<{ error?: 
 
   return (
     <div className="flex flex-col gap-6 p-4">
-      <h1 className="text-4xl">Settings</h1>
+      <PageHeading>Settings</PageHeading>
       <Card>
         <CardTitle>Profile</CardTitle>
         <p className="text-sm">

@@ -1,20 +1,35 @@
+import { Card, CardTitle } from "@/components/ui/card";
+import { PageHeading } from "@/components/ui/page-heading";
+import { SubmitButton } from "@/components/ui/submit-button";
+import { openBillingPortal, startCheckout } from "@/app/actions/billing";
+import { PLANS } from "@/lib/plans";
+import { getMonthlyUsage } from "@/server/services/usage";
 import { requireUser } from "@/server/session";
-import { isSubscribed } from "@/server/services/billing";
-import ManageSubscription from "./ManageSubscription";
 
-const Page = async () => {
+export default async function BillingPage() {
   const user = await requireUser("/billing");
-
-  const subscribed = await isSubscribed(user.id);
-  const plan = subscribed ? "premium" : "free";
+  const { plan, used, limit } = await getMonthlyUsage(user.id);
 
   return (
-    <div className="p-4 border rounded-md">
-      <h1 className="text-4xl mb-3">Subscription Details</h1>
-      <p className="mb-2">You are currently on the {plan} plan.</p>
-      <ManageSubscription />
+    <div className="flex flex-col gap-6 p-4">
+      <PageHeading>Billing</PageHeading>
+      <Card>
+        <CardTitle>{PLANS[plan].label} plan</CardTitle>
+        <p className="text-sm text-muted-foreground">
+          {used} of {limit} quizzes used this month.
+        </p>
+        {plan === "free" ? (
+          <form action={startCheckout}>
+            <SubmitButton pendingText="Opening checkout…">
+              Upgrade to Pro for {PLANS.pro.monthlyQuizzes} quizzes a month
+            </SubmitButton>
+          </form>
+        ) : (
+          <form action={openBillingPortal}>
+            <SubmitButton pendingText="Please wait…">Manage subscription</SubmitButton>
+          </form>
+        )}
+      </Card>
     </div>
   );
-};
-
-export default Page;
+}

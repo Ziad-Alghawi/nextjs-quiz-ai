@@ -2,6 +2,7 @@ import { Plus } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
+import { PageHeading } from "@/components/ui/page-heading";
 import { listQuizzes } from "@/server/services/quizzes";
 import { getSubmissionActivity, getUserMetrics } from "@/server/services/stats";
 import { requireUser } from "@/server/session";
@@ -20,15 +21,18 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-6 p-4">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-3xl font-semibold tracking-tight">Dashboard</h1>
-        <Button className="gap-2" asChild>
-          <Link href="/quizzes/new">
-            <Plus className="size-4" aria-hidden />
-            New quiz
-          </Link>
-        </Button>
-      </div>
+      <PageHeading
+        action={
+          <Button className="gap-2" asChild>
+            <Link href="/quizzes/new">
+              <Plus className="size-4" aria-hidden />
+              New quiz
+            </Link>
+          </Button>
+        }
+      >
+        Dashboard
+      </PageHeading>
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {metrics.map((metric) => (
           <MetricCard key={metric.label} {...metric} />
