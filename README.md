@@ -11,13 +11,9 @@ progress over time.
 
 ## Screenshots
 
-| Landing page                                  | Dashboard                                    |
-| --------------------------------------------- | -------------------------------------------- |
-| ![Landing page](docs/screenshots/landing.png) | ![Dashboard](docs/screenshots/dashboard.png) |
-
-| Create a quiz                                   | Taking a quiz                               | Result                                 |
-| ----------------------------------------------- | ------------------------------------------- | -------------------------------------- |
-| ![Create a quiz](docs/screenshots/new-quiz.png) | ![Taking a quiz](docs/screenshots/quiz.png) | ![Result](docs/screenshots/result.png) |
+| Landing page                                  | Dashboard                                    | Create a quiz                                   |
+| --------------------------------------------- | -------------------------------------------- | ----------------------------------------------- |
+| ![Landing page](docs/screenshots/landing.png) | ![Dashboard](docs/screenshots/dashboard.png) | ![Create a quiz](docs/screenshots/new-quiz.png) |
 
 ## Features
 
