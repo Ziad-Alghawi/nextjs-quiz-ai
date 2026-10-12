@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getSignInMethods } from "@/server/services/account";
 import { googleErrorMessage } from "@/lib/oauth-errors";
 import { requireUser } from "@/server/session";
@@ -9,6 +10,8 @@ import { ChangePasswordForm } from "./ChangePasswordForm";
 import { ConnectGoogleButton } from "./ConnectGoogleButton";
 import { DeleteAccountForm } from "./DeleteAccountForm";
 import { NameForm } from "./NameForm";
+
+export const metadata: Metadata = { title: "Settings" };
 
 const SettingsPage = async ({ searchParams }: { searchParams: Promise<{ error?: string }> }) => {
   const user = await requireUser("/settings");

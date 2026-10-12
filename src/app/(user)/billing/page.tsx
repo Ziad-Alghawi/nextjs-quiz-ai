@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Card, CardTitle } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -5,6 +6,8 @@ import { openBillingPortal, startCheckout } from "@/app/actions/billing";
 import { PLANS } from "@/lib/plans";
 import { getMonthlyUsage } from "@/server/services/usage";
 import { requireUser } from "@/server/session";
+
+export const metadata: Metadata = { title: "Billing" };
 
 export default async function BillingPage() {
   const user = await requireUser("/billing");

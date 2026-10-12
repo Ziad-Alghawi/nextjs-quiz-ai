@@ -1,5 +1,8 @@
+import type { Metadata } from "next";
 import type { QuizWithQuestions } from "@/server/services/quizzes";
 import QuizQuestions from "../QuizQuestions";
+
+export const metadata: Metadata = { title: "Sample quiz" };
 
 // A fixed quiz for trying the app without uploading a document. It is never saved.
 const sampleQuiz: QuizWithQuestions = {

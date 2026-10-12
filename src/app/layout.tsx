@@ -7,7 +7,7 @@ import Header from "@/components/ui/header";
 const geistSans = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
 
 export const metadata: Metadata = {
-  title: "Quiz AI",
+  title: { default: "Quiz AI", template: "%s · Quiz AI" },
   description: "Generate quizzes from your documents and study faster with AI.",
 };
 

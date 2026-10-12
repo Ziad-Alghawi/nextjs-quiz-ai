@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -6,6 +7,8 @@ import { PLANS } from "@/lib/plans";
 import { isSubscribed } from "@/server/services/billing";
 import { requireUser } from "@/server/session";
 import { ActivationPending } from "./activation-pending";
+
+export const metadata: Metadata = { title: "Payment successful" };
 
 export default async function PaymentSuccessPage() {
   const user = await requireUser("/billing/payment/success");

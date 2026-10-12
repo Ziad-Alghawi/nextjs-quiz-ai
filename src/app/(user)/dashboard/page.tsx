@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Plus } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,8 @@ import { requireUser } from "@/server/session";
 import { ActivityHeatmap } from "./activity-heatmap";
 import { MetricCard } from "./metric-card";
 import { QuizzesTable } from "./quizzes-table";
+
+export const metadata: Metadata = { title: "Dashboard" };
 
 export default async function DashboardPage() {
   const { id: userId } = await requireUser("/dashboard");

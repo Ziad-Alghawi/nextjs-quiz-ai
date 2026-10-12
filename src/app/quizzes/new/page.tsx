@@ -1,8 +1,11 @@
+import type { Metadata } from "next";
 import UploadDoc from "../UploadDoc";
 import UpgradePlan from "../UpgradePlan";
 import { PLANS } from "@/lib/plans";
 import { getMonthlyUsage } from "@/server/services/usage";
 import { requireUser } from "@/server/session";
+
+export const metadata: Metadata = { title: "New quiz" };
 
 // Quotas count calendar months in UTC (the database clock), so the reset is the 1st at 00:00 UTC.
 const nextMonthStart = () => {
