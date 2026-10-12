@@ -33,6 +33,11 @@ export default async function BillingPage() {
           </form>
         )}
       </Card>
+      {/* Stripe stays in test mode on the live site: this is a portfolio project. */}
+      <p className="text-sm text-muted-foreground">
+        Payments are in test mode, use card{" "}
+        <span className="whitespace-nowrap">4242 4242 4242 4242</span>.
+      </p>
     </div>
   );
 }
