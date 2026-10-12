@@ -4,16 +4,20 @@ import { googleErrorMessage } from "@/lib/oauth-errors";
 import { requireUser } from "@/server/session";
 import { Card, CardTitle } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
-import { AddPasswordForm } from "./AddPasswordForm";
-import { ChangeEmailForm } from "./ChangeEmailForm";
-import { ChangePasswordForm } from "./ChangePasswordForm";
-import { ConnectGoogleButton } from "./ConnectGoogleButton";
-import { DeleteAccountForm } from "./DeleteAccountForm";
-import { NameForm } from "./NameForm";
+import { AddPasswordForm } from "./add-password-form";
+import { ChangeEmailForm } from "./change-email-form";
+import { ChangePasswordForm } from "./change-password-form";
+import { ConnectGoogleButton } from "./connect-google-button";
+import { DeleteAccountForm } from "./delete-account-form";
+import { NameForm } from "./name-form";
 
 export const metadata: Metadata = { title: "Settings" };
 
-const SettingsPage = async ({ searchParams }: { searchParams: Promise<{ error?: string }> }) => {
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
   const user = await requireUser("/settings");
   const methods = await getSignInMethods(user.id);
   // Set when connecting Google failed and Better Auth sent the user back here.
@@ -52,6 +56,4 @@ const SettingsPage = async ({ searchParams }: { searchParams: Promise<{ error?: 
       </Card>
     </div>
   );
-};
-
-export default SettingsPage;
+}
