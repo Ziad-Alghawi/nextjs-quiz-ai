@@ -1,6 +1,8 @@
 import "server-only";
+import { getSessionCookie } from "better-auth/cookies";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { pingDatabase } from "@/db/health";
 import { auth } from "@/lib/auth";
 
 export type CurrentUser = {
@@ -12,8 +14,16 @@ export type CurrentUser = {
 
 /** The signed-in user, or null. The only place the app reads the auth session. */
 export async function getCurrentUser(): Promise<CurrentUser | null> {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) return null;
+  const requestHeaders = await headers();
+  const session = await auth.api.getSession({ headers: requestHeaders });
+  if (!session) {
+    // The customSession plugin turns every lookup error into "no session". With a session cookie,
+    // check the database, so an outage shows the error page instead of looking signed out.
+    if (getSessionCookie(requestHeaders) && !(await pingDatabase())) {
+      throw new Error("Service temporarily unavailable: the database can't be reached.");
+    }
+    return null;
+  }
 
   const { id, name, email, image } = session.user;
   return { id, name, email, image: image ?? null };
