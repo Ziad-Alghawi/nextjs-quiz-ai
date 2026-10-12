@@ -48,7 +48,7 @@ export async function createCheckoutSession(userId: string) {
     mode: "subscription",
     customer: await getOrCreateStripeCustomer(userId),
     line_items: [{ price: env.STRIPE_PRICE_ID, quantity: 1 }],
-    payment_method_types: ["card"],
+    allowed_payment_method_types: ["card"],
     success_url: `${env.APP_URL}/billing/payment/success`,
   });
 }
