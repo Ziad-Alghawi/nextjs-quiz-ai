@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser, signOut } from "@/server/session";
-import { Button } from "./button";
+import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
 import { DropdownMenu, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { NavMenu } from "../NavMenu";
+import { NavMenu } from "./nav-menu";
 
 function SignOut() {
   return (
@@ -22,7 +22,7 @@ function SignOut() {
   );
 }
 
-const Header = async () => {
+export async function Header() {
   const user = await getCurrentUser();
   return (
     <header>
@@ -68,5 +68,4 @@ const Header = async () => {
       </nav>
     </header>
   );
-};
-export default Header;
+}

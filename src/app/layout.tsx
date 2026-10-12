@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
-import Header from "@/components/ui/header";
+import { Header } from "@/components/header";
 
 // Self-hosted by Next at build time: no request to Google from the visitor's browser.
 const geistSans = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
