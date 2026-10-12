@@ -33,7 +33,7 @@
     "lucide-react": "^1.52.0",
     "next": "^16.4.0",
     "nodemailer": "^10.0.15",
-    "postgres": "^3.4.3",
+    "postgres": "^3.4.9",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "react-rewards": "^2.1.0",
