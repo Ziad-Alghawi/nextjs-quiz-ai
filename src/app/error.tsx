@@ -16,9 +16,9 @@ export default function ErrorPage({ reset }: { reset: () => void }) {
 
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-4 p-10 text-center">
-      <h2 className="text-2xl font-bold">Something went wrong</h2>
+      <h1 className="text-2xl font-bold">Service temporarily unavailable</h1>
       <p className="text-muted-foreground">
-        This page couldn&apos;t be loaded. The service may be temporarily unavailable, so please try again in a moment.
+        This page couldn&apos;t be loaded. Please try again in a moment.
       </p>
       <Button onClick={retry}>Try again</Button>
     </main>

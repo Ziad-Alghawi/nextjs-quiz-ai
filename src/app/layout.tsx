@@ -1,29 +1,23 @@
-import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
-import './globals.css'
-import { SessionProvider } from "next-auth/react"
-import Header from '@/components/ui/header';
+import type { Metadata } from "next";
+import { Geist } from "next/font/google";
+import "./globals.css";
+import { Header } from "@/components/header";
 
-const inter = Inter({ subsets: ['latin'] })
+// Self-hosted by Next at build time: no request to Google from the visitor's browser.
+const geistSans = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
 
 export const metadata: Metadata = {
-  title: 'Quizz Ai',
-  description: 'Generated Quizzes And Study Faster Using AI',
-}
+  title: { default: "Quiz AI", template: "%s · Quiz AI" },
+  description: "Generate quizzes from your documents and study faster with AI.",
+};
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <SessionProvider>
-        <body className={"dark"}>
-          <Header />
-          {children}
-        </body>
-      </SessionProvider>
+    <html lang="en" className={geistSans.variable}>
+      <body>
+        <Header />
+        {children}
+      </body>
     </html>
-  )
+  );
 }

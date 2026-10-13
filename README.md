@@ -1,169 +1,147 @@
 # Quiz AI
 
-Quiz AI is a full-stack quiz generation platform built around a simple idea: upload a document, let AI turn it into a structured quiz, then track how well you perform over time.
+[![CI](https://github.com/Ziad-Alghawi/nextjs-quiz-ai/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Ziad-Alghawi/nextjs-quiz-ai/actions/workflows/ci.yml)
 
-The project started as an AI workflow experiment and gradually became a complete product with authentication, document parsing, quiz generation, submissions, analytics, and subscription billing. Instead of manually writing questions, the app takes uploaded PDF content, extracts the important text, sends it through an LLM pipeline, stores the generated quiz in PostgreSQL, and presents the result through a clean quiz-taking flow.
+Upload a PDF and Quiz AI turns it into a multiple-choice quiz, scores your answers and tracks your
+progress over time.
 
-## What the app does
+**Live:** https://quiz-ai-gamma.vercel.app (payments run in Stripe test mode: card `4242 4242 4242 4242`)
 
-- Lets users sign in with Google.
-- Accepts PDF uploads and turns them into quizzes with AI.
-- Stores quizzes, questions, answers, and submissions in PostgreSQL.
-- Shows quiz results immediately after submission.
-- Tracks activity and learning progress in a dashboard.
-- Uses Stripe subscriptions to control access to quiz generation.
+`main` is the live site; new work is developed on branches and released at planned checkpoints.
 
-## Project journey
+## Screenshots
 
-This project grew in layers:
+| Landing page                                  | Dashboard                                    | Create a quiz                                   |
+| --------------------------------------------- | -------------------------------------------- | ----------------------------------------------- |
+| ![Landing page](docs/screenshots/landing.png) | ![Dashboard](docs/screenshots/dashboard.png) | ![Create a quiz](docs/screenshots/new-quiz.png) |
 
-1. Start with the core quiz experience: upload a file, generate questions, and answer them.
-2. Add persistence with Drizzle and PostgreSQL so generated quizzes and submissions are saved.
-3. Introduce authentication with NextAuth to give each user a private workspace.
-4. Add analytics so users can see quiz volume, question volume, submission count, average score, and activity over time.
-5. Add Stripe billing to turn the quiz generator into a gated feature that can be deployed as a real product.
-6. Deploy and run the project in production using Vercel.
+## Features
 
-The result is not just an AI demo. It is a full-stack SaaS-style project that combines product thinking, backend persistence, and external service integration.
+- **Accounts:** sign up with email and password or continue with Google. Forgotten passwords are
+  reset with a 6-digit code sent by email.
+- **Settings:** change name, email (confirmed by a code sent to the new address) and password,
+  connect Google, delete the account (this also cancels the subscription).
+- **Quiz generation:** upload a PDF (up to 4 MB); the server extracts the text and Gemini returns a
+  structured quiz that is validated before it is saved. Very long documents use their first part.
+- **Taking a quiz:** one question at a time with progress, answer feedback and a score at the end.
+  The server scores the answers and saves the result.
+- **Dashboard:** number of quizzes, questions and attempts, average score, and an activity heatmap
+  (keyboard accessible, built without a chart library).
+- **Plans:** Free (10 quizzes a month) and Pro (50 a month), plus a limit of 3 generations per
+  10 minutes. Pro is sold through Stripe Checkout and managed in the Stripe billing portal.
+- **Sample quiz** to try the app without an account, light and dark mode (follows the system), and
+  responsive layouts down to phone width.
 
 ## Tech stack
 
-- Next.js 14 with App Router
-- TypeScript
-- NextAuth for authentication
-- Shadcn UI and Tailwind CSS for the interface
-- LangChain for the LLM workflow
-- Google Gemini for quiz generation
-- Drizzle ORM
-- PostgreSQL
-- Supabase for database hosting
-- Stripe for subscriptions and billing portal flows
-- TanStack Table for dashboard tables
-- Zod for schema-oriented form and data validation support
-- Vercel for deployment
+| Area           | Choice                                                                            |
+| -------------- | --------------------------------------------------------------------------------- |
+| Framework      | Next.js 16 (App Router, Server Components, Server Actions), React 19              |
+| Language       | TypeScript (strict), Zod for validation                                           |
+| Database       | PostgreSQL 17 with Drizzle ORM and committed migrations                           |
+| Auth           | Better Auth: email/password, Google OAuth, database sessions                      |
+| AI             | Google Gemini 2.5 Flash through LangChain (structured output), unpdf for PDF text |
+| Payments       | Stripe Checkout, billing portal and webhooks                                      |
+| Email          | Nodemailer over SMTP                                                              |
+| UI             | Tailwind CSS 4, Radix UI primitives, lucide icons                                 |
+| Testing and CI | Vitest, GitHub Actions                                                            |
+| Hosting        | Vercel (app), Supabase (Postgres)                                                 |
 
-## Core features
+## Architecture
 
-### 1. Authentication
+```mermaid
+flowchart LR
+  Browser -->|pages| RSC[Server Components]
+  Browser -->|forms| SA[Server Actions]
+  Browser -->|PDF upload| API[Route handlers]
+  RSC --> Services
+  SA --> Services
+  API --> Services
+  Services[src/server/services] --> DB[(PostgreSQL)]
+  API -->|quiz generation| Gemini[Google Gemini]
+  Services --> Stripe
+  Stripe -->|signed webhook| API
+  Services --> SMTP[Email]
+  Browser -->|sign-in| Auth[Better Auth] --> DB
+  Auth --> Google[Google OAuth]
+```
 
-Users can sign in with Google. Session data is persisted with NextAuth and Drizzle.
+- **Reads:** Server Components call the services in `src/server/services`.
+- **Writes:** Server Actions in `src/app/actions` validate the input with Zod, check the session and
+  call a service.
+- **Route handlers** only where plain HTTP is needed: PDF upload and generation, the Stripe webhook,
+  auth and `/api/health`.
+- **Business logic and every database query** live in the services; components and handlers stay thin.
 
-### 2. AI-powered quiz generation
+## Run it locally
 
-Users upload a PDF, the server extracts text from the document, sends it to Gemini through LangChain, cleans the JSON response, and stores the generated quiz in the database.
-
-### 3. Quiz experience
-
-Generated quizzes are presented in a step-by-step interface with progress tracking, answer feedback, and a final score summary.
-
-### 4. Dashboard analytics
-
-Each user can review their generated quizzes and see metrics such as:
-
-- Number of quizzes
-- Number of questions
-- Number of submissions
-- Average score
-- Submission activity heatmap
-
-### 5. Subscription flow
-
-Stripe checkout and billing portal flows are wired into the app so quiz generation can be offered as a paid feature.
-
-## Architecture overview
-
-### Frontend
-
-- Next.js App Router pages and layouts
-- Client components for upload, quiz interactions, and billing actions
-- Shadcn UI components for reusable interface pieces
-
-### Backend
-
-- Route handlers for AI generation and Stripe integrations
-- Server actions for submissions, metrics, and subscription state
-- Drizzle schema for users, quizzes, questions, answers, and submissions
-
-### External services
-
-- Google OAuth for sign-in
-- Gemini API for quiz generation
-- Supabase-hosted PostgreSQL for storage
-- Stripe for subscriptions and webhook-driven access updates
-
-## Local development
-
-### 1. Install dependencies
+Requirements: Node.js 20.9 or newer and Docker (the database runs in a container).
 
 ```bash
 npm install
+cp .env.example .env     # fill in the values, see the table below
+npm run db:up            # Postgres 17 in Docker
+npm run db:migrate       # apply the migrations in drizzle/
+npm run dev              # http://localhost:3000
 ```
 
-### 2. Set up environment variables
+Without SMTP settings, emails (reset and email-change codes) are printed to the terminal. For the
+Stripe webhook, run `stripe listen --forward-to localhost:3000/api/stripe/webhook` and put the
+secret it prints into `STRIPE_WEBHOOK_SECRET`.
 
-Copy `.env.example` to `.env` and fill in your real values.
+## Environment variables
 
-Required variables:
+All of them are validated with Zod when the server starts (`src/lib/env.ts`).
 
-```env
-GEMINI_API_KEY=""
-GOOGLE_CLIENT_ID=""
-GOOGLE_CLIENT_SECRET=""
-AUTH_SECRET=""
-DATABASE_URL=""
-NEXT_PUBLIC_BASE_URL="http://localhost:3000"
-NEXT_PUBLIC_PUBLISHABLE_KEY=""
-STRIPE_SECRET_KEY=""
-STRIPE_WEBHOOK_SECRET=""
-STRIPE_WEBHOOK_LOCAL_SECRET=""
-```
+| Name                    | Purpose                                           |
+| ----------------------- | ------------------------------------------------- |
+| `DATABASE_URL`          | PostgreSQL connection                             |
+| `AUTH_SECRET`           | Signs session cookies                             |
+| `GOOGLE_CLIENT_ID`      | Google sign-in                                    |
+| `GOOGLE_CLIENT_SECRET`  | Google sign-in                                    |
+| `GEMINI_API_KEY`        | Quiz generation                                   |
+| `STRIPE_SECRET_KEY`     | Checkout and billing portal                       |
+| `STRIPE_WEBHOOK_SECRET` | Verifies Stripe webhook signatures                |
+| `STRIPE_PRICE_ID`       | The Pro subscription price                        |
+| `APP_URL`               | Public base URL (auth and Stripe return links)    |
+| `EMAIL_TRANSPORT`       | `console` (default) or `smtp`                     |
+| `SMTP_HOST`             | SMTP server (only with `EMAIL_TRANSPORT=smtp`)    |
+| `SMTP_PORT`             | SMTP port (only with `EMAIL_TRANSPORT=smtp`)      |
+| `SMTP_USER`             | SMTP account (only with `EMAIL_TRANSPORT=smtp`)   |
+| `SMTP_PASSWORD`         | SMTP password (only with `EMAIL_TRANSPORT=smtp`)  |
+| `EMAIL_FROM`            | Sender address (only with `EMAIL_TRANSPORT=smtp`) |
 
-### 3. Run the app
+## Security decisions
+
+- **Ownership on every read and write:** someone else's quiz is a 404, the same as a missing one, so
+  ids can't be probed. Server Actions check the session and validate their arguments with Zod.
+- **The server scores attempts:** the browser sends only the chosen answer ids.
+- **Payments:** the price comes from server configuration, never from the browser. The webhook
+  verifies Stripe's signature, and the subscription status alone decides the plan (failed renewals
+  lose Pro).
+- **Authentication:** scrypt password hashes, database sessions, rate limits on sign-in, sign-up and
+  password reset (stored in Postgres so they work across serverless instances), the same answer for
+  new and existing emails at sign-up, and no session token in API responses.
+- **Linking Google** to an account requires the same email address.
+- **Uploads:** PDF signature and a 4 MB size limit, checked in the browser and on the server.
+- **Cost control:** monthly quotas and a burst limit enforced on the server, a per-user database lock
+  so parallel requests can't both take the last slot, and a cap on the document text sent to the model.
+- **Failures are visible:** a database outage shows an error page instead of signing users out, and
+  a result that couldn't be saved says so.
+
+## Tests and CI
+
+- **Unit tests** (Vitest): validation schemas, scoring, environment parsing, error mapping, the
+  session helper, the health route and the Stripe webhook (with signed test payloads).
+- **Database tests** against a real Postgres: quotas under parallel requests, billing and auth rules.
+- **CI** (GitHub Actions, on every push and pull request): lint, format check, typecheck, unused-code
+  check (knip), unit tests, migrations plus database tests against Postgres 17, and a production build.
 
 ```bash
-npm run dev
-```
-
-Open http://localhost:3000 in the browser.
-
-### 4. Build check
-
-```bash
+npm run lint
+npm run typecheck
+npm run check:unused
+npm test
+npm run test:db    # needs the Docker database
 npm run build
 ```
-
-## Stripe webhook notes
-
-For local development, use your local Stripe webhook secret.
-
-For production, set `STRIPE_WEBHOOK_SECRET` in your hosting environment.
-
-The code currently accepts the older misspelled local variable name `STRIPE_WEBHOOK_LOCAL_SERCRET` as a fallback so existing local setups do not break immediately.
-
-## Database model
-
-The main entities are:
-
-- `user`
-- `account`
-- `session`
-- `verificationToken`
-- `quizzes`
-- `questions`
-- `answers`
-- `quizz_submissions`
-
-Together, these tables support authentication, generated quiz content, and user performance tracking.
-
-## Why this project matters
-
-Quiz AI demonstrates more than UI work. It shows how to combine:
-
-- product-oriented thinking
-- AI integration
-- backend data modeling
-- user authentication
-- payment infrastructure
-- deployable SaaS architecture
-
-It is the kind of project that reflects both implementation skill and product ownership.

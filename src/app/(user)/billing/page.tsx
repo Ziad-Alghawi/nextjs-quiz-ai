@@ -1,33 +1,43 @@
-import { auth, signIn } from "@/auth";
-import { db } from "@/db";
-import { eq } from "drizzle-orm";
-import { users } from "@/db/schema";
-import ManageSubscription from "./ManageSubscription";
+import type { Metadata } from "next";
+import { Card, CardTitle } from "@/components/ui/card";
+import { PageHeading } from "@/components/ui/page-heading";
+import { SubmitButton } from "@/components/ui/submit-button";
+import { openBillingPortal, startCheckout } from "@/app/actions/billing";
+import { PLANS } from "@/lib/plans";
+import { getMonthlyUsage } from "@/server/services/usage";
+import { requireUser } from "@/server/session";
 
-const Page = async () => {
-  const session = await auth();
+export const metadata: Metadata = { title: "Billing" };
 
-  if (!session || !session.user|| !session.user.id) {
-    signIn();
-    return null;
-  }
+export default async function BillingPage() {
+  const user = await requireUser("/billing");
+  const { plan, used, limit } = await getMonthlyUsage(user.id);
 
-  const user = await db.query.users.findFirst({
-    where: eq(users.id, session.user.id)
-  } )
-
-  const subscribed = user?.subscribed ?? false;
-  const plan = subscribed ? "premium" : "free";
-
-    return (
-      <div className="p-4 border rounded-md">
-        <h1 className="text-4xl mb-3">Subscription Details</h1>
-        <p className="mb-2">You are currently on the {plan} plan.</p>
-      <ManageSubscription />
-
-      </div>
-    );
-
+  return (
+    <div className="flex flex-col gap-6 p-4">
+      <PageHeading>Billing</PageHeading>
+      <Card>
+        <CardTitle>{PLANS[plan].label} plan</CardTitle>
+        <p className="text-sm text-muted-foreground">
+          {used} of {limit} quizzes used this month.
+        </p>
+        {plan === "free" ? (
+          <form action={startCheckout}>
+            <SubmitButton pendingText="Opening checkout…">
+              Upgrade to Pro for {PLANS.pro.monthlyQuizzes} quizzes a month
+            </SubmitButton>
+          </form>
+        ) : (
+          <form action={openBillingPortal}>
+            <SubmitButton pendingText="Please wait…">Manage subscription</SubmitButton>
+          </form>
+        )}
+      </Card>
+      {/* Stripe stays in test mode on the live site: this is a portfolio project. */}
+      <p className="text-sm text-muted-foreground">
+        Payments are in test mode, use card{" "}
+        <span className="whitespace-nowrap">4242 4242 4242 4242</span>.
+      </p>
+    </div>
+  );
 }
-
-export default Page;

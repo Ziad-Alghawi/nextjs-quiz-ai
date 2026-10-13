@@ -1,72 +1,39 @@
 import Stripe from "stripe";
-import { stripe } from "@/lib/stripe";
-import {
-  createSubscription,
-  deleteSubscription
-} from "@/app/actions/userSubscriptions";
+import { env } from "@/lib/env";
+import { getStripe } from "@/lib/stripe";
+import { setSubscribed } from "@/server/services/billing";
 
-const relevantEvents = new Set([
-  "checkout.session.completed",
+// Sent when a subscription starts, changes (renewal, failed payment, cancellation) or ends.
+const subscriptionEvents = new Set<Stripe.Event.Type>([
   "customer.subscription.created",
   "customer.subscription.updated",
   "customer.subscription.deleted",
 ]);
 
-export async function POST(
-  req: Request) {
-    const body = await req.text();
-    const sig = req.headers.get("stripe-signature") as string;
-    const webHookSecret = process.env.NODE_ENV === "production"
-      ? process.env.STRIPE_WEBHOOK_SECRET
-      : process.env.STRIPE_WEBHOOK_LOCAL_SECRET || process.env.STRIPE_WEBHOOK_LOCAL_SERCRET;
+const ACTIVE_STATUSES = new Set<Stripe.Subscription.Status>(["active", "trialing"]);
 
-    if(!webHookSecret) {
-      throw new Error("STRIPE_WEBHOOK_SECRET is not defined");
-    }
-
-    if (!sig) {
-      return new Response(JSON.stringify({ error: "Missing stripe signature" }), { status: 400 });
-    }
-
-    const event = stripe.webhooks.constructEvent(
-      body,
-      sig,
-      webHookSecret
-    );
-
-    console.log("stripe webhook event:", event.type);
-
-    if (relevantEvents.has(event.type)) {
-      switch (event.type) {
-        case "checkout.session.completed": {
-          const data = event.data.object as Stripe.Checkout.Session;
-
-          if (typeof data.customer === "string") {
-            await createSubscription({ stripeCustomerId: data.customer });
-          }
-          break;
-        }
-        case "customer.subscription.created":
-        case "customer.subscription.updated": {
-          const data = event.data.object as Stripe.Subscription;
-          await createSubscription({ stripeCustomerId: data.customer as string });
-          break;
-        }
-        case "customer.subscription.deleted": {
-          const data = event.data.object as Stripe.Subscription;
-          await deleteSubscription({ stripeCustomerId: data.customer as string });
-          break;
-        }
-        default:{
-          break;
-        }
-      }
-    }
-
-    return new Response(
-      JSON.stringify({
-        received: true,
-      }), {
-        status: 200,
-      });
+export async function POST(req: Request) {
+  const body = await req.text();
+  const signature = req.headers.get("stripe-signature");
+  if (!signature) {
+    return Response.json({ error: "Missing stripe signature" }, { status: 400 });
   }
+
+  let event: Stripe.Event;
+  try {
+    event = getStripe().webhooks.constructEvent(body, signature, env.STRIPE_WEBHOOK_SECRET);
+  } catch {
+    return Response.json({ error: "Invalid signature" }, { status: 400 });
+  }
+
+  if (subscriptionEvents.has(event.type)) {
+    const subscription = event.data.object as Stripe.Subscription;
+    const customerId =
+      typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id;
+    // The status alone decides: a deleted subscription arrives as "canceled", a failed renewal
+    // as "past_due", and a checkout that is still waiting for payment as "incomplete".
+    await setSubscribed(customerId, ACTIVE_STATUSES.has(subscription.status));
+  }
+
+  return Response.json({ received: true });
+}

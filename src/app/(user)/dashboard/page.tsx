@@ -1,55 +1,51 @@
-import { db } from '@/db';
-import { eq } from 'drizzle-orm';
-import { quizzes } from '@/db/schema';
-import { auth } from '@/auth';
-import QuizzesTable, { Quizz } from './quizzesTable';
-import getUserMatrics from '@/actions/getUserMatrics';
-import MetricCard from './metricCard';
-import getHeatMapData from '@/actions/getHeatMapData';
-import SubmissionHeatMap from './heatMap';
-import SubscribeBtn from '../billing/SubscribeBtn';
-import { PRICE_ID } from '@/lib/utils';
+import type { Metadata } from "next";
+import { Plus } from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardTitle } from "@/components/ui/card";
+import { PageHeading } from "@/components/ui/page-heading";
+import { listQuizzes } from "@/server/services/quizzes";
+import { getSubmissionActivity, getUserMetrics } from "@/server/services/stats";
+import { requireUser } from "@/server/session";
+import { ActivityHeatmap } from "./activity-heatmap";
+import { MetricCard } from "./metric-card";
+import { QuizzesTable } from "./quizzes-table";
 
+export const metadata: Metadata = { title: "Dashboard" };
 
+export default async function DashboardPage() {
+  const { id: userId } = await requireUser("/dashboard");
 
-
-const page = async () => {
-  const session = await auth();
-  const userId = session?.user?.id;
-
-  if (!userId) {
-    return (<p>User not found</p>)
-  }
-
-  // Fetch quizzes created by the user
-  const userQuizzes: Quizz[] = await db.query.quizzes.findMany({
-    where: eq(quizzes.userId, userId)
-  });
-  const userData = await getUserMatrics();
-  const heatMapData = await getHeatMapData();
-  console.log(heatMapData);
+  const [quizzes, metrics, activity] = await Promise.all([
+    listQuizzes(userId),
+    getUserMetrics(userId),
+    getSubmissionActivity(userId),
+  ]);
 
   return (
-    <div className="mt-4">
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-      {userData && userData.length > 0 ? 
-      <>{
-        userData.map((metric) => <MetricCard key={metric.label} label={metric.label} value={metric.value} />)
-      }
-      
-      </> : null
-      }
-      </div>
-      <div>
-        {
-          heatMapData ? <SubmissionHeatMap data={heatMapData.data} /> : <p>No data available</p>
+    <div className="flex flex-col gap-6 p-4">
+      <PageHeading
+        action={
+          <Button className="gap-2" asChild>
+            <Link href="/quizzes/new">
+              <Plus className="size-4" aria-hidden />
+              New quiz
+            </Link>
+          </Button>
         }
+      >
+        Dashboard
+      </PageHeading>
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        {metrics.map((metric) => (
+          <MetricCard key={metric.label} {...metric} />
+        ))}
       </div>
-
-
-    <QuizzesTable quizzes={userQuizzes} />
+      <Card>
+        <CardTitle>Activity</CardTitle>
+        <ActivityHeatmap activity={activity} today={new Date().toISOString().slice(0, 10)} />
+      </Card>
+      <QuizzesTable quizzes={quizzes} />
     </div>
   );
 }
-
-export default page;

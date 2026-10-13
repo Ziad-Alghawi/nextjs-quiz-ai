@@ -1,17 +1,71 @@
+import { redirect } from "next/navigation";
+import { getCurrentUser, signOut } from "@/server/session";
+import { Button } from "@/components/ui/button";
+import Image from "next/image";
 import Link from "next/link";
+import { DropdownMenu, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { NavMenu } from "./nav-menu";
 
-const Header = () => {
+function SignOut() {
   return (
-    <header>
-      <nav className="flex gap-2 py-2.5 px-4">
-        <Link className="underline"
-        href="/quizz">Sample Quizz</Link>
-
-        <Link className="underline"
-        href="/quizz/new">New Quizz</Link>
-      </nav>
-    </header>
-  )
+    <form
+      action={async () => {
+        "use server";
+        await signOut();
+        redirect("/");
+      }}
+    >
+      <Button type="submit" variant="ghost">
+        Sign out
+      </Button>
+    </form>
+  );
 }
 
-export default Header;
+export async function Header() {
+  const user = await getCurrentUser();
+  return (
+    <header>
+      <nav className="py-2.5 px-4">
+        <div className="flex flex-wrap items-center justify-between mx-auto max-w-(--breakpoint-xl)">
+          <Link href="/" className="text-3xl font-bold">
+            Quiz AI
+          </Link>
+
+          <div>
+            {user ? (
+              <div className="flex items-center gap-4">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" aria-label="Account menu">
+                      {/* Email sign-ups have no profile picture; show the name's first letter. */}
+                      {user.image ? (
+                        <Image
+                          src={user.image}
+                          alt=""
+                          width={32}
+                          height={32}
+                          className="rounded-full"
+                        />
+                      ) : (
+                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
+                          {user.name.charAt(0).toUpperCase()}
+                        </span>
+                      )}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <NavMenu />
+                </DropdownMenu>
+                <SignOut />
+              </div>
+            ) : (
+              <Button variant="link" className="rounded-xl border" asChild>
+                <Link href="/sign-in">Sign in</Link>
+              </Button>
+            )}
+          </div>
+        </div>
+      </nav>
+    </header>
+  );
+}

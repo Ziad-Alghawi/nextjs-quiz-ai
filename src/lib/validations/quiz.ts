@@ -14,7 +14,10 @@ const hasPdfSignature = async (file: Blob) => {
 export const pdfUploadSchema = z
   .instanceof(Blob, { message: "Please choose a PDF file." })
   .refine((file) => file.size > 0, "The selected file is empty.")
-  .refine((file) => file.size <= MAX_PDF_BYTES, "This PDF is larger than 4 MB. Please upload a smaller file.")
+  .refine(
+    (file) => file.size <= MAX_PDF_BYTES,
+    "This PDF is larger than 4 MB. Please upload a smaller file.",
+  )
   .refine(hasPdfSignature, "Only PDF files are supported.");
 
 // A new schema per field: a shared instance becomes a JSON Schema $ref, which Gemini rejects.
@@ -47,5 +50,8 @@ export const generatedQuizSchema = z.object({
       "A quiz needs 1 to 30 questions",
     ),
 });
+
+/** A quiz id from a URL or form: a positive whole number. */
+export const quizIdSchema = z.coerce.number().int().positive();
 
 export type GeneratedQuiz = z.infer<typeof generatedQuizSchema>;
