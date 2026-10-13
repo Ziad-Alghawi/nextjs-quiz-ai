@@ -12,11 +12,11 @@ const stripeMock = vi.hoisted(() => ({
   createPortalSession: vi.fn(),
 }));
 vi.mock("@/lib/stripe", () => ({
-  stripe: {
+  getStripe: () => ({
     subscriptions: { list: stripeMock.list, cancel: stripeMock.cancel },
     customers: { create: stripeMock.createCustomer },
     billingPortal: { sessions: { create: stripeMock.createPortalSession } },
-  },
+  }),
 }));
 
 const USER = "billing-db-test-user";

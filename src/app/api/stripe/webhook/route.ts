@@ -1,6 +1,6 @@
 import Stripe from "stripe";
 import { env } from "@/lib/env";
-import { stripe } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
 import { setSubscribed } from "@/server/services/billing";
 
 // Sent when a subscription starts, changes (renewal, failed payment, cancellation) or ends.
@@ -21,7 +21,7 @@ export async function POST(req: Request) {
 
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(body, signature, env.STRIPE_WEBHOOK_SECRET);
+    event = getStripe().webhooks.constructEvent(body, signature, env.STRIPE_WEBHOOK_SECRET);
   } catch {
     return Response.json({ error: "Invalid signature" }, { status: 400 });
   }

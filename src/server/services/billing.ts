@@ -4,7 +4,7 @@ import Stripe from "stripe";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { env } from "@/lib/env";
-import { stripe } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
 
 /** Sets the subscription flag of the user who owns this Stripe customer. */
 export async function setSubscribed(stripeCustomerId: string, subscribed: boolean) {
@@ -34,7 +34,7 @@ async function getOrCreateStripeCustomer(userId: string) {
 
   // Two requests at once (a double click) would both find no saved id. With the same idempotency
   // key, Stripe returns the first customer to the second request instead of creating another one.
-  const customer = await stripe.customers.create(
+  const customer = await getStripe().customers.create(
     { metadata: { dbId: userId } },
     { idempotencyKey: `customer-${userId}` },
   );
@@ -44,7 +44,7 @@ async function getOrCreateStripeCustomer(userId: string) {
 
 /** A Stripe Checkout session for the Pro plan; the price comes from server config only. */
 export async function createCheckoutSession(userId: string) {
-  return stripe.checkout.sessions.create({
+  return getStripe().checkout.sessions.create({
     mode: "subscription",
     customer: await getOrCreateStripeCustomer(userId),
     line_items: [{ price: env.STRIPE_PRICE_ID, quantity: 1 }],
@@ -54,7 +54,7 @@ export async function createCheckoutSession(userId: string) {
 }
 
 export async function createBillingPortalSession(userId: string) {
-  return stripe.billingPortal.sessions.create({
+  return getStripe().billingPortal.sessions.create({
     customer: await getOrCreateStripeCustomer(userId),
     return_url: `${env.APP_URL}/billing`,
   });
@@ -68,14 +68,14 @@ export async function cancelSubscriptions(userId: string) {
   const customerId = await getSavedCustomerId(userId);
   if (!customerId) return;
 
-  const subscriptions = stripe.subscriptions.list({
+  const subscriptions = getStripe().subscriptions.list({
     customer: customerId,
     status: "all",
   });
   try {
     for await (const subscription of subscriptions) {
       if (subscription.status !== "canceled" && subscription.status !== "incomplete_expired") {
-        await stripe.subscriptions.cancel(subscription.id);
+        await getStripe().subscriptions.cancel(subscription.id);
       }
     }
   } catch (error) {
