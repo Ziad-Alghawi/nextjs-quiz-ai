@@ -1,5 +1,5 @@
 import "server-only";
-import { and, count, eq, sql } from "drizzle-orm";
+import { and, count, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { courses, sources } from "@/db/schema";
 import { MAX_CHAPTERS_PER_COURSE, PLANS, type PlanId } from "@/lib/plans";
@@ -59,4 +59,20 @@ export async function addChapter(
       .returning({ id: sources.id });
     return { id };
   });
+}
+
+/**
+ * Deletes the chapter if its course belongs to the user and returns the course id, or null.
+ * Quizzes made from it stay; only their link to it goes (quiz_sources cascades).
+ */
+export async function deleteChapter(userId: string, chapterId: number) {
+  const usersCourses = db
+    .select({ id: courses.id })
+    .from(courses)
+    .where(eq(courses.userId, userId));
+  const [deleted] = await db
+    .delete(sources)
+    .where(and(eq(sources.id, chapterId), inArray(sources.courseId, usersCourses)))
+    .returning({ courseId: sources.courseId });
+  return deleted?.courseId ?? null;
 }
