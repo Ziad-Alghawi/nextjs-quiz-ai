@@ -13,6 +13,7 @@ import {
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
 } from "@/lib/validations/auth";
+import { getSignInMethods } from "@/server/services/account";
 import { cancelSubscriptions } from "@/server/services/billing";
 import { sendEmail } from "@/server/services/mail";
 
@@ -29,6 +30,27 @@ const otpEmails: Partial<Record<string, { subject: string; ignoreNote: string }>
       "If you didn't ask to use this address for Quiz AI, you can ignore this email; nothing changes.",
   },
 };
+
+/** For a sign-up with an email that already has an account: how its owner can get in. */
+function existingAccountEmail(methods: { password: boolean; google: boolean }) {
+  const signIn = `${env.APP_URL}/sign-in`;
+  const reset = `${env.APP_URL}/forgot-password`;
+  const howToSignIn = methods.password
+    ? [
+        `Sign in with your password: ${signIn}`,
+        `Forgot it? Reset it with an email code: ${reset}`,
+        ...(methods.google ? ["You can also choose Continue with Google there."] : []),
+      ]
+    : [
+        `Your account uses Google sign-in. Choose Continue with Google on ${signIn}`,
+        `To sign in with a password too, set one with an email code: ${reset}`,
+      ];
+  return [
+    "Someone, probably you, just tried to create a Quiz AI account with this email address. You already have an account, so nothing was created or changed.",
+    ...howToSignIn,
+    "If this wasn't you, you can ignore this email.",
+  ].join("\n\n");
+}
 
 export const auth = betterAuth({
   baseURL: env.APP_URL,
@@ -52,6 +74,16 @@ export const auth = betterAuth({
     autoSignIn: false,
     // A reset is for when someone else may know the password, so sign out everywhere.
     revokeSessionsOnPasswordReset: true,
+    // The generic answer above creates nothing for a registered email, so its owner would be stuck at
+    // "invalid email or password" (e.g. an account that only signs in with Google). The email reaches
+    // only the owner, so the page still reveals nothing. Sent in the background like the codes.
+    onExistingUserSignUp: async ({ user }) => {
+      await sendEmail({
+        to: user.email,
+        subject: "You already have a Quiz AI account",
+        text: existingAccountEmail(await getSignInMethods(user.id)),
+      });
+    },
   },
   // On by default in production only. Limits are per client IP (x-forwarded-for, which Vercel sets
   // itself) and path. Counters live in Postgres because serverless instances don't share memory.
