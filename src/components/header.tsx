@@ -1,9 +1,11 @@
 import { redirect } from "next/navigation";
+import { listCourses } from "@/server/services/courses";
 import { getCurrentUser, signOut } from "@/server/session";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
 import { DropdownMenu, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { MobileSidebar } from "./mobile-sidebar";
 import { NavMenu } from "./nav-menu";
 
 function SignOut() {
@@ -28,9 +30,12 @@ export async function Header() {
     <header>
       <nav className="py-2.5 px-4">
         <div className="flex flex-wrap items-center justify-between mx-auto max-w-(--breakpoint-xl)">
-          <Link href="/" className="text-3xl font-bold">
-            Quiz AI
-          </Link>
+          <div className="flex items-center gap-1">
+            {user ? <MobileSidebar courses={await listCourses(user.id)} /> : null}
+            <Link href="/" className="text-3xl font-bold">
+              Quiz AI
+            </Link>
+          </div>
 
           <div>
             {user ? (

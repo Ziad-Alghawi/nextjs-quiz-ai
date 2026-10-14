@@ -6,17 +6,21 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { SidebarNav } from "./sidebar-nav";
 
-/** Below the md breakpoint the sidebar opens as a drawer from a menu button. */
+/** Below the md breakpoint the sidebar opens as a drawer from the ☰ button in the header. */
 export function MobileSidebar({ courses }: { courses: { id: number; name: string }[] }) {
   const pathname = usePathname();
   // Closes when a link inside is followed (the path changes).
   const [openedAt, setOpenedAt] = useState<string | null>(null);
 
   return (
-    <div className="border-b p-2 md:hidden">
-      <Button variant="ghost" className="gap-2" onClick={() => setOpenedAt(pathname)}>
-        <Menu className="size-4" aria-hidden />
-        Menu
+    <div className="md:hidden">
+      <Button
+        variant="ghost"
+        size="icon"
+        aria-label="Open menu"
+        onClick={() => setOpenedAt(pathname)}
+      >
+        <Menu className="size-5" aria-hidden />
       </Button>
       <Dialog
         open={openedAt === pathname}
