@@ -202,6 +202,8 @@ export const questions = pgTable(
   {
     id: serial("id").primaryKey(),
     questionText: text("question_text").notNull(),
+    // Why the correct answer is right; quizzes made before explanations were added have none.
+    explanation: text("explanation"),
     quizId: integer("quiz_id")
       .notNull()
       .references(() => quizzes.id, { onDelete: "cascade" }),
