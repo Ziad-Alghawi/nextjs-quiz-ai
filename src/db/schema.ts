@@ -9,6 +9,7 @@ import {
   integer,
   serial,
   boolean,
+  primaryKey,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import type { PlanId } from "@/lib/plans";
@@ -27,6 +28,7 @@ export const users = pgTable("user", {
 });
 
 export const userRelations = relations(users, ({ many }) => ({
+  courses: many(courses),
   quizzes: many(quizzes),
 }));
 
@@ -95,6 +97,52 @@ export const rateLimits = pgTable("rate_limit", {
 });
 
 ///////////////////////////////////////////
+// course tables
+///////////////////////////////////////////
+
+export const courses = pgTable(
+  "courses",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  // Also lets the default course be created with ON CONFLICT DO NOTHING, so parallel requests and
+  // a re-run backfill never create two of them.
+  (table) => [uniqueIndex("courses_user_id_name_idx").on(table.userId, table.name)],
+);
+
+export const coursesRelations = relations(courses, ({ many }) => ({
+  sources: many(sources),
+  quizzes: many(quizzes),
+}));
+
+// A PDF in a course ("Chapter" in the UI). Only the extracted text is kept, not the file.
+export const sources = pgTable(
+  "sources",
+  {
+    id: serial("id").primaryKey(),
+    courseId: integer("course_id")
+      .notNull()
+      .references(() => courses.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    text: text("text").notNull(),
+    pageCount: integer("page_count").notNull(),
+    sizeBytes: integer("size_bytes").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [index("sources_course_id_idx").on(table.courseId)],
+);
+
+export const sourcesRelations = relations(sources, ({ one, many }) => ({
+  course: one(courses, { fields: [sources.courseId], references: [courses.id] }),
+  quizSources: many(quizSources),
+}));
+
+///////////////////////////////////////////
 // quiz tables
 ///////////////////////////////////////////
 
@@ -107,14 +155,42 @@ export const quizzes = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
+    courseId: integer("course_id").references(() => courses.id, { onDelete: "cascade" }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  (table) => [index("quizzes_user_id_idx").on(table.userId)],
+  (table) => [
+    index("quizzes_user_id_idx").on(table.userId),
+    index("quizzes_course_id_idx").on(table.courseId),
+  ],
 );
 
-export const quizzesRelations = relations(quizzes, ({ many }) => ({
+export const quizzesRelations = relations(quizzes, ({ one, many }) => ({
+  course: one(courses, { fields: [quizzes.courseId], references: [courses.id] }),
   questions: many(questions),
   submissions: many(quizSubmissions),
+  quizSources: many(quizSources),
+}));
+
+// The chapters a quiz was generated from. Deleting a chapter keeps its quizzes, only the link goes.
+export const quizSources = pgTable(
+  "quiz_sources",
+  {
+    quizId: integer("quiz_id")
+      .notNull()
+      .references(() => quizzes.id, { onDelete: "cascade" }),
+    sourceId: integer("source_id")
+      .notNull()
+      .references(() => sources.id, { onDelete: "cascade" }),
+  },
+  (table) => [
+    primaryKey({ columns: [table.quizId, table.sourceId] }),
+    index("quiz_sources_source_id_idx").on(table.sourceId),
+  ],
+);
+
+export const quizSourcesRelations = relations(quizSources, ({ one }) => ({
+  quiz: one(quizzes, { fields: [quizSources.quizId], references: [quizzes.id] }),
+  source: one(sources, { fields: [quizSources.sourceId], references: [sources.id] }),
 }));
 
 export const questions = pgTable(
