@@ -14,7 +14,11 @@ import { safeReturnPath, signInSchema } from "@/lib/validations/auth";
 
 // Shown after another page sent the user here; unknown values show nothing.
 const notices = new Map([
-  ["registered", "Thanks for signing up. You can now sign in with your email and password."],
+  [
+    "registered",
+    // Sign-up answers a registered email like a new one; the owner gets an email instead.
+    "Thanks for signing up. You can now sign in with your email and password. If this email already had an account, we've emailed you how to sign in (check your spam folder).",
+  ],
   [
     "password-reset",
     "Your password was changed and you were signed out everywhere. Sign in again.",
