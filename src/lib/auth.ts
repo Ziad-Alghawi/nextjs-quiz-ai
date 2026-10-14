@@ -13,7 +13,7 @@ import {
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
 } from "@/lib/validations/auth";
-import { getSignInMethods } from "@/server/services/account";
+import { claimExistingAccountEmail, getSignInMethods } from "@/server/services/account";
 import { cancelSubscriptions } from "@/server/services/billing";
 import { sendEmail } from "@/server/services/mail";
 
@@ -78,6 +78,7 @@ export const auth = betterAuth({
     // "invalid email or password" (e.g. an account that only signs in with Google). The email reaches
     // only the owner, so the page still reveals nothing. Sent in the background like the codes.
     onExistingUserSignUp: async ({ user }) => {
+      if (!(await claimExistingAccountEmail(user.id))) return;
       await sendEmail({
         to: user.email,
         subject: "You already have a Quiz AI account",

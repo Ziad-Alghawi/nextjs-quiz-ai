@@ -20,7 +20,7 @@ vi.mock("@/server/services/mail", () => ({
 vi.mock("next/server", () => ({ after: () => {} }));
 
 const { db } = await import("@/db");
-const { authAccounts, authSessions, authVerifications, quizzes, users } =
+const { authAccounts, authSessions, authVerifications, quizzes, rateLimits, users } =
   await import("@/db/schema");
 const { auth } = await import("./auth");
 const { getSignInMethods } = await import("@/server/services/account");
@@ -70,7 +70,11 @@ const userByEmail = (address: string) =>
 const sessionCount = async (userId: string) =>
   (await db.select().from(authSessions).where(eq(authSessions.userId, userId))).length;
 
-const cleanUp = () => db.delete(users).where(like(users.email, `${PREFIX}%`));
+const cleanUp = async () => {
+  await db.delete(users).where(like(users.email, `${PREFIX}%`));
+  // Rate-limit rows don't belong to a user row, so they outlive it.
+  await db.delete(rateLimits).where(like(rateLimits.key, "existing-account-email:%"));
+};
 
 beforeEach(async () => {
   await cleanUp();
@@ -134,6 +138,25 @@ describe("sign-up and sign-in", () => {
     expect(mail.text).toContain("Continue with Google");
     expect(mail.text).toContain("/forgot-password");
     expect(sent.filter((m) => m.to === email("someone-new"))).toHaveLength(0);
+  });
+
+  it("sends that email at most once per 15 minutes, also for parallel sign-ups", async () => {
+    await signUp(email("flooded"));
+    const owner = await userByEmail(email("flooded"));
+
+    await Promise.all(Array.from({ length: 5 }, () => signUp(email("flooded"))));
+    await signUp(email("flooded"));
+    await vi.waitFor(() => expect(sent).toHaveLength(1));
+    // Give any extra (wrongly allowed) background send time to arrive before counting.
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    expect(sent).toHaveLength(1);
+
+    await db
+      .update(rateLimits)
+      .set({ lastRequest: Date.now() - 16 * 60 * 1000 })
+      .where(eq(rateLimits.key, `existing-account-email:${owner!.id}`));
+    await signUp(email("flooded"));
+    await vi.waitFor(() => expect(sent).toHaveLength(2));
   });
 
   it("emails the owner of a password account to sign in with the password", async () => {
