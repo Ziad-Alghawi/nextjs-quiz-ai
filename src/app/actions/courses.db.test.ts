@@ -37,10 +37,13 @@ afterAll(async () => {
 });
 
 describe("course actions", () => {
-  it("create trims the name and refreshes the sidebar", async () => {
-    expect(await createCourse(IDLE, form({ name: "  Biology  " }))).toEqual({ status: "saved" });
-    expect(await courseNamed("Biology")).toBeDefined();
+  it("create trims the name, refreshes the sidebar and opens the course", async () => {
+    await createCourse(IDLE, form({ name: "  Biology  " }));
+
+    const course = await courseNamed("Biology");
+    expect(course).toBeDefined();
     expect(revalidatePath).toHaveBeenCalledWith("/", "layout");
+    expect(redirect).toHaveBeenCalledWith(`/courses/${course!.id}`);
   });
 
   it("create explains invalid and duplicate names", async () => {
@@ -49,10 +52,12 @@ describe("course actions", () => {
       error: "Enter a course name.",
     });
     await createCourse(IDLE, form({ name: "Biology" }));
+    redirect.mockClear();
     expect(await createCourse(IDLE, form({ name: "Biology" }))).toEqual({
       status: "error",
       error: "You already have a course with this name.",
     });
+    expect(redirect).not.toHaveBeenCalled();
   });
 
   it("rename changes the name; an unknown id is an error", async () => {

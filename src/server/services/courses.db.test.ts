@@ -3,7 +3,14 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db";
 import { courses, quizzes, sources, users } from "@/db/schema";
 import { MAX_COURSES_PER_USER } from "@/lib/plans";
-import { createCourse, deleteCourse, getOrCreateDefaultCourse, renameCourse } from "./courses";
+import {
+  createCourse,
+  deleteCourse,
+  getCourse,
+  getOrCreateDefaultCourse,
+  listCourses,
+  renameCourse,
+} from "./courses";
 import { createQuiz } from "./quizzes";
 
 const USER = "courses-db-test-user";
@@ -135,5 +142,47 @@ describe("createQuiz", () => {
       ]),
     );
     expect(saved).toHaveLength(2);
+  });
+});
+
+describe("listCourses and getCourse", () => {
+  it("list only the user's courses, oldest first", async () => {
+    await newCourse(USER, "Biology");
+    await newCourse(OTHER_USER, "Secret");
+    await newCourse(USER, "Chemistry");
+
+    expect((await listCourses(USER)).map((course) => course.name)).toEqual([
+      "Biology",
+      "Chemistry",
+    ]);
+  });
+
+  it("returns the course with its chapters and quizzes, newest quiz first", async () => {
+    const courseId = await newCourse(USER, "Biology");
+    await db
+      .insert(sources)
+      .values({ courseId, name: "ch1.pdf", text: "Cells.", pageCount: 3, sizeBytes: 100 });
+    const [older] = await db
+      .insert(quizzes)
+      .values({ name: "Older", userId: USER, courseId, createdAt: new Date("2026-01-01") })
+      .returning({ id: quizzes.id });
+    const [newer] = await db
+      .insert(quizzes)
+      .values({ name: "Newer", userId: USER, courseId, createdAt: new Date("2026-02-01") })
+      .returning({ id: quizzes.id });
+
+    const course = await getCourse(USER, courseId);
+
+    expect(course?.name).toBe("Biology");
+    expect(course?.sources).toEqual([
+      { id: expect.any(Number), name: "ch1.pdf", pageCount: 3, sizeBytes: 100 },
+    ]);
+    expect(course?.quizzes.map((quiz) => quiz.id)).toEqual([newer.id, older.id]);
+  });
+
+  it("is undefined for another user's course", async () => {
+    const id = await newCourse(OTHER_USER, "Secret");
+
+    expect(await getCourse(USER, id)).toBeUndefined();
   });
 });

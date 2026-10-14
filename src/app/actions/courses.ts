@@ -19,6 +19,7 @@ const deleteSchema = z.object({ courseId: courseIdSchema });
 // The sidebar in the shared layout lists the courses.
 const refreshCourses = () => revalidatePath("/", "layout");
 
+/** Creates the course and opens its page; the form only ever sees an error. */
 export async function createCourse(_previous: FormState, formData: FormData): Promise<FormState> {
   const user = await requireUser("/dashboard");
 
@@ -36,7 +37,7 @@ export async function createCourse(_previous: FormState, formData: FormData): Pr
     };
   }
   refreshCourses();
-  return { status: "saved" };
+  redirect(`/courses/${result.id}`);
 }
 
 export async function renameCourse(_previous: FormState, formData: FormData): Promise<FormState> {

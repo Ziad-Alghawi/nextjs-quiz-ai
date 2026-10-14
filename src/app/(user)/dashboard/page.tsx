@@ -11,7 +11,7 @@ import { ActivityHeatmap } from "./activity-heatmap";
 import { MetricCard } from "./metric-card";
 import { QuizzesTable } from "./quizzes-table";
 
-export const metadata: Metadata = { title: "Dashboard" };
+export const metadata: Metadata = { title: "Overview" };
 
 export default async function DashboardPage() {
   const { id: userId } = await requireUser("/dashboard");
@@ -34,7 +34,7 @@ export default async function DashboardPage() {
           </Button>
         }
       >
-        Dashboard
+        Overview
       </PageHeading>
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {metrics.map((metric) => (

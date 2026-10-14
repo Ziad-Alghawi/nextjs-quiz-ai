@@ -1,9 +1,9 @@
 import "server-only";
-import { and, count, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq } from "drizzle-orm";
 import { DrizzleQueryError } from "drizzle-orm/errors";
 import postgres from "postgres";
 import { db } from "@/db";
-import { courses } from "@/db/schema";
+import { courses, quizzes, sources } from "@/db/schema";
 import { MAX_COURSES_PER_USER } from "@/lib/plans";
 
 // Migration 0010 uses the same name for the course it moves existing quizzes into.
@@ -32,6 +32,33 @@ export async function getOrCreateDefaultCourse(
     })
     .returning({ id: courses.id });
   return id;
+}
+
+/** The user's courses for the sidebar, oldest first so the list doesn't reorder itself. */
+export function listCourses(userId: string) {
+  return db
+    .select({ id: courses.id, name: courses.name })
+    .from(courses)
+    .where(eq(courses.userId, userId))
+    .orderBy(asc(courses.id));
+}
+
+/** The course with its chapters and quizzes, only if it belongs to the user. Chapter text isn't loaded. */
+export function getCourse(userId: string, courseId: number) {
+  return db.query.courses.findFirst({
+    columns: { id: true, name: true },
+    where: and(eq(courses.id, courseId), eq(courses.userId, userId)),
+    with: {
+      sources: {
+        columns: { id: true, name: true, pageCount: true, sizeBytes: true },
+        orderBy: asc(sources.id),
+      },
+      quizzes: {
+        columns: { id: true, name: true, description: true },
+        orderBy: desc(quizzes.createdAt),
+      },
+    },
+  });
 }
 
 type CreateCourseResult = { id: number } | { error: "duplicate" | "limit" };
