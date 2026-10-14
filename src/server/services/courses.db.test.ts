@@ -1,11 +1,19 @@
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db";
-import { courses, quizzes, users } from "@/db/schema";
-import { getOrCreateDefaultCourse } from "./courses";
+import { courses, quizzes, sources, users } from "@/db/schema";
+import { MAX_COURSES_PER_USER } from "@/lib/plans";
+import { createCourse, deleteCourse, getOrCreateDefaultCourse, renameCourse } from "./courses";
 import { createQuiz } from "./quizzes";
 
 const USER = "courses-db-test-user";
+const OTHER_USER = "courses-db-test-other-user";
+
+const newCourse = async (userId: string, name: string) => {
+  const result = await createCourse(userId, name);
+  if (!("id" in result)) throw new Error(`Course not created: ${result.error}`);
+  return result.id;
+};
 
 const generatedQuiz = {
   name: "Test quiz",
@@ -22,12 +30,80 @@ const generatedQuiz = {
 };
 
 beforeEach(async () => {
-  await db.delete(users).where(eq(users.id, USER));
-  await db.insert(users).values({ id: USER, name: "Courses test", email: `${USER}@example.com` });
+  await db.delete(users).where(inArray(users.id, [USER, OTHER_USER]));
+  await db.insert(users).values([
+    { id: USER, name: "Courses test", email: `${USER}@example.com` },
+    { id: OTHER_USER, name: "Other user", email: `${OTHER_USER}@example.com` },
+  ]);
 });
 
 afterAll(async () => {
-  await db.delete(users).where(eq(users.id, USER));
+  await db.delete(users).where(inArray(users.id, [USER, OTHER_USER]));
+});
+
+describe("createCourse", () => {
+  it("rejects a name the user already has, but not another user's", async () => {
+    await newCourse(USER, "Biology");
+
+    expect(await createCourse(USER, "Biology")).toEqual({ error: "duplicate" });
+    expect(await createCourse(OTHER_USER, "Biology")).toEqual({ id: expect.any(Number) });
+  });
+
+  it(`stops at ${MAX_COURSES_PER_USER} courses`, async () => {
+    await db
+      .insert(courses)
+      .values(
+        Array.from({ length: MAX_COURSES_PER_USER }, (_, i) => ({ userId: USER, name: `C${i}` })),
+      );
+
+    expect(await createCourse(USER, "One too many")).toEqual({ error: "limit" });
+  });
+});
+
+describe("renameCourse", () => {
+  it("renames the user's own course", async () => {
+    const id = await newCourse(USER, "Biology");
+
+    expect(await renameCourse(USER, id, "Chemistry")).toBe("renamed");
+    const [course] = await db.select().from(courses).where(eq(courses.id, id));
+    expect(course.name).toBe("Chemistry");
+  });
+
+  it("rejects a name the user already has", async () => {
+    await newCourse(USER, "Biology");
+    const id = await newCourse(USER, "Chemistry");
+
+    expect(await renameCourse(USER, id, "Biology")).toBe("duplicate");
+  });
+
+  it("doesn't touch another user's course", async () => {
+    const id = await newCourse(OTHER_USER, "Biology");
+
+    expect(await renameCourse(USER, id, "Mine now")).toBe("not-found");
+    const [course] = await db.select().from(courses).where(eq(courses.id, id));
+    expect(course.name).toBe("Biology");
+  });
+});
+
+describe("deleteCourse", () => {
+  it("deletes the course with its chapters and quizzes", async () => {
+    const courseId = await newCourse(USER, "Biology");
+    await db
+      .insert(sources)
+      .values({ courseId, name: "ch1.pdf", text: "Cells.", pageCount: 1, sizeBytes: 100 });
+    await db.insert(quizzes).values({ name: "Cells", userId: USER, courseId });
+
+    expect(await deleteCourse(USER, courseId)).toBe(true);
+    expect(await db.select().from(sources).where(eq(sources.courseId, courseId))).toEqual([]);
+    expect(await db.select().from(quizzes).where(eq(quizzes.courseId, courseId))).toEqual([]);
+  });
+
+  it("doesn't delete another user's course", async () => {
+    const id = await newCourse(OTHER_USER, "Biology");
+
+    expect(await deleteCourse(USER, id)).toBe(false);
+    expect(await db.select().from(courses).where(eq(courses.id, id))).toHaveLength(1);
+  });
 });
 
 describe("getOrCreateDefaultCourse", () => {
