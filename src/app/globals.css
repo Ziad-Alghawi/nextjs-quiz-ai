@@ -92,6 +92,25 @@
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
+/*
+  Slightly larger text on wide screens (small text 14 -> 15px, headings a bit bigger); phones keep
+  Tailwind's defaults. The utilities read these variables, so one override covers every component.
+*/
+@media (min-width: 1024px) {
+  :root {
+    --text-sm: 0.9375rem;
+    --text-lg: 1.1875rem;
+    --text-3xl: 2rem;
+  }
+}
+
+@media (min-width: 1536px) {
+  :root {
+    --text-2xl: 1.625rem;
+    --text-3xl: 2.25rem;
+  }
+}
+
 @layer base {
   *,
   ::after,
