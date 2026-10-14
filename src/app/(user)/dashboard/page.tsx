@@ -23,7 +23,7 @@ export default async function DashboardPage() {
   ]);
 
   return (
-    <div className="flex flex-col gap-6 p-4">
+    <div className="flex flex-col gap-6">
       <PageHeading
         action={
           <Button className="gap-2" asChild>

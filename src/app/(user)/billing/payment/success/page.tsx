@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { PageColumn } from "@/components/ui/page-column";
 import { PageHeading } from "@/components/ui/page-heading";
 import { PLANS } from "@/lib/plans";
 import { isSubscribed } from "@/server/services/billing";
@@ -15,7 +16,7 @@ export default async function PaymentSuccessPage() {
   const active = await isSubscribed(user.id);
 
   return (
-    <div className="flex flex-col gap-6 p-4">
+    <PageColumn>
       <PageHeading>Payment successful</PageHeading>
       <Card>
         {active ? (
@@ -31,6 +32,6 @@ export default async function PaymentSuccessPage() {
           <ActivationPending />
         )}
       </Card>
-    </div>
+    </PageColumn>
   );
 }

@@ -34,7 +34,7 @@ export default async function CoursePage({ params }: Props) {
   const course = await loadCourse((await params).courseId);
 
   return (
-    <div className="flex flex-col gap-6 p-4">
+    <div className="flex flex-col gap-6">
       <PageHeading
         action={
           <CourseActions
@@ -47,48 +47,51 @@ export default async function CoursePage({ params }: Props) {
         {course.name}
       </PageHeading>
 
-      <Card className="gap-2">
-        <CardTitle>Chapters</CardTitle>
-        {course.sources.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No chapters yet.</p>
-        ) : (
-          <ul className="divide-y">
-            {course.sources.map((source) => (
-              <li key={source.id} className="flex items-center gap-3 py-3">
-                <FileText className="size-5 shrink-0 text-muted-foreground" aria-hidden />
-                <span className="min-w-0 flex-1 truncate font-medium">{source.name}</span>
-                <span className="shrink-0 text-sm text-muted-foreground">
-                  {source.pageCount} {source.pageCount === 1 ? "page" : "pages"} ·{" "}
-                  {formatSize(source.sizeBytes)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
+      {/* Side by side on wide screens, stacked below. */}
+      <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-2">
+        <Card className="gap-2">
+          <CardTitle>Chapters</CardTitle>
+          {course.sources.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No chapters yet.</p>
+          ) : (
+            <ul className="divide-y">
+              {course.sources.map((source) => (
+                <li key={source.id} className="flex items-center gap-3 py-3">
+                  <FileText className="size-5 shrink-0 text-muted-foreground" aria-hidden />
+                  <span className="min-w-0 flex-1 truncate font-medium">{source.name}</span>
+                  <span className="shrink-0 text-sm text-muted-foreground">
+                    {source.pageCount} {source.pageCount === 1 ? "page" : "pages"} ·{" "}
+                    {formatSize(source.sizeBytes)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
 
-      <Card className="gap-2">
-        <CardTitle>Quizzes</CardTitle>
-        {course.quizzes.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No quizzes in this course yet.</p>
-        ) : (
-          <ul className="divide-y">
-            {course.quizzes.map((quiz) => (
-              <li key={quiz.id}>
-                <Link
-                  href={`/quizzes/${quiz.id}`}
-                  className="flex flex-col gap-0.5 rounded-md py-3 hover:bg-accent/50"
-                >
-                  <span className="font-medium">{quiz.name}</span>
-                  {quiz.description ? (
-                    <span className="text-sm text-muted-foreground">{quiz.description}</span>
-                  ) : null}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
+        <Card className="gap-2">
+          <CardTitle>Quizzes</CardTitle>
+          {course.quizzes.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No quizzes in this course yet.</p>
+          ) : (
+            <ul className="divide-y">
+              {course.quizzes.map((quiz) => (
+                <li key={quiz.id}>
+                  <Link
+                    href={`/quizzes/${quiz.id}`}
+                    className="flex flex-col gap-0.5 rounded-md py-3 hover:bg-accent/50"
+                  >
+                    <span className="font-medium">{quiz.name}</span>
+                    {quiz.description ? (
+                      <span className="text-sm text-muted-foreground">{quiz.description}</span>
+                    ) : null}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      </div>
     </div>
   );
 }
