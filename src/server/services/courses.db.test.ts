@@ -175,7 +175,13 @@ describe("listCourses and getCourse", () => {
 
     expect(course?.name).toBe("Biology");
     expect(course?.sources).toEqual([
-      { id: expect.any(Number), name: "ch1.pdf", pageCount: 3, sizeBytes: 100 },
+      {
+        id: expect.any(Number),
+        name: "ch1.pdf",
+        pageCount: 3,
+        sizeBytes: 100,
+        textTruncated: false,
+      },
     ]);
     expect(course?.quizzes.map((quiz) => quiz.id)).toEqual([newer.id, older.id]);
   });
