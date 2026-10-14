@@ -78,6 +78,13 @@
       "when": 1791990667129,
       "tag": "0010_default_course",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792007296619,
+      "tag": "0011_source_text_truncated",
+      "breakpoints": true
     }
   ]
 }
