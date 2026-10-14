@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { MAX_DOCUMENT_CHARS } from "./plans";
-import { limitDocumentText } from "./pdf";
+import { makePdf } from "@/test/make-pdf";
+import { extractPdfText, limitDocumentText } from "./pdf";
 
 describe("limitDocumentText", () => {
   it("keeps a document within the limit unchanged", () => {
@@ -22,5 +23,15 @@ describe("limitDocumentText", () => {
   it("cuts at the limit when there is no space to cut at", () => {
     const result = limitDocumentText("x".repeat(MAX_DOCUMENT_CHARS + 1));
     expect(result).toEqual({ text: "x".repeat(MAX_DOCUMENT_CHARS), truncated: true });
+  });
+});
+
+describe("extractPdfText", () => {
+  it("returns the text of every page and the page count", async () => {
+    const { text, pageCount } = await extractPdfText(makePdf(["Cells divide.", "Genes mutate."]));
+
+    expect(pageCount).toBe(2);
+    expect(text).toContain("Cells divide.");
+    expect(text).toContain("Genes mutate.");
   });
 });

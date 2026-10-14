@@ -17,7 +17,7 @@ export class GenerationLimitError extends Error {
   }
 }
 
-const getPlan = async (userId: string): Promise<PlanId> =>
+export const getPlan = async (userId: string): Promise<PlanId> =>
   (await isSubscribed(userId)) ? "pro" : "free";
 
 // Succeeded generations count; failed ones don't, and pending ones only while still in flight.
