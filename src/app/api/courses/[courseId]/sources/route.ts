@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { CHAPTER_UPLOAD_LIMIT, PLANS } from "@/lib/plans";
-import { extractPdfText, limitDocumentText } from "@/lib/pdf";
+import { extractPdfText, limitDocumentText, uploadFileName } from "@/lib/pdf";
 import { courseIdSchema } from "@/lib/validations/course";
 import { pdfUploadSchema } from "@/lib/validations/quiz";
 import { consumeRateLimit } from "@/server/services/rate-limit";
@@ -10,10 +10,6 @@ import { getCurrentUser } from "@/server/session";
 const errorResponse = (error: string, status: number) => NextResponse.json({ error }, { status });
 
 const COURSE_NOT_FOUND = "This course doesn't exist anymore. Reload the page.";
-
-/** The chapter's name: the file name, or a fallback when the browser sends none. */
-const chapterName = (upload: FormDataEntryValue | null) =>
-  (upload instanceof File ? upload.name.trim() : "").slice(0, 200) || "Untitled.pdf";
 
 /** Uploads a PDF into a course as a chapter. Only its text is kept, not the file. */
 export async function POST(
@@ -58,7 +54,7 @@ export async function POST(
   }
 
   const result = await addChapter(user.id, courseId.data, {
-    name: chapterName(body.get("pdf")),
+    name: uploadFileName(body.get("pdf")),
     text,
     textTruncated: truncated,
     pageCount: extracted.pageCount,
