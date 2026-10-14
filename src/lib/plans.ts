@@ -7,7 +7,7 @@ export const PLANS = {
 export type PlanId = keyof typeof PLANS;
 
 /** On every plan. Courses cost nothing to create, so this only stops scripted mass creation. */
-export const MAX_COURSES_PER_USER = 50;
+export const MAX_COURSES_PER_USER = 30;
 
 /** On every plan: at most this many generation attempts per user in the window. */
 export const GENERATION_BURST_LIMIT = { attempts: 3, windowMinutes: 10 } as const;
