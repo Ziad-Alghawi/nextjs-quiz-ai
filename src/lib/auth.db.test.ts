@@ -20,7 +20,8 @@ vi.mock("@/server/services/mail", () => ({
 vi.mock("next/server", () => ({ after: () => {} }));
 
 const { db } = await import("@/db");
-const { authSessions, authVerifications, quizzes, users } = await import("@/db/schema");
+const { authAccounts, authSessions, authVerifications, quizzes, rateLimits, users } =
+  await import("@/db/schema");
 const { auth } = await import("./auth");
 const { getSignInMethods } = await import("@/server/services/account");
 
@@ -69,7 +70,11 @@ const userByEmail = (address: string) =>
 const sessionCount = async (userId: string) =>
   (await db.select().from(authSessions).where(eq(authSessions.userId, userId))).length;
 
-const cleanUp = () => db.delete(users).where(like(users.email, `${PREFIX}%`));
+const cleanUp = async () => {
+  await db.delete(users).where(like(users.email, `${PREFIX}%`));
+  // Rate-limit rows don't belong to a user row, so they outlive it.
+  await db.delete(rateLimits).where(like(rateLimits.key, "existing-account-email:%"));
+};
 
 beforeEach(async () => {
   await cleanUp();
@@ -93,6 +98,74 @@ describe("sign-up and sign-in", () => {
     expect(await getSignInMethods(user!.id)).toEqual({ password: true, google: false });
     expect((await signIn(email("dup"), "second password")).status).toBe(401);
     expect((await signIn(email("dup"))).cookie).toBeDefined();
+  });
+
+  it("signs in after signing up with capital letters in the email", async () => {
+    const address = email("Mixed-Case");
+
+    expect((await signUp(address)).status).toBe(200);
+    expect((await userByEmail(address.toLowerCase()))?.email).toBe(address.toLowerCase());
+    expect((await signIn(address.toLowerCase())).cookie).toBeDefined();
+    expect((await signIn(address)).cookie).toBeDefined();
+  });
+
+  // Production bug: accounts moved over from the old auth library sign in with Google only. Signing
+  // up with their email looked successful, but nothing was created and sign-in said "invalid".
+  it("emails the owner of a Google-only account how to sign in when someone signs up with it", async () => {
+    const address = email("google-only");
+    const [owner] = await db
+      .insert(users)
+      .values({ id: `${PREFIX}google-only`, name: "Google user", email: address })
+      .returning();
+    await db.insert(authAccounts).values({
+      id: `${PREFIX}google-account`,
+      accountId: "google-sub-123",
+      providerId: "google",
+      userId: owner.id,
+    });
+
+    const response = await signUp(address.toUpperCase());
+    const fresh = await signUp(email("someone-new"));
+    // Same answer as for a new email, so the sign-up page still reveals nothing.
+    expect(response.status).toBe(200);
+    expect(Object.keys(response.body!)).toEqual(Object.keys(fresh.body!));
+    expect(await getSignInMethods(owner.id)).toEqual({ password: false, google: true });
+    expect((await signIn(address)).body).toMatchObject({ code: "INVALID_EMAIL_OR_PASSWORD" });
+
+    await vi.waitFor(() => expect(sent.filter((mail) => mail.to === address)).toHaveLength(1));
+    const [mail] = sent.filter((m) => m.to === address);
+    expect(mail.subject).toBe("You already have a Quiz AI account");
+    expect(mail.text).toContain("Continue with Google");
+    expect(mail.text).toContain("/forgot-password");
+    expect(sent.filter((m) => m.to === email("someone-new"))).toHaveLength(0);
+  });
+
+  it("sends that email at most once per 15 minutes, also for parallel sign-ups", async () => {
+    await signUp(email("flooded"));
+    const owner = await userByEmail(email("flooded"));
+
+    await Promise.all(Array.from({ length: 5 }, () => signUp(email("flooded"))));
+    await signUp(email("flooded"));
+    await vi.waitFor(() => expect(sent).toHaveLength(1));
+    // Give any extra (wrongly allowed) background send time to arrive before counting.
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    expect(sent).toHaveLength(1);
+
+    await db
+      .update(rateLimits)
+      .set({ lastRequest: Date.now() - 16 * 60 * 1000 })
+      .where(eq(rateLimits.key, `existing-account-email:${owner!.id}`));
+    await signUp(email("flooded"));
+    await vi.waitFor(() => expect(sent).toHaveLength(2));
+  });
+
+  it("emails the owner of a password account to sign in with the password", async () => {
+    await signUp(email("has-password"));
+    await signUp(email("has-password"), "Someone else", "second password");
+
+    await vi.waitFor(() => expect(sent).toHaveLength(1));
+    expect(sent[0].text).toContain("Sign in with your password");
+    expect(sent[0].text).not.toContain("Continue with Google");
   });
 
   it("switches off the email OTP endpoints the app doesn't use", async () => {
