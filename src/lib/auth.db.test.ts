@@ -20,7 +20,7 @@ vi.mock("@/server/services/mail", () => ({
 vi.mock("next/server", () => ({ after: () => {} }));
 
 const { db } = await import("@/db");
-const { authSessions, authVerifications, quizzes, users } = await import("@/db/schema");
+const { authSessions, authVerifications, courses, quizzes, users } = await import("@/db/schema");
 const { auth } = await import("./auth");
 const { getSignInMethods } = await import("@/server/services/account");
 
@@ -191,11 +191,15 @@ describe("account settings", () => {
     expect((await request("GET", "/get-session", undefined, changed.cookie)).body).not.toBeNull();
   });
 
-  it("deletes the account with its quizzes after checking the password", async () => {
+  it("deletes the account with its courses and quizzes after checking the password", async () => {
     await signUp(email("delete"));
     const { cookie } = await signIn(email("delete"));
     const user = await userByEmail(email("delete"));
-    await db.insert(quizzes).values({ name: "Doomed quiz", userId: user!.id });
+    const [course] = await db
+      .insert(courses)
+      .values({ name: "Doomed course", userId: user!.id })
+      .returning({ id: courses.id });
+    await db.insert(quizzes).values({ name: "Doomed quiz", userId: user!.id, courseId: course.id });
 
     expect((await post("/delete-user", { password: "wrong" }, cookie)).status).toBe(400);
     expect(await userByEmail(email("delete"))).toBeDefined();
@@ -203,5 +207,6 @@ describe("account settings", () => {
     expect((await post("/delete-user", { password: PASSWORD }, cookie)).status).toBe(200);
     expect(await userByEmail(email("delete"))).toBeUndefined();
     expect(await db.select().from(quizzes).where(eq(quizzes.userId, user!.id))).toHaveLength(0);
+    expect(await db.select().from(courses).where(eq(courses.userId, user!.id))).toHaveLength(0);
   });
 });

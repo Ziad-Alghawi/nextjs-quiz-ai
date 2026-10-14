@@ -3,13 +3,18 @@ import { and, asc, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { questionAnswers, questions, quizzes } from "@/db/schema";
 import type { GeneratedQuiz } from "@/lib/validations/quiz";
+import { getOrCreateDefaultCourse } from "./courses";
 
-/** Stores a generated quiz with its questions and answers in one transaction (three inserts). */
+/**
+ * Stores a generated quiz with its questions and answers in one transaction, in the user's
+ * "My quizzes" course.
+ */
 export async function createQuiz(quiz: GeneratedQuiz, userId: string) {
   return db.transaction(async (tx) => {
+    const courseId = await getOrCreateDefaultCourse(tx, userId);
     const [{ quizId }] = await tx
       .insert(quizzes)
-      .values({ name: quiz.name, description: quiz.description, userId })
+      .values({ name: quiz.name, description: quiz.description, userId, courseId })
       .returning({ quizId: quizzes.id });
 
     const inserted = await tx
