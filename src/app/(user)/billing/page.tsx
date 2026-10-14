@@ -4,20 +4,27 @@ import { PageHeading } from "@/components/ui/page-heading";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { openBillingPortal, startCheckout } from "@/app/actions/billing";
 import { PLANS } from "@/lib/plans";
+import { getCancellationDate } from "@/server/services/billing";
 import { getMonthlyUsage } from "@/server/services/usage";
 import { requireUser } from "@/server/session";
 
 export const metadata: Metadata = { title: "Billing" };
 
+const dateFormat = new Intl.DateTimeFormat("en", { dateStyle: "long", timeZone: "UTC" });
+
 export default async function BillingPage() {
   const user = await requireUser("/billing");
   const { plan, used, limit } = await getMonthlyUsage(user.id);
+  const cancelsOn = plan === "pro" ? await getCancellationDate(user.id) : null;
 
   return (
     <div className="flex flex-col gap-6 p-4">
       <PageHeading>Billing</PageHeading>
       <Card>
-        <CardTitle>{PLANS[plan].label} plan</CardTitle>
+        <CardTitle>
+          {PLANS[plan].label}
+          {cancelsOn ? `, cancels on ${dateFormat.format(cancelsOn)}` : " plan"}
+        </CardTitle>
         <p className="text-sm text-muted-foreground">
           {used} of {limit} quizzes used this month.
         </p>

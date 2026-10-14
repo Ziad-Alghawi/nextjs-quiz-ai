@@ -61,6 +61,25 @@ export async function createBillingPortalSession(userId: string) {
 }
 
 /**
+ * The date the user's Pro plan ends, or null while it renews. Read from Stripe when the page is
+ * shown, so nothing extra is stored or kept in sync by the webhook.
+ */
+export async function getCancellationDate(userId: string) {
+  const customerId = await getSavedCustomerId(userId);
+  if (!customerId) return null;
+
+  const { data } = await getStripe().subscriptions.list({
+    customer: customerId,
+    status: "active",
+    limit: 1,
+  });
+  const [subscription] = data;
+  if (!subscription?.cancel_at_period_end) return null;
+  // Since API version 2025-03-31 the period belongs to the subscription items, not the subscription.
+  return new Date(subscription.items.data[0].current_period_end * 1000);
+}
+
+/**
  * Ends the user's subscriptions right away, before the account is deleted. Throws when Stripe
  * fails, so the account isn't deleted while a subscription keeps billing.
  */
