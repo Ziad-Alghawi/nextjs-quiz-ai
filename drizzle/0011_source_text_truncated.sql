@@ -1,0 +1,1 @@
+ALTER TABLE "sources" ADD COLUMN "text_truncated" boolean DEFAULT false NOT NULL;

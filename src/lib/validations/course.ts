@@ -6,4 +6,7 @@ export const courseNameSchema = z
   .min(1, "Enter a course name.")
   .max(60, "Use at most 60 characters.");
 
-export const courseIdSchema = z.coerce.number().int().positive();
+// Ids arrive as strings from forms and URLs.
+const idSchema = z.coerce.number().int().positive();
+export const courseIdSchema = idSchema;
+export const chapterIdSchema = idSchema;

@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
       return errorResponse("Please sign in to generate a quiz.", 401);
     }
 
-    const { text, truncated } = limitDocumentText(await extractPdfText(document));
+    const { text, truncated } = limitDocumentText((await extractPdfText(document)).text);
 
     if (!text) {
       return errorResponse(

@@ -130,6 +130,8 @@ export const sources = pgTable(
       .references(() => courses.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     text: text("text").notNull(),
+    // Long PDFs keep only their first part (MAX_DOCUMENT_CHARS); the course page says so.
+    textTruncated: boolean("text_truncated").default(false).notNull(),
     pageCount: integer("page_count").notNull(),
     sizeBytes: integer("size_bytes").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),

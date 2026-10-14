@@ -1,11 +1,11 @@
 import { extractText } from "unpdf";
 import { MAX_DOCUMENT_CHARS } from "@/lib/plans";
 
-export async function extractPdfText(file: Blob): Promise<string> {
-  const { text } = await extractText(new Uint8Array(await file.arrayBuffer()), {
+export async function extractPdfText(file: Blob) {
+  const { text, totalPages } = await extractText(new Uint8Array(await file.arrayBuffer()), {
     mergePages: true,
   });
-  return text.trim();
+  return { text: text.trim(), pageCount: totalPages };
 }
 
 /** Keeps the first MAX_DOCUMENT_CHARS characters, cut at a word boundary when there is one. */
