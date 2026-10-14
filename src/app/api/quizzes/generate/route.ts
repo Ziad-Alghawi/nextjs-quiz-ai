@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { getCurrentUser } from "@/server/session";
 import { pingDatabase } from "@/db/health";
-import { extractPdfText, limitDocumentText } from "@/lib/pdf";
+import { DEFAULT_QUESTION_COUNT } from "@/lib/plans";
+import { extractPdfText, limitDocumentText, uploadFileName } from "@/lib/pdf";
 import { pdfUploadSchema, type GeneratedQuiz } from "@/lib/validations/quiz";
 import { GenerationError, generateQuiz } from "@/server/services/generation";
 import { createQuiz } from "@/server/services/quizzes";
@@ -59,7 +60,10 @@ export async function POST(request: NextRequest) {
     try {
       let quiz: GeneratedQuiz;
       try {
-        quiz = await generateQuiz(text);
+        quiz = await generateQuiz({
+          documents: [{ title: uploadFileName(body.get("pdf")), text }],
+          questionCount: DEFAULT_QUESTION_COUNT,
+        });
       } catch (error) {
         if (error instanceof GenerationError) return errorResponse(error.message, error.status);
         throw error;

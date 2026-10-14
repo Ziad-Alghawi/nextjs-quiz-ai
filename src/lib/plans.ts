@@ -11,6 +11,9 @@ export const PLANS = {
 
 export type PlanId = keyof typeof PLANS;
 
+/** Quick quiz (one uploaded PDF) uses this until the question picker exists. Allowed on every plan. */
+export const DEFAULT_QUESTION_COUNT = 10;
+
 /** The most questions a quiz can have on any plan; every question-count check uses this. */
 export const MAX_QUESTIONS = Math.max(
   ...Object.values(PLANS).flatMap((plan) => plan.questionCounts),

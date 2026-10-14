@@ -28,6 +28,7 @@ const generatedQuiz = {
   questions: [
     {
       questionText: "Which one is right?",
+      explanation: "Because the document says so.",
       answers: [
         { answerText: "This one", isCorrect: true },
         { answerText: "That one", isCorrect: false },

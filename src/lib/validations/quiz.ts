@@ -44,11 +44,16 @@ export const generatedQuizSchema = z.object({
             (answers) => answers.filter((answer) => answer.isCorrect).length === 1,
             "Each question needs exactly one correct answer",
           ),
+        explanation: nonEmptyText().describe(
+          "At most 2 sentences on why the correct answer is right, based on the document",
+        ),
       }),
     )
+    // Generous on purpose: questions beyond the requested count are dropped after generation,
+    // instead of failing the whole quiz.
     .refine(
-      (questions) => questions.length >= 1 && questions.length <= MAX_QUESTIONS,
-      `A quiz needs 1 to ${MAX_QUESTIONS} questions`,
+      (questions) => questions.length >= 1 && questions.length <= 2 * MAX_QUESTIONS,
+      `A quiz needs 1 to ${2 * MAX_QUESTIONS} questions`,
     ),
 });
 

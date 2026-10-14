@@ -3,7 +3,7 @@ import { NextRequest } from "next/server";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
 import { courses, quizGenerations, quizzes, users } from "@/db/schema";
-import { PLANS } from "@/lib/plans";
+import { DEFAULT_QUESTION_COUNT, PLANS } from "@/lib/plans";
 import type { GeneratedQuiz } from "@/lib/validations/quiz";
 import { getMonthlyUsage } from "@/server/services/usage";
 import { makePdf } from "@/test/make-pdf";
@@ -31,6 +31,7 @@ const generated = (questionCount: number): GeneratedQuiz => ({
   description: "Parts of a cell.",
   questions: Array.from({ length: questionCount }, (_, i) => ({
     questionText: `Question ${i + 1}?`,
+    explanation: `Explanation ${i + 1}.`,
     answers: [
       { answerText: "Right", isCorrect: true },
       { answerText: "Wrong", isCorrect: false },
@@ -62,8 +63,8 @@ beforeEach(async () => {
 afterAll(cleanUp);
 
 describe("POST /api/quizzes/generate", () => {
-  it("saves the generated quiz in the user's default course and uses one generation", async () => {
-    model.invoke.mockResolvedValue(generated(3));
+  it("saves a 10-question quiz with explanations in the user's default course", async () => {
+    model.invoke.mockResolvedValue(generated(DEFAULT_QUESTION_COUNT));
 
     const response = await generate(makePdf(["Mitochondria make energy."]));
 
@@ -72,7 +73,11 @@ describe("POST /api/quizzes/generate", () => {
       where: eq(quizzes.id, response.body.quizId!),
       with: { questions: { with: { answers: true } } },
     });
-    expect(quiz?.questions).toHaveLength(3);
+    expect(quiz?.questions).toHaveLength(DEFAULT_QUESTION_COUNT);
+    expect(quiz?.questions.map((q) => q.explanation)).toContain("Explanation 1.");
+    const [system, human] = model.invoke.mock.calls[0][0] as { content: string }[];
+    expect(system.content).toContain(`Write exactly ${DEFAULT_QUESTION_COUNT} questions.`);
+    expect(human.content).toContain('<document title="cells.pdf">');
     const [course] = await db.select().from(courses).where(eq(courses.id, quiz!.courseId));
     expect(course).toMatchObject({ userId: USER, name: "My quizzes" });
     expect((await getMonthlyUsage(USER)).used).toBe(1);
@@ -86,13 +91,13 @@ describe("POST /api/quizzes/generate", () => {
     expect(model.invoke).not.toHaveBeenCalled();
   });
 
-  it("doesn't count a failed generation toward the monthly quota", async () => {
-    model.invoke.mockRejectedValue(new Error("Output didn't match the schema"));
+  it("doesn't count a quiz with too few questions toward the monthly quota", async () => {
+    model.invoke.mockResolvedValue(generated(DEFAULT_QUESTION_COUNT - 3));
 
     const response = await generate(makePdf(["Text."]));
 
     expect(response.status).toBe(502);
-    expect(response.body.error).toContain("could not generate");
+    expect(response.body.error).toContain("Please try again");
     expect((await getMonthlyUsage(USER)).used).toBe(0);
     const [attempt] = await db
       .select()
