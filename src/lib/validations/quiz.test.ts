@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { MAX_QUESTIONS } from "@/lib/plans";
 import {
   generatedQuizSchema,
   MAX_PDF_BYTES,
@@ -22,6 +23,7 @@ const quizWith = (questions: GeneratedQuiz["questions"]): GeneratedQuiz => ({
 const question = (answerList = answers(1)) => ({
   questionText: "What do plants produce?",
   answers: answerList,
+  explanation: "Plants produce oxygen during photosynthesis.",
 });
 
 describe("generatedQuizSchema", () => {
@@ -42,8 +44,9 @@ describe("generatedQuizSchema", () => {
     expect(generatedQuizSchema.safeParse(quizWith([])).success).toBe(false);
   });
 
-  it("rejects a quiz with more than 30 questions", () => {
-    const questions = Array.from({ length: 31 }, () => question());
+  // Questions beyond the requested count are cut after generation; this only stops absurd output.
+  it(`rejects a quiz with more than ${2 * MAX_QUESTIONS} questions`, () => {
+    const questions = Array.from({ length: 2 * MAX_QUESTIONS + 1 }, () => question());
     expect(generatedQuizSchema.safeParse(quizWith(questions)).success).toBe(false);
   });
 

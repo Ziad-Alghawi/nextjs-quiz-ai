@@ -19,7 +19,13 @@ export async function createQuiz(quiz: GeneratedQuiz, userId: string) {
 
     const inserted = await tx
       .insert(questions)
-      .values(quiz.questions.map((question) => ({ questionText: question.questionText, quizId })))
+      .values(
+        quiz.questions.map(({ questionText, explanation }) => ({
+          questionText,
+          explanation,
+          quizId,
+        })),
+      )
       .returning({ id: questions.id });
     // Serial ids are handed out in VALUES order, so sorting them restores the input order.
     const questionIds = inserted.map((row) => row.id).sort((a, b) => a - b);
