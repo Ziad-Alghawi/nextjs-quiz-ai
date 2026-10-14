@@ -19,7 +19,7 @@ export function NavMenu() {
         <DropdownMenuItem asChild>
           <Link href="/dashboard">
             <BarChartBig />
-            Dashboard
+            Overview
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
