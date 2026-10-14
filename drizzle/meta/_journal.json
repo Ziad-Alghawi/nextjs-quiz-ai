@@ -64,6 +64,20 @@
       "when": 1791551492250,
       "tag": "0008_stripe_customer_id_unique",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791990665008,
+      "tag": "0009_courses_and_sources",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791990667129,
+      "tag": "0010_default_course",
+      "breakpoints": true
     }
   ]
 }
