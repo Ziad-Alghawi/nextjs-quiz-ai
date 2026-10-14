@@ -5,10 +5,13 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 import { Card, CardTitle } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
+import { MAX_CHAPTERS_PER_COURSE } from "@/lib/plans";
 import { courseIdSchema } from "@/lib/validations/course";
 import { getCourse } from "@/server/services/courses";
 import { requireUser } from "@/server/session";
+import { ChapterUpload } from "./chapter-upload";
 import { CourseActions } from "./course-actions";
+import { DeleteChapterButton } from "./delete-chapter-button";
 
 type Props = { params: Promise<{ courseId: string }> };
 
@@ -50,21 +53,42 @@ export default async function CoursePage({ params }: Props) {
       {/* Side by side on wide screens, stacked below. */}
       <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-2">
         <Card className="gap-2">
-          <CardTitle>Chapters</CardTitle>
+          <div className="flex items-baseline justify-between gap-3">
+            <CardTitle>Chapters</CardTitle>
+            <span className="text-sm text-muted-foreground">
+              {course.sources.length} of {MAX_CHAPTERS_PER_COURSE}
+            </span>
+          </div>
+          <ChapterUpload
+            courseId={course.id}
+            full={course.sources.length >= MAX_CHAPTERS_PER_COURSE}
+          />
           {course.sources.length === 0 ? (
             <p className="text-sm text-muted-foreground">No chapters yet.</p>
           ) : (
             <ul className="divide-y">
-              {course.sources.map((source) => (
-                <li key={source.id} className="flex items-center gap-3 py-3">
-                  <FileText className="size-5 shrink-0 text-muted-foreground" aria-hidden />
-                  <span className="min-w-0 flex-1 truncate font-medium">{source.name}</span>
-                  <span className="shrink-0 text-sm text-muted-foreground">
-                    {source.pageCount} {source.pageCount === 1 ? "page" : "pages"} ·{" "}
-                    {formatSize(source.sizeBytes)}
-                  </span>
-                </li>
-              ))}
+              {course.sources.map((source) => {
+                const meta = `${source.pageCount} ${source.pageCount === 1 ? "page" : "pages"} · ${formatSize(source.sizeBytes)}`;
+                return (
+                  <li key={source.id} className="flex items-center gap-3 py-3">
+                    <FileText className="size-5 shrink-0 text-muted-foreground" aria-hidden />
+                    <div className="min-w-0 flex-1 text-sm text-muted-foreground">
+                      <span className="block truncate text-base font-medium text-foreground">
+                        {source.name}
+                      </span>
+                      {/* Beside the name from sm up; on phones it goes under it, so the name and hint keep their width. */}
+                      <span className="sm:hidden">{meta}</span>
+                      {source.textTruncated ? (
+                        <span className="block">Long PDF: quizzes use only its first part.</span>
+                      ) : null}
+                    </div>
+                    <span className="hidden shrink-0 text-sm text-muted-foreground sm:inline">
+                      {meta}
+                    </span>
+                    <DeleteChapterButton chapter={{ id: source.id, name: source.name }} />
+                  </li>
+                );
+              })}
             </ul>
           )}
         </Card>

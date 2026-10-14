@@ -50,7 +50,7 @@ export function getCourse(userId: string, courseId: number) {
     where: and(eq(courses.id, courseId), eq(courses.userId, userId)),
     with: {
       sources: {
-        columns: { id: true, name: true, pageCount: true, sizeBytes: true },
+        columns: { id: true, name: true, pageCount: true, sizeBytes: true, textTruncated: true },
         orderBy: asc(sources.id),
       },
       quizzes: {
