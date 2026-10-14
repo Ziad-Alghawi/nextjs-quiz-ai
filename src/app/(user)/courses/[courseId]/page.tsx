@@ -8,6 +8,7 @@ import { PageHeading } from "@/components/ui/page-heading";
 import { courseIdSchema } from "@/lib/validations/course";
 import { getCourse } from "@/server/services/courses";
 import { requireUser } from "@/server/session";
+import { CourseActions } from "./course-actions";
 
 type Props = { params: Promise<{ courseId: string }> };
 
@@ -34,7 +35,17 @@ export default async function CoursePage({ params }: Props) {
 
   return (
     <div className="flex flex-col gap-6 p-4">
-      <PageHeading>{course.name}</PageHeading>
+      <PageHeading
+        action={
+          <CourseActions
+            course={{ id: course.id, name: course.name }}
+            chapterCount={course.sources.length}
+            quizCount={course.quizzes.length}
+          />
+        }
+      >
+        {course.name}
+      </PageHeading>
 
       <Card className="gap-2">
         <CardTitle>Chapters</CardTitle>
