@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MAX_QUESTIONS } from "@/lib/plans";
 
 // Below Vercel's 4.5 MB request body limit, which rejects larger uploads before our code runs.
 export const MAX_PDF_BYTES = 4 * 1024 * 1024;
@@ -46,8 +47,8 @@ export const generatedQuizSchema = z.object({
       }),
     )
     .refine(
-      (questions) => questions.length >= 1 && questions.length <= 30,
-      "A quiz needs 1 to 30 questions",
+      (questions) => questions.length >= 1 && questions.length <= MAX_QUESTIONS,
+      `A quiz needs 1 to ${MAX_QUESTIONS} questions`,
     ),
 });
 

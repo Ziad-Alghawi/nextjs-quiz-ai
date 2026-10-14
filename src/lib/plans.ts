@@ -1,10 +1,20 @@
 /** Plan limits. The server enforces them; the UI only displays them. */
 export const PLANS = {
-  free: { label: "Free", monthlyQuizzes: 10, maxChapters: 30 },
-  pro: { label: "Pro", monthlyQuizzes: 50, maxChapters: 150 },
+  free: { label: "Free", monthlyQuizzes: 10, maxChapters: 30, questionCounts: [5, 10, 15] },
+  pro: {
+    label: "Pro",
+    monthlyQuizzes: 50,
+    maxChapters: 150,
+    questionCounts: [5, 10, 15, 20, 25],
+  },
 } as const;
 
 export type PlanId = keyof typeof PLANS;
+
+/** The most questions a quiz can have on any plan; every question-count check uses this. */
+export const MAX_QUESTIONS = Math.max(
+  ...Object.values(PLANS).flatMap((plan) => plan.questionCounts),
+);
 
 /** On every plan. Courses cost nothing to create, so this only stops scripted mass creation. */
 export const MAX_COURSES_PER_USER = 30;

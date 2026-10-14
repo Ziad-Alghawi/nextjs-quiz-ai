@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { MAX_QUESTIONS } from "@/lib/plans";
 import { scoreAttempt } from "@/lib/scoring";
 import { quizIdSchema } from "@/lib/validations/quiz";
 import { getQuizWithQuestions } from "@/server/services/quizzes";
@@ -10,7 +11,9 @@ import { getCurrentUser } from "@/server/session";
 
 const submitQuizSchema = z.object({
   quizId: quizIdSchema,
-  answers: z.array(z.object({ questionId: z.number().int(), answerId: z.number().int() })).max(100),
+  answers: z
+    .array(z.object({ questionId: z.number().int(), answerId: z.number().int() }))
+    .max(MAX_QUESTIONS),
 });
 
 type SubmitQuizResult =

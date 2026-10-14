@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { MAX_QUESTIONS } from "@/lib/plans";
 import {
   generatedQuizSchema,
   MAX_PDF_BYTES,
@@ -42,8 +43,8 @@ describe("generatedQuizSchema", () => {
     expect(generatedQuizSchema.safeParse(quizWith([])).success).toBe(false);
   });
 
-  it("rejects a quiz with more than 30 questions", () => {
-    const questions = Array.from({ length: 31 }, () => question());
+  it(`rejects a quiz with more than ${MAX_QUESTIONS} questions`, () => {
+    const questions = Array.from({ length: MAX_QUESTIONS + 1 }, () => question());
     expect(generatedQuizSchema.safeParse(quizWith(questions)).success).toBe(false);
   });
 
