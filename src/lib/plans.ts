@@ -35,6 +35,12 @@ export const CHAPTER_UPLOAD_LIMIT = { uploads: 20, windowMinutes: 10 } as const;
 export const GENERATION_BURST_LIMIT = { attempts: 3, windowMinutes: 10 } as const;
 
 /**
+ * Generation attempts per UTC day across all users. Gemini's paid tier has no per-day request
+ * quota, so this keeps one busy day from using up the monthly spend cap.
+ */
+export const DAILY_GENERATION_LIMIT = 50;
+
+/**
  * Document text sent to Gemini, in characters: about 40k tokens (4 characters per token in English,
  * fewer in other languages). Bounds the cost of one generation; longer documents use the first part.
  */
