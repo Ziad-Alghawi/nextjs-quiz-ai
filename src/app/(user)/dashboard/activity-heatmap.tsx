@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const WEEKS = 53;
-// 10px squares with 2px gaps fit 53 weeks into the dashboard card; narrower screens scroll.
+// 10px squares with 2px gaps; narrower cards scroll the grid.
 const CELL = "size-[10px] rounded-[2px]";
 // Roughly half the widest tooltip; closer to an edge than this, the tooltip aligns inward.
 const TOOLTIP_HALF_WIDTH = 90;
@@ -107,7 +107,8 @@ export function ActivityHeatmap({
   };
 
   return (
-    <div className="flex flex-col gap-2">
+    // As wide as the grid, so the legend stays right under the cells.
+    <div className="flex w-max min-w-0 max-w-full flex-col gap-2">
       <div ref={scroller} className="relative overflow-x-auto pb-1 pt-7">
         {tooltip ? (
           <div
@@ -126,16 +127,16 @@ export function ActivityHeatmap({
           aria-label="Quizzes taken per day in the last year"
           onKeyDown={moveFocus}
           className="grid w-max gap-[2px]"
-          style={{ gridTemplateColumns: `2rem repeat(${WEEKS}, 10px)` }}
+          style={{ gridTemplateColumns: `2.5rem repeat(${WEEKS}, 10px)` }}
         >
-          <div aria-hidden className="contents text-[10px] text-muted-foreground">
+          <div aria-hidden className="contents text-xs text-muted-foreground">
             <span className="sticky left-0 bg-card" />
             {weeks.map((week, index) => {
               const first = week[0];
               // A label where a month begins in this week, so a partial first month gets none.
               const startsMonth = first && new Date(first.time).getUTCDate() <= 7;
               return (
-                <span key={index} className="h-3 overflow-visible whitespace-nowrap">
+                <span key={index} className="h-4 overflow-visible whitespace-nowrap">
                   {startsMonth ? monthFormat.format(first.time) : ""}
                 </span>
               );
@@ -143,10 +144,10 @@ export function ActivityHeatmap({
           </div>
           {WEEKDAY_LABELS.map((label, weekday) => (
             <div key={weekday} role="row" className="contents">
-              {/* Stays visible while the grid scrolls on narrow screens. */}
+              {/* Stays visible while the grid scrolls on narrow screens. The 10px line height keeps a label from making its row taller than the cells, while the column still covers the cells scrolling under it. */}
               <span
                 aria-hidden
-                className="sticky left-0 z-[1] bg-card text-[10px] leading-[10px] text-muted-foreground"
+                className="sticky left-0 z-[1] self-center bg-card text-xs leading-[10px] text-muted-foreground"
               >
                 {label}
               </span>
@@ -182,7 +183,7 @@ export function ActivityHeatmap({
       </div>
       <div
         aria-hidden
-        className="flex items-center justify-end gap-1 text-[10px] text-muted-foreground"
+        className="flex items-center justify-end gap-1 text-xs text-muted-foreground"
       >
         Less
         {SHADES.map((shade) => (

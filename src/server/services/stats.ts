@@ -46,3 +46,32 @@ export async function getSubmissionActivity(userId: string) {
     )
     .groupBy(day);
 }
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const dayNumber = (date: string) => Date.parse(date) / DAY_MS;
+
+/** Streaks in consecutive UTC days with a submission, and the submissions in the current month. */
+export function summarizeActivity(activity: { date: string; count: number }[], today: string) {
+  const active = new Set(activity.filter((day) => day.count > 0).map((day) => dayNumber(day.date)));
+
+  let longestStreak = 0;
+  let run = 0;
+  for (const day of [...active].sort((a, b) => a - b)) {
+    run = active.has(day - 1) ? run + 1 : 1;
+    longestStreak = Math.max(longestStreak, run);
+  }
+
+  // A day without a quiz yet doesn't end the streak until the day is over.
+  let currentStreak = 0;
+  const todayNumber = dayNumber(today);
+  for (let day = active.has(todayNumber) ? todayNumber : todayNumber - 1; active.has(day); day--) {
+    currentStreak++;
+  }
+
+  const month = today.slice(0, 7);
+  const quizzesThisMonth = activity
+    .filter((day) => day.date.startsWith(month))
+    .reduce((total, day) => total + day.count, 0);
+
+  return { currentStreak, longestStreak, quizzesThisMonth };
+}

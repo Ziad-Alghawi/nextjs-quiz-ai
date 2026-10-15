@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
 import { listQuizzes } from "@/server/services/quizzes";
-import { getSubmissionActivity, getUserMetrics } from "@/server/services/stats";
+import { getSubmissionActivity, getUserMetrics, summarizeActivity } from "@/server/services/stats";
 import { requireUser } from "@/server/session";
 import { ActivityHeatmap } from "./activity-heatmap";
+import { ActivityStats } from "./activity-stats";
 import { MetricCard } from "./metric-card";
 import { QuizzesTable } from "./quizzes-table";
 
@@ -21,6 +22,8 @@ export default async function DashboardPage() {
     getUserMetrics(userId),
     getSubmissionActivity(userId),
   ]);
+
+  const today = new Date().toISOString().slice(0, 10);
 
   return (
     <div className="flex flex-col gap-6">
@@ -43,7 +46,10 @@ export default async function DashboardPage() {
       </div>
       <Card>
         <CardTitle>Activity</CardTitle>
-        <ActivityHeatmap activity={activity} today={new Date().toISOString().slice(0, 10)} />
+        <div className="flex flex-col gap-4 lg:flex-row lg:gap-6">
+          <ActivityHeatmap activity={activity} today={today} />
+          <ActivityStats {...summarizeActivity(activity, today)} />
+        </div>
       </Card>
       <QuizzesTable quizzes={quizzes} />
     </div>
