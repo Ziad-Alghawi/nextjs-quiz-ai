@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { quizGenerations } from "@/db/schema";
 import { DAILY_GENERATION_LIMIT, GENERATION_BURST_LIMIT, PLANS, type PlanId } from "@/lib/plans";
 import { isSubscribed } from "./billing";
+import type { ModelUsage } from "./generation";
 import { consumeRateLimit } from "./rate-limit";
 
 /** A request that died after reserving (e.g. a timeout) stops holding its slot after this. */
@@ -105,22 +106,40 @@ export async function reserveGeneration(userId: string) {
   });
 }
 
-export async function finishGeneration(id: number, status: "succeeded" | "failed") {
-  await db.update(quizGenerations).set({ status }).where(eq(quizGenerations.id, id));
+export async function finishGeneration(
+  id: number,
+  status: "succeeded" | "failed",
+  usage?: ModelUsage,
+) {
+  await db
+    .update(quizGenerations)
+    .set({ status, ...usage })
+    .where(eq(quizGenerations.id, id));
 }
 
 /**
  * Reserves a generation (or throws GenerationLimitError), then runs `generate`. Only a run that
- * returns counts toward the monthly quota; a failed one doesn't.
+ * returns counts toward the monthly quota; a failed one doesn't. The usage `generate` reports is
+ * saved either way, since a failed run's model calls cost money too.
  */
-export async function runGeneration<T>(userId: string, generate: () => Promise<T>) {
+export async function runGeneration<T>(
+  userId: string,
+  generate: (onUsage: (usage: ModelUsage) => void) => Promise<T>,
+) {
   const id = await reserveGeneration(userId);
+  let usage: ModelUsage | undefined;
   let succeeded = false;
   try {
-    const result = await generate();
+    const result = await generate((call) => {
+      usage = {
+        model: call.model,
+        inputTokens: (usage?.inputTokens ?? 0) + call.inputTokens,
+        outputTokens: (usage?.outputTokens ?? 0) + call.outputTokens,
+      };
+    });
     succeeded = true;
     return result;
   } finally {
-    await finishGeneration(id, succeeded ? "succeeded" : "failed");
+    await finishGeneration(id, succeeded ? "succeeded" : "failed", usage);
   }
 }

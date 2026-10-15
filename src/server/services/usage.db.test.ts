@@ -8,6 +8,7 @@ import {
   GenerationLimitError,
   getMonthlyUsage,
   reserveGeneration,
+  runGeneration,
 } from "./usage";
 
 const USER = "usage-db-test-user";
@@ -133,5 +134,31 @@ describe("usage service", () => {
 
     const [daily] = await db.select().from(rateLimits).where(eq(rateLimits.key, dailyKey()));
     expect(daily.count).toBe(1);
+  });
+
+  it("saves the summed token counts and the last model, also for a failed run", async () => {
+    await runGeneration(USER, async (onUsage) => {
+      onUsage({ model: "model-a", inputTokens: 1000, outputTokens: 200 });
+      onUsage({ model: "model-b", inputTokens: 1500, outputTokens: 300 });
+    });
+    await runGeneration(USER, async (onUsage) => {
+      onUsage({ model: "model-a", inputTokens: 900, outputTokens: 100 });
+      throw new Error("invalid quiz");
+    }).catch(() => {});
+
+    const rows = await db
+      .select({
+        status: quizGenerations.status,
+        model: quizGenerations.model,
+        inputTokens: quizGenerations.inputTokens,
+        outputTokens: quizGenerations.outputTokens,
+      })
+      .from(quizGenerations)
+      .where(eq(quizGenerations.userId, USER))
+      .orderBy(quizGenerations.id);
+    expect(rows).toEqual([
+      { status: "succeeded", model: "model-b", inputTokens: 2500, outputTokens: 500 },
+      { status: "failed", model: "model-a", inputTokens: 900, outputTokens: 100 },
+    ]);
   });
 });

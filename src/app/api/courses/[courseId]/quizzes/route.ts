@@ -47,8 +47,8 @@ export async function POST(
   );
 
   try {
-    const quizId = await runGeneration(user.id, async () => {
-      const quiz = await generateQuiz({ documents, questionCount });
+    const quizId = await runGeneration(user.id, async (onUsage) => {
+      const quiz = await generateQuiz({ documents, questionCount, onUsage });
       return createQuiz(quiz, user.id, { courseId: courseId.data, chapterIds });
     });
     return NextResponse.json({ quizId, truncated }, { status: 201 });

@@ -280,6 +280,11 @@ export const quizGenerations = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     plan: text("plan").$type<PlanId>().notNull(),
     status: generationStatus("status").default("pending").notNull(),
+    // Set when the generation finishes, so the cost per quiz is measured. Tokens add up every model
+    // call of the generation; the model is the one that made the last call. Null before 0013.
+    model: text("model"),
+    inputTokens: integer("input_tokens"),
+    outputTokens: integer("output_tokens"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [index("quiz_generations_user_id_created_at_idx").on(table.userId, table.createdAt)],

@@ -1,12 +1,20 @@
 import type { BaseMessage } from "@langchain/core/messages";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { GeneratedQuiz } from "@/lib/validations/quiz";
+import { modelResponse } from "@/test/model-response";
 import { GenerationError, generateQuiz } from "./generation";
 
-// No real Gemini calls in tests: the structured-output model is replaced by this mock.
-const model = vi.hoisted(() => ({ invoke: vi.fn() }));
+const PRIMARY = "gemini-3.5-flash-lite";
+const FALLBACK = "gemini-3.8-flash";
+
+// No real Gemini calls in tests: the structured-output model is replaced by this mock, which also
+// records which model each call was made with.
+const model = vi.hoisted(() => ({ invoke: vi.fn(), names: [] as string[] }));
 vi.mock("@langchain/google/node", () => ({
   ChatGoogle: class {
+    constructor({ model: name }: { model: string }) {
+      model.names.push(name);
+    }
     withStructuredOutput() {
       return model;
     }
@@ -28,21 +36,32 @@ const quiz = (questionCount: number): GeneratedQuiz => ({
   })),
 });
 
+const rateLimited = {
+  statusCode: 429,
+  data: { error: { message: "Resource has been exhausted." } },
+};
+
+const onUsage = vi.fn();
+
 const oneDocument = (questionCount = 10) => ({
   documents: [{ title: "cells.pdf", text: "Mitochondria make energy." }],
   questionCount,
+  onUsage,
 });
 
 const sentMessages = () => model.invoke.mock.calls[0][0] as BaseMessage[];
+const failure = (promise: Promise<unknown>) => promise.catch((error: unknown) => error);
 
 beforeEach(() => {
   model.invoke.mockReset();
+  model.names = [];
+  onUsage.mockReset();
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
 describe("generateQuiz", () => {
   it("asks for the exact count and explanations, and sends the documents as data", async () => {
-    model.invoke.mockResolvedValue(quiz(15));
+    model.invoke.mockResolvedValue(modelResponse(quiz(15)));
 
     await generateQuiz({
       documents: [
@@ -50,6 +69,7 @@ describe("generateQuiz", () => {
         { title: 'ch2 "<tricky>".pdf', text: "Genes mutate." },
       ],
       questionCount: 15,
+      onUsage,
     });
 
     const [system, human] = sentMessages();
@@ -66,7 +86,7 @@ describe("generateQuiz", () => {
   });
 
   it("keeps every question with its explanation and the same answers, in any order", async () => {
-    model.invoke.mockResolvedValue(quiz(10));
+    model.invoke.mockResolvedValue(modelResponse(quiz(10)));
 
     const result = await generateQuiz(oneDocument());
 
@@ -80,28 +100,105 @@ describe("generateQuiz", () => {
     }
   });
 
-  it("drops questions beyond the requested count", async () => {
-    model.invoke.mockResolvedValue(quiz(13));
+  it("uses only the primary model when its quiz is fine, and reports the call's usage", async () => {
+    model.invoke.mockResolvedValue(
+      modelResponse(quiz(10), { input_tokens: 12_000, output_tokens: 3_500 }),
+    );
 
-    expect((await generateQuiz(oneDocument(10))).questions).toHaveLength(10);
+    await generateQuiz(oneDocument());
+
+    expect(model.names).toEqual([PRIMARY]);
+    expect(onUsage).toHaveBeenCalledExactlyOnceWith({
+      model: PRIMARY,
+      inputTokens: 12_000,
+      outputTokens: 3_500,
+    });
   });
 
-  it("accepts a quiz at most 2 questions short and fails a shorter one", async () => {
-    model.invoke.mockResolvedValueOnce(quiz(8)).mockResolvedValueOnce(quiz(7));
+  it("drops questions beyond the requested count", async () => {
+    model.invoke.mockResolvedValue(modelResponse(quiz(13)));
+
+    expect((await generateQuiz(oneDocument(10))).questions).toHaveLength(10);
+    expect(model.names).toEqual([PRIMARY]);
+  });
+
+  it("accepts a quiz at most 2 questions short without a retry", async () => {
+    model.invoke.mockResolvedValue(modelResponse(quiz(8)));
 
     expect((await generateQuiz(oneDocument(10))).questions).toHaveLength(8);
-    const error = await generateQuiz(oneDocument(10)).catch((e: unknown) => e);
+    expect(model.names).toEqual([PRIMARY]);
+  });
+
+  it("retries a quiz that is too short on the fallback model", async () => {
+    model.invoke
+      .mockResolvedValueOnce(modelResponse(quiz(7)))
+      .mockResolvedValueOnce(modelResponse(quiz(10)));
+
+    expect((await generateQuiz(oneDocument(10))).questions).toHaveLength(10);
+    expect(model.names).toEqual([PRIMARY, FALLBACK]);
+  });
+
+  it("fails when the fallback's quiz is too short as well", async () => {
+    model.invoke.mockResolvedValue(modelResponse(quiz(7)));
+
+    const error = await failure(generateQuiz(oneDocument(10)));
+
     expect(error).toBeInstanceOf(GenerationError);
     expect(error).toMatchObject({ status: 502, message: expect.stringContaining("only 7 of 10") });
   });
 
-  it("turns a model failure into a 502 for the user", async () => {
-    model.invoke.mockRejectedValue(new Error("Output didn't match the schema"));
+  it("retries output that doesn't match the schema, reporting the usage of both calls", async () => {
+    model.invoke
+      .mockResolvedValueOnce(modelResponse(null, { input_tokens: 1000, output_tokens: 100 }))
+      .mockResolvedValueOnce(modelResponse(quiz(10), { input_tokens: 1000, output_tokens: 400 }));
 
-    const error = await generateQuiz(oneDocument()).catch((e: unknown) => e);
+    await generateQuiz(oneDocument());
+
+    expect(onUsage.mock.calls).toEqual([
+      [{ model: PRIMARY, inputTokens: 1000, outputTokens: 100 }],
+      [{ model: FALLBACK, inputTokens: 1000, outputTokens: 400 }],
+    ]);
+  });
+
+  it("fails with 502 when neither model writes a valid quiz", async () => {
+    model.invoke.mockResolvedValue(modelResponse(null));
+
+    const error = await failure(generateQuiz(oneDocument()));
 
     expect(error).toBeInstanceOf(GenerationError);
     expect(error).toMatchObject({ status: 502 });
+    expect(onUsage).toHaveBeenCalledTimes(2);
+  });
+
+  it("retries on the fallback when the primary model is rate-limited", async () => {
+    model.invoke.mockRejectedValueOnce(rateLimited).mockResolvedValueOnce(modelResponse(quiz(10)));
+
+    await generateQuiz(oneDocument());
+
+    expect(model.names).toEqual([PRIMARY, FALLBACK]);
+  });
+
+  it("doesn't retry when billing paused the API, since that stops every model", async () => {
+    model.invoke.mockRejectedValue({
+      statusCode: 429,
+      data: { error: { message: "Your billing account has exceeded its monthly spending cap." } },
+    });
+
+    const error = await failure(generateQuiz(oneDocument()));
+
+    expect(error).toMatchObject({ status: 503, message: expect.stringContaining("paused") });
+    expect(model.names).toEqual([PRIMARY]);
+  });
+
+  it("turns failures of both models into a 502 for the user", async () => {
+    model.invoke.mockRejectedValue(new Error("fetch failed"));
+
+    const error = await failure(generateQuiz(oneDocument()));
+
+    expect(error).toBeInstanceOf(GenerationError);
+    expect(error).toMatchObject({ status: 502 });
+    expect(model.names).toEqual([PRIMARY, FALLBACK]);
+    expect(onUsage).not.toHaveBeenCalled();
   });
 
   it("turns a daily quota error into a 503 that says when to come back", async () => {
@@ -112,14 +209,14 @@ describe("generateQuiz", () => {
           details: [
             {
               "@type": "type.googleapis.com/google.rpc.QuotaFailure",
-              violations: [{ quotaId: "GenerateRequestsPerDayPerProjectPerModel-FreeTier" }],
+              violations: [{ quotaId: "GenerateRequestsPerDayPerProjectPerModel" }],
             },
           ],
         },
       },
     });
 
-    const error = await generateQuiz(oneDocument()).catch((e: unknown) => e);
+    const error = await failure(generateQuiz(oneDocument()));
 
     expect(error).toMatchObject({ status: 503 });
     expect((error as Error).message).toContain("tomorrow");
