@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getQuotaErrorMessage } from "./gemini-errors";
+import { getQuotaErrorMessage, isBillingStop } from "./gemini-errors";
 
 const quotaError = (details: unknown[]) => ({
   statusCode: 429,
@@ -85,5 +85,16 @@ describe("getQuotaErrorMessage", () => {
     ["nothing", undefined],
   ])("returns null for %s", (_, error) => {
     expect(getQuotaErrorMessage(error)).toBeNull();
+  });
+});
+
+describe("isBillingStop", () => {
+  it("is true for a billing stop and false for a rate limit or another error", () => {
+    expect(isBillingStop({ statusCode: 402 })).toBe(true);
+    expect(isBillingStop({ statusCode: 429, data: { error: { message: "spending cap" } } })).toBe(
+      true,
+    );
+    expect(isBillingStop(quotaError([retryInfo("5s")]))).toBe(false);
+    expect(isBillingStop(new Error("fetch failed"))).toBe(false);
   });
 });

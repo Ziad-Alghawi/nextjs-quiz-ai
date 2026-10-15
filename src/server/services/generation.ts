@@ -1,12 +1,16 @@
 import "server-only";
-import { AIMessage, HumanMessage, SystemMessage } from "@langchain/core/messages";
+import { AIMessage, HumanMessage, SystemMessage, type BaseMessage } from "@langchain/core/messages";
 import { ChatGoogle } from "@langchain/google/node";
 import { env } from "@/lib/env";
-import { getQuotaErrorMessage } from "@/lib/gemini-errors";
+import { getQuotaErrorMessage, isBillingStop } from "@/lib/gemini-errors";
 import { shuffle } from "@/lib/shuffle";
 import { generatedQuizSchema, type GeneratedQuiz } from "@/lib/validations/quiz";
 
-const MODEL = "gemini-2.5-flash";
+/** Generates every quiz first. Same price per token as gemini-2.5-flash, which it replaces. */
+const PRIMARY_MODEL = "gemini-3.5-flash-lite";
+
+/** Gets one more try when the primary model fails or its quiz is unusable; about 2.5× the price. */
+const FALLBACK_MODEL = "gemini-3.8-flash";
 
 /** A quiz this many questions short of the request is still kept; a shorter one fails. */
 const ALLOWED_MISSING_QUESTIONS = 2;
@@ -67,71 +71,89 @@ type GenerateQuizInput = {
 
 const INVALID_QUIZ = "The AI could not generate a valid quiz from this document. Please try again.";
 
-/**
- * Asks Gemini for a quiz about the documents; throws GenerationError when it can't. Extra questions
- * are dropped; up to ALLOWED_MISSING_QUESTIONS missing ones are accepted.
- */
-export async function generateQuiz({
-  documents,
-  questionCount,
-  onUsage,
-}: GenerateQuizInput): Promise<GeneratedQuiz> {
-  // includeRaw keeps the raw message for its token counts. It also turns output that doesn't match
-  // the schema into `parsed: null` instead of an error (LangChain's types don't show the null).
-  const model = new ChatGoogle({ apiKey: env.GEMINI_API_KEY, model: MODEL }).withStructuredOutput(
-    generatedQuizSchema,
-    { includeRaw: true },
-  );
+type Attempt = { quiz: GeneratedQuiz } | { error: GenerationError; retry: boolean };
 
+/** One model call, checked: a usable quiz, or the error to show and whether another model may help. */
+async function attempt(
+  model: string,
+  messages: BaseMessage[],
+  { questionCount, onUsage }: GenerateQuizInput,
+): Promise<Attempt> {
   let response: { raw: unknown; parsed: GeneratedQuiz | null };
   try {
-    // Instructions only in the system message and the documents wrapped as data, so instructions
-    // written inside a document are harder to pass off as part of the prompt.
-    response = await model.invoke([
-      new SystemMessage(quizInstructions(questionCount)),
-      new HumanMessage(
-        documents
-          .map(
-            ({ title, text }) =>
-              `<document title="${escapeAttribute(title)}">\n${text}\n</document>`,
-          )
-          .join("\n\n"),
-      ),
-    ]);
+    // includeRaw keeps the raw message for its token counts. It also turns output that doesn't
+    // match the schema into `parsed: null` instead of an error (LangChain's types don't show it).
+    // Low thinking keeps both calls within the routes' 60 s (25 questions from 150k characters
+    // measured 12 s on the primary model and 38 s on the fallback).
+    response = await new ChatGoogle({ apiKey: env.GEMINI_API_KEY, model, thinkingLevel: "low" })
+      .withStructuredOutput(generatedQuizSchema, { includeRaw: true })
+      .invoke(messages);
   } catch (error) {
-    console.error("Quiz generation: model call failed", error);
+    console.error(`Quiz generation: ${model} failed`, error);
     const quotaMessage = getQuotaErrorMessage(error);
-    throw quotaMessage
-      ? new GenerationError(quotaMessage, 503)
-      : new GenerationError(INVALID_QUIZ, 502);
+    return {
+      error: quotaMessage
+        ? new GenerationError(quotaMessage, 503)
+        : new GenerationError(INVALID_QUIZ, 502),
+      // A billing stop pauses every model; any other failure may not happen on the other one.
+      retry: !isBillingStop(error),
+    };
   }
 
   const usage = AIMessage.isInstance(response.raw) ? response.raw.usage_metadata : undefined;
   onUsage({
-    model: MODEL,
+    model,
     inputTokens: usage?.input_tokens ?? 0,
     outputTokens: usage?.output_tokens ?? 0,
   });
 
   const quiz = response.parsed;
   if (!quiz) {
-    console.error("Quiz generation: the output didn't match the schema");
-    throw new GenerationError(INVALID_QUIZ, 502);
+    console.error(`Quiz generation: ${model}'s output didn't match the schema`);
+    return { error: new GenerationError(INVALID_QUIZ, 502), retry: true };
   }
-
   if (quiz.questions.length < questionCount - ALLOWED_MISSING_QUESTIONS) {
-    throw new GenerationError(
-      `The AI wrote only ${quiz.questions.length} of ${questionCount} questions. Please try again.`,
-      502,
-    );
+    console.error(`Quiz generation: ${model} wrote ${quiz.questions.length} of ${questionCount}`);
+    const message = `The AI wrote only ${quiz.questions.length} of ${questionCount} questions. Please try again.`;
+    return { error: new GenerationError(message, 502), retry: true };
   }
+  return { quiz };
+}
 
-  // Models tend to put the correct answer in the same few positions.
-  return {
-    ...quiz,
-    questions: quiz.questions.slice(0, questionCount).map((question) => ({
-      ...question,
-      answers: shuffle(question.answers),
-    })),
-  };
+/** Drops extra questions and shuffles the answers: models put the correct one in the same few places. */
+const finish = (quiz: GeneratedQuiz, questionCount: number): GeneratedQuiz => ({
+  ...quiz,
+  questions: quiz.questions.slice(0, questionCount).map((question) => ({
+    ...question,
+    answers: shuffle(question.answers),
+  })),
+});
+
+/**
+ * Asks Gemini for a quiz about the documents; throws GenerationError when it can't. The primary model
+ * goes first; when it fails or its quiz is unusable, the fallback model gets one try.
+ * Extra questions are dropped; up to ALLOWED_MISSING_QUESTIONS missing ones are accepted.
+ */
+export async function generateQuiz(input: GenerateQuizInput): Promise<GeneratedQuiz> {
+  const { documents, questionCount } = input;
+  // Instructions only in the system message and the documents wrapped as data, so instructions
+  // written inside a document are harder to pass off as part of the prompt.
+  const messages = [
+    new SystemMessage(quizInstructions(questionCount)),
+    new HumanMessage(
+      documents
+        .map(
+          ({ title, text }) => `<document title="${escapeAttribute(title)}">\n${text}\n</document>`,
+        )
+        .join("\n\n"),
+    ),
+  ];
+
+  const first = await attempt(PRIMARY_MODEL, messages, input);
+  if ("quiz" in first) return finish(first.quiz, questionCount);
+  if (!first.retry) throw first.error;
+
+  const second = await attempt(FALLBACK_MODEL, messages, input);
+  if ("quiz" in second) return finish(second.quiz, questionCount);
+  throw second.error;
 }

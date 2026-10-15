@@ -112,7 +112,8 @@ describe("POST /api/quizzes/generate", () => {
       .select()
       .from(quizGenerations)
       .where(eq(quizGenerations.userId, USER));
-    expect(attempt.status).toBe("failed");
+    // Both models were tried; the tokens of both calls are saved.
+    expect(attempt).toMatchObject({ status: "failed", inputTokens: 2000, outputTokens: 600 });
   });
 
   it("stops at the monthly quota without calling the AI", async () => {

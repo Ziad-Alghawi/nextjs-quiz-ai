@@ -30,17 +30,22 @@ const plural = (count: number, unit: string) => `${count} ${unit}${count === 1 ?
 // 403: the project lost API access, e.g. billing stopped. Waiting a minute or another model won't help.
 const BILLING_STOP = /spending cap|prepayment credits/i;
 
+/** Whether billing stopped the Gemini API (spend cap, used-up credits): every model is paused. */
+export function isBillingStop(error: unknown) {
+  const parsed = quotaErrorSchema.safeParse(error);
+  if (!parsed.success) return false;
+  const { statusCode, data } = parsed.data;
+  return statusCode !== 429 || BILLING_STOP.test(data?.error.message ?? "");
+}
+
 /** User-facing message for a Gemini quota or billing error, or null if the error is not one. */
 export function getQuotaErrorMessage(error: unknown): string | null {
   const parsed = quotaErrorSchema.safeParse(error);
   if (!parsed.success) return null;
 
-  const { statusCode, data } = parsed.data;
-  if (statusCode !== 429 || BILLING_STOP.test(data?.error.message ?? "")) {
-    return "Quiz generation is paused. Please try again later.";
-  }
+  if (isBillingStop(error)) return "Quiz generation is paused. Please try again later.";
 
-  const details = data?.error.details ?? [];
+  const details = parsed.data.data?.error.details ?? [];
   const quotaIds = details
     .filter((detail) => detail["@type"] === QUOTA_FAILURE)
     .flatMap((detail) => detail.violations ?? [])

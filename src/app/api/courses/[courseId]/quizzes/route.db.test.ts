@@ -132,9 +132,10 @@ describe("POST /api/courses/[courseId]/quizzes", () => {
   it("accepts a quiz 2 questions short, and fails a shorter one without using the quota", async () => {
     const courseId = await newCourse(USER);
     const chapterIds = [await addChapter(courseId, "cells.pdf", "Text.")];
+    // The second request gets 7 questions from both models.
     model.invoke
       .mockResolvedValueOnce(modelResponse(generated(8)))
-      .mockResolvedValueOnce(modelResponse(generated(7)));
+      .mockResolvedValue(modelResponse(generated(7)));
 
     expect((await generate(courseId, { chapterIds, questionCount: 10 })).status).toBe(201);
     const failed = await generate(courseId, { chapterIds, questionCount: 10 });
