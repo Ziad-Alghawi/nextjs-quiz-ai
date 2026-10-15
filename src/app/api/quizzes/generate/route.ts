@@ -4,10 +4,10 @@ import { getCurrentUser } from "@/server/session";
 import { pingDatabase } from "@/db/health";
 import { DEFAULT_QUESTION_COUNT } from "@/lib/plans";
 import { extractPdfText, limitDocumentText, uploadFileName } from "@/lib/pdf";
-import { pdfUploadSchema, type GeneratedQuiz } from "@/lib/validations/quiz";
+import { pdfUploadSchema } from "@/lib/validations/quiz";
 import { GenerationError, generateQuiz } from "@/server/services/generation";
 import { createQuiz } from "@/server/services/quizzes";
-import { finishGeneration, GenerationLimitError, reserveGeneration } from "@/server/services/usage";
+import { GenerationLimitError, runGeneration } from "@/server/services/usage";
 
 // Gemini needs 10-20 s for a typical document; set explicitly so a lower platform default can't cut it off.
 export const maxDuration = 60;
@@ -48,32 +48,20 @@ export async function POST(request: NextRequest) {
     }
 
     // Reserved only after the cheap checks above, right before the call that costs money.
-    let generationId: number;
     try {
-      generationId = await reserveGeneration(user.id);
-    } catch (error) {
-      if (error instanceof GenerationLimitError) return errorResponse(error.message, error.status);
-      throw error;
-    }
-
-    let succeeded = false;
-    try {
-      let quiz: GeneratedQuiz;
-      try {
-        quiz = await generateQuiz({
+      const quizId = await runGeneration(user.id, async () => {
+        const quiz = await generateQuiz({
           documents: [{ title: uploadFileName(body.get("pdf")), text }],
           questionCount: DEFAULT_QUESTION_COUNT,
         });
-      } catch (error) {
-        if (error instanceof GenerationError) return errorResponse(error.message, error.status);
-        throw error;
-      }
-      const quizId = await createQuiz(quiz, user.id);
-      succeeded = true;
+        return createQuiz(quiz, user.id);
+      });
       return NextResponse.json({ quizId, truncated }, { status: 200 });
-    } finally {
-      // Failed attempts don't use up the monthly quota.
-      await finishGeneration(generationId, succeeded ? "succeeded" : "failed");
+    } catch (error) {
+      if (error instanceof GenerationLimitError || error instanceof GenerationError) {
+        return errorResponse(error.message, error.status);
+      }
+      throw error;
     }
   } catch (error) {
     console.error("Quiz generation failed", error);

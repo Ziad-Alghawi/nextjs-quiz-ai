@@ -96,3 +96,19 @@ export async function reserveGeneration(userId: string) {
 export async function finishGeneration(id: number, status: "succeeded" | "failed") {
   await db.update(quizGenerations).set({ status }).where(eq(quizGenerations.id, id));
 }
+
+/**
+ * Reserves a generation (or throws GenerationLimitError), then runs `generate`. Only a run that
+ * returns counts toward the monthly quota; a failed one doesn't.
+ */
+export async function runGeneration<T>(userId: string, generate: () => Promise<T>) {
+  const id = await reserveGeneration(userId);
+  let succeeded = false;
+  try {
+    const result = await generate();
+    succeeded = true;
+    return result;
+  } finally {
+    await finishGeneration(id, succeeded ? "succeeded" : "failed");
+  }
+}
