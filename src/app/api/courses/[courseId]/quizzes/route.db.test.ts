@@ -1,7 +1,7 @@
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, like } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
-import { courses, quizGenerations, quizzes, sources, users } from "@/db/schema";
+import { courses, quizGenerations, quizzes, rateLimits, sources, users } from "@/db/schema";
 import { MAX_DOCUMENT_CHARS } from "@/lib/plans";
 import type { GeneratedQuiz } from "@/lib/validations/quiz";
 import { getMonthlyUsage } from "@/server/services/usage";
@@ -68,6 +68,8 @@ const cleanUp = () => db.delete(users).where(inArray(users.id, [USER, OTHER_USER
 
 beforeEach(async () => {
   await cleanUp();
+  // Repeated test runs would otherwise use up the day's shared generation slots.
+  await db.delete(rateLimits).where(like(rateLimits.key, "generation-daily:%"));
   await db.insert(users).values([
     { id: USER, name: "Test", email: `${USER}@example.com` },
     { id: OTHER_USER, name: "Other", email: `${OTHER_USER}@example.com` },

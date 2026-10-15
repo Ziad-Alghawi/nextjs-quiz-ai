@@ -2,11 +2,15 @@ import "server-only";
 import { and, count, eq, gte, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { quizGenerations } from "@/db/schema";
-import { GENERATION_BURST_LIMIT, PLANS, type PlanId } from "@/lib/plans";
+import { DAILY_GENERATION_LIMIT, GENERATION_BURST_LIMIT, PLANS, type PlanId } from "@/lib/plans";
 import { isSubscribed } from "./billing";
+import { consumeRateLimit } from "./rate-limit";
 
 /** A request that died after reserving (e.g. a timeout) stops holding its slot after this. */
 const PENDING_TIMEOUT = sql`interval '5 minutes'`;
+
+// The daily key changes at midnight UTC, so its window never needs to end within the day.
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 export class GenerationLimitError extends Error {
   constructor(
@@ -83,6 +87,14 @@ export async function reserveGeneration(userId: string) {
         `You can generate up to ${GENERATION_BURST_LIMIT.attempts} quizzes per ${GENERATION_BURST_LIMIT.windowMinutes} minutes. Please wait a few minutes.`,
         429,
       );
+    }
+
+    // Last, so a request the user's own limits reject doesn't take one of the shared slots. Throwing
+    // rolls the transaction back, so a request stopped here doesn't count toward the user's quota.
+    const today = new Date().toISOString().slice(0, 10);
+    const key = `generation-daily:${today}`;
+    if (!(await consumeRateLimit(key, DAILY_GENERATION_LIMIT, DAY_MS, tx))) {
+      throw new GenerationLimitError("Daily limit reached. Please try again tomorrow.", 429);
     }
 
     const [{ id }] = await tx

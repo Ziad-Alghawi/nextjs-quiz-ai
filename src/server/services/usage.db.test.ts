@@ -1,8 +1,8 @@
-import { eq, sql, type SQL } from "drizzle-orm";
+import { eq, like, sql, type SQL } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db";
-import { quizGenerations, users } from "@/db/schema";
-import { GENERATION_BURST_LIMIT, PLANS } from "@/lib/plans";
+import { quizGenerations, rateLimits, users } from "@/db/schema";
+import { DAILY_GENERATION_LIMIT, GENERATION_BURST_LIMIT, PLANS } from "@/lib/plans";
 import {
   finishGeneration,
   GenerationLimitError,
@@ -39,8 +39,12 @@ const limitError = (promise: Promise<unknown>) =>
     (error: unknown) => (error instanceof GenerationLimitError ? error.status : error),
   );
 
+const dailyKey = () => `generation-daily:${new Date().toISOString().slice(0, 10)}`;
+
 beforeEach(async () => {
   await db.delete(users).where(eq(users.id, USER)); // cascades to its generations
+  // Repeated test runs would otherwise use up the day's shared generation slots.
+  await db.delete(rateLimits).where(like(rateLimits.key, "generation-daily:%"));
   await db
     .insert(users)
     .values({ id: USER, name: "Usage test", email: `${USER}@example.com`, subscribed: false });
@@ -102,5 +106,32 @@ describe("usage service", () => {
 
     expect(results.filter((status) => status === null)).toHaveLength(1);
     expect(results.filter((status) => status === 403)).toHaveLength(19);
+  });
+
+  it("stops everyone at the daily limit with 429, without counting toward the user's quota", async () => {
+    await db.insert(rateLimits).values({
+      id: crypto.randomUUID(),
+      key: dailyKey(),
+      count: DAILY_GENERATION_LIMIT,
+      lastRequest: Date.now(),
+    });
+
+    expect(await limitError(reserveGeneration(USER))).toBe(429);
+    expect((await getMonthlyUsage(USER)).used).toBe(0);
+  });
+
+  it("doesn't take a daily slot when the user's own limit rejects the request", async () => {
+    await addGenerations(PLANS.free.monthlyQuizzes, {});
+    expect(await limitError(reserveGeneration(USER))).toBe(403);
+
+    const daily = await db.select().from(rateLimits).where(eq(rateLimits.key, dailyKey()));
+    expect(daily).toHaveLength(0);
+  });
+
+  it("takes one daily slot per reserved generation", async () => {
+    await reserveGeneration(USER);
+
+    const [daily] = await db.select().from(rateLimits).where(eq(rateLimits.key, dailyKey()));
+    expect(daily.count).toBe(1);
   });
 });
