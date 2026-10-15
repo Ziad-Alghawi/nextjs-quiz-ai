@@ -32,7 +32,7 @@ CONTENT
 ANSWERS
 7. Exactly 4 options per question, exactly one correct.
 8. Wrong options must be plausible: common misconceptions or close but incorrect ideas from the same topic. No joke answers.
-9. Keep all options similar in length and grammatical form, so the correct one does not stand out.
+9. The form of the options must not give the answer away. Write all four in the same grammatical form and with the same level of detail. Every option, correct or wrong, has 5 to 12 words, and the options of one question differ by at most 3 words. Details belong in the explanation, not in the options. Never add qualifiers, examples or words from the question only to the correct answer.
 10. Never use "all of the above", "none of the above" or "both A and B".
 11. Avoid negative questions. If one is necessary, write NOT in capitals.
 12. For each question, add an explanation of at most 2 sentences saying why the correct answer is right, based on the document.
