@@ -6,6 +6,7 @@ import { courses, quizGenerations, quizzes, rateLimits, users } from "@/db/schem
 import { DEFAULT_QUESTION_COUNT, PLANS } from "@/lib/plans";
 import type { GeneratedQuiz } from "@/lib/validations/quiz";
 import { getMonthlyUsage } from "@/server/services/usage";
+import { modelResponse } from "@/test/model-response";
 import { makePdf } from "@/test/make-pdf";
 import { POST } from "./route";
 
@@ -66,7 +67,7 @@ afterAll(cleanUp);
 
 describe("POST /api/quizzes/generate", () => {
   it("saves a 10-question quiz with explanations in the user's default course", async () => {
-    model.invoke.mockResolvedValue(generated(DEFAULT_QUESTION_COUNT));
+    model.invoke.mockResolvedValue(modelResponse(generated(DEFAULT_QUESTION_COUNT)));
 
     const response = await generate(makePdf(["Mitochondria make energy."]));
 
@@ -83,6 +84,12 @@ describe("POST /api/quizzes/generate", () => {
     const [course] = await db.select().from(courses).where(eq(courses.id, quiz!.courseId));
     expect(course).toMatchObject({ userId: USER, name: "My quizzes" });
     expect((await getMonthlyUsage(USER)).used).toBe(1);
+    const [generation] = await db
+      .select()
+      .from(quizGenerations)
+      .where(eq(quizGenerations.userId, USER));
+    expect(generation).toMatchObject({ inputTokens: 1000, outputTokens: 300 });
+    expect(generation.model).toMatch(/^gemini-/);
   });
 
   it("refuses signed-out users, non-PDF files and PDFs without text before calling the AI", async () => {
@@ -94,7 +101,7 @@ describe("POST /api/quizzes/generate", () => {
   });
 
   it("doesn't count a quiz with too few questions toward the monthly quota", async () => {
-    model.invoke.mockResolvedValue(generated(DEFAULT_QUESTION_COUNT - 3));
+    model.invoke.mockResolvedValue(modelResponse(generated(DEFAULT_QUESTION_COUNT - 3)));
 
     const response = await generate(makePdf(["Text."]));
 

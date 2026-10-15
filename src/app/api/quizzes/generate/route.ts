@@ -49,10 +49,11 @@ export async function POST(request: NextRequest) {
 
     // Reserved only after the cheap checks above, right before the call that costs money.
     try {
-      const quizId = await runGeneration(user.id, async () => {
+      const quizId = await runGeneration(user.id, async (onUsage) => {
         const quiz = await generateQuiz({
           documents: [{ title: uploadFileName(body.get("pdf")), text }],
           questionCount: DEFAULT_QUESTION_COUNT,
+          onUsage,
         });
         return createQuiz(quiz, user.id);
       });

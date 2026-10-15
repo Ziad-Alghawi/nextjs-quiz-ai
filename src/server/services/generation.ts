@@ -1,5 +1,5 @@
 import "server-only";
-import { HumanMessage, SystemMessage } from "@langchain/core/messages";
+import { AIMessage, HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { ChatGoogle } from "@langchain/google/node";
 import { env } from "@/lib/env";
 import { getQuotaErrorMessage } from "@/lib/gemini-errors";
@@ -55,10 +55,17 @@ export class GenerationError extends Error {
   }
 }
 
+/** One model call's model and token counts (output includes thinking), for the cost per quiz. */
+export type ModelUsage = { model: string; inputTokens: number; outputTokens: number };
+
 type GenerateQuizInput = {
   documents: { title: string; text: string }[];
   questionCount: number;
+  /** Called after every model call that got an answer, also when the answer is unusable. */
+  onUsage: (usage: ModelUsage) => void;
 };
+
+const INVALID_QUIZ = "The AI could not generate a valid quiz from this document. Please try again.";
 
 /**
  * Asks Gemini for a quiz about the documents; throws GenerationError when it can't. Extra questions
@@ -67,16 +74,20 @@ type GenerateQuizInput = {
 export async function generateQuiz({
   documents,
   questionCount,
+  onUsage,
 }: GenerateQuizInput): Promise<GeneratedQuiz> {
+  // includeRaw keeps the raw message for its token counts. It also turns output that doesn't match
+  // the schema into `parsed: null` instead of an error (LangChain's types don't show the null).
   const model = new ChatGoogle({ apiKey: env.GEMINI_API_KEY, model: MODEL }).withStructuredOutput(
     generatedQuizSchema,
+    { includeRaw: true },
   );
 
-  let quiz: GeneratedQuiz;
+  let response: { raw: unknown; parsed: GeneratedQuiz | null };
   try {
     // Instructions only in the system message and the documents wrapped as data, so instructions
     // written inside a document are harder to pass off as part of the prompt.
-    quiz = await model.invoke([
+    response = await model.invoke([
       new SystemMessage(quizInstructions(questionCount)),
       new HumanMessage(
         documents
@@ -92,10 +103,20 @@ export async function generateQuiz({
     const quotaMessage = getQuotaErrorMessage(error);
     throw quotaMessage
       ? new GenerationError(quotaMessage, 503)
-      : new GenerationError(
-          "The AI could not generate a valid quiz from this document. Please try again.",
-          502,
-        );
+      : new GenerationError(INVALID_QUIZ, 502);
+  }
+
+  const usage = AIMessage.isInstance(response.raw) ? response.raw.usage_metadata : undefined;
+  onUsage({
+    model: MODEL,
+    inputTokens: usage?.input_tokens ?? 0,
+    outputTokens: usage?.output_tokens ?? 0,
+  });
+
+  const quiz = response.parsed;
+  if (!quiz) {
+    console.error("Quiz generation: the output didn't match the schema");
+    throw new GenerationError(INVALID_QUIZ, 502);
   }
 
   if (quiz.questions.length < questionCount - ALLOWED_MISSING_QUESTIONS) {

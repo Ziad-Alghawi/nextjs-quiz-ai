@@ -1,6 +1,7 @@
 import type { BaseMessage } from "@langchain/core/messages";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { GeneratedQuiz } from "@/lib/validations/quiz";
+import { modelResponse } from "@/test/model-response";
 import { GenerationError, generateQuiz } from "./generation";
 
 // No real Gemini calls in tests: the structured-output model is replaced by this mock.
@@ -28,21 +29,25 @@ const quiz = (questionCount: number): GeneratedQuiz => ({
   })),
 });
 
+const onUsage = vi.fn();
+
 const oneDocument = (questionCount = 10) => ({
   documents: [{ title: "cells.pdf", text: "Mitochondria make energy." }],
   questionCount,
+  onUsage,
 });
 
 const sentMessages = () => model.invoke.mock.calls[0][0] as BaseMessage[];
 
 beforeEach(() => {
   model.invoke.mockReset();
+  onUsage.mockReset();
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
 describe("generateQuiz", () => {
   it("asks for the exact count and explanations, and sends the documents as data", async () => {
-    model.invoke.mockResolvedValue(quiz(15));
+    model.invoke.mockResolvedValue(modelResponse(quiz(15)));
 
     await generateQuiz({
       documents: [
@@ -50,6 +55,7 @@ describe("generateQuiz", () => {
         { title: 'ch2 "<tricky>".pdf', text: "Genes mutate." },
       ],
       questionCount: 15,
+      onUsage,
     });
 
     const [system, human] = sentMessages();
@@ -66,7 +72,7 @@ describe("generateQuiz", () => {
   });
 
   it("keeps every question with its explanation and the same answers, in any order", async () => {
-    model.invoke.mockResolvedValue(quiz(10));
+    model.invoke.mockResolvedValue(modelResponse(quiz(10)));
 
     const result = await generateQuiz(oneDocument());
 
@@ -81,13 +87,15 @@ describe("generateQuiz", () => {
   });
 
   it("drops questions beyond the requested count", async () => {
-    model.invoke.mockResolvedValue(quiz(13));
+    model.invoke.mockResolvedValue(modelResponse(quiz(13)));
 
     expect((await generateQuiz(oneDocument(10))).questions).toHaveLength(10);
   });
 
   it("accepts a quiz at most 2 questions short and fails a shorter one", async () => {
-    model.invoke.mockResolvedValueOnce(quiz(8)).mockResolvedValueOnce(quiz(7));
+    model.invoke
+      .mockResolvedValueOnce(modelResponse(quiz(8)))
+      .mockResolvedValueOnce(modelResponse(quiz(7)));
 
     expect((await generateQuiz(oneDocument(10))).questions).toHaveLength(8);
     const error = await generateQuiz(oneDocument(10)).catch((e: unknown) => e);
@@ -95,13 +103,38 @@ describe("generateQuiz", () => {
     expect(error).toMatchObject({ status: 502, message: expect.stringContaining("only 7 of 10") });
   });
 
-  it("turns a model failure into a 502 for the user", async () => {
-    model.invoke.mockRejectedValue(new Error("Output didn't match the schema"));
+  it("reports the model and token counts of the call", async () => {
+    model.invoke.mockResolvedValue(
+      modelResponse(quiz(10), { input_tokens: 12_000, output_tokens: 3_500 }),
+    );
+
+    await generateQuiz(oneDocument());
+
+    expect(onUsage).toHaveBeenCalledExactlyOnceWith({
+      model: expect.stringMatching(/^gemini-/),
+      inputTokens: 12_000,
+      outputTokens: 3_500,
+    });
+  });
+
+  it("turns output that doesn't match the schema into a 502, still reporting its usage", async () => {
+    model.invoke.mockResolvedValue(modelResponse(null));
 
     const error = await generateQuiz(oneDocument()).catch((e: unknown) => e);
 
     expect(error).toBeInstanceOf(GenerationError);
     expect(error).toMatchObject({ status: 502 });
+    expect(onUsage).toHaveBeenCalledOnce();
+  });
+
+  it("turns a model failure into a 502 for the user", async () => {
+    model.invoke.mockRejectedValue(new Error("fetch failed"));
+
+    const error = await generateQuiz(oneDocument()).catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(GenerationError);
+    expect(error).toMatchObject({ status: 502 });
+    expect(onUsage).not.toHaveBeenCalled();
   });
 
   it("turns a daily quota error into a 503 that says when to come back", async () => {
