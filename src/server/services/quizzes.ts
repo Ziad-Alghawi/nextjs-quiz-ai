@@ -1,17 +1,22 @@
 import "server-only";
 import { and, asc, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { questionAnswers, questions, quizzes } from "@/db/schema";
+import { questionAnswers, questions, quizSources, quizzes } from "@/db/schema";
 import type { GeneratedQuiz } from "@/lib/validations/quiz";
 import { getOrCreateDefaultCourse } from "./courses";
 
 /**
- * Stores a generated quiz with its questions and answers in one transaction, in the user's
- * "My quizzes" course.
+ * Stores a generated quiz with its questions and answers in one transaction: in the given course,
+ * linked to the chapters it was made from (the caller checked they are the user's), or else in the
+ * user's "My quizzes" course.
  */
-export async function createQuiz(quiz: GeneratedQuiz, userId: string) {
+export async function createQuiz(
+  quiz: GeneratedQuiz,
+  userId: string,
+  source?: { courseId: number; chapterIds: number[] },
+) {
   return db.transaction(async (tx) => {
-    const courseId = await getOrCreateDefaultCourse(tx, userId);
+    const courseId = source?.courseId ?? (await getOrCreateDefaultCourse(tx, userId));
     const [{ quizId }] = await tx
       .insert(quizzes)
       .values({ name: quiz.name, description: quiz.description, userId, courseId })
@@ -39,6 +44,12 @@ export async function createQuiz(quiz: GeneratedQuiz, userId: string) {
         })),
       ),
     );
+
+    if (source) {
+      await tx
+        .insert(quizSources)
+        .values(source.chapterIds.map((sourceId) => ({ quizId, sourceId })));
+    }
 
     return quizId;
   });
