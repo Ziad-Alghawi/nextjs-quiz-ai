@@ -1,5 +1,5 @@
 import "server-only";
-import { and, count, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, count, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { courses, sources } from "@/db/schema";
 import { MAX_CHAPTERS_PER_COURSE, PLANS, type PlanId } from "@/lib/plans";
@@ -59,6 +59,18 @@ export async function addChapter(
       .returning({ id: sources.id });
     return { id };
   });
+}
+
+/** The chapters' names and texts in upload order, leaving out ids that aren't in the user's course. */
+export function getChapterTexts(userId: string, courseId: number, chapterIds: number[]) {
+  return db
+    .select({ name: sources.name, text: sources.text })
+    .from(sources)
+    .innerJoin(courses, eq(sources.courseId, courses.id))
+    .where(
+      and(eq(courses.id, courseId), eq(courses.userId, userId), inArray(sources.id, chapterIds)),
+    )
+    .orderBy(asc(sources.id));
 }
 
 /**

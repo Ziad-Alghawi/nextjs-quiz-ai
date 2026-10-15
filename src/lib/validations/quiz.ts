@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { MAX_QUESTIONS } from "@/lib/plans";
+import { MAX_CHAPTERS_PER_COURSE, MAX_QUESTIONS, QUESTION_COUNTS } from "@/lib/plans";
+import { chapterIdSchema } from "./course";
 
 // Below Vercel's 4.5 MB request body limit, which rejects larger uploads before our code runs.
 export const MAX_PDF_BYTES = 4 * 1024 * 1024;
@@ -54,6 +55,21 @@ export const generatedQuizSchema = z.object({
     .refine(
       (questions) => questions.length >= 1 && questions.length <= 2 * MAX_QUESTIONS,
       `A quiz needs 1 to ${2 * MAX_QUESTIONS} questions`,
+    ),
+});
+
+/** Generating a quiz from chapters of one course. Repeated chapter ids count once. */
+export const chapterQuizSchema = z.object({
+  chapterIds: z
+    .array(chapterIdSchema)
+    .min(1, "Select at least one chapter.")
+    .max(MAX_CHAPTERS_PER_COURSE, `Select at most ${MAX_CHAPTERS_PER_COURSE} chapters.`)
+    .transform((ids) => [...new Set(ids)]),
+  questionCount: z
+    .number()
+    .refine(
+      (count) => QUESTION_COUNTS.includes(count),
+      "Choose one of the offered question counts.",
     ),
 });
 
