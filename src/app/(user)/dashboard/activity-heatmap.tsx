@@ -5,13 +5,8 @@ import { cn } from "@/lib/utils";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const WEEKS = 53;
-// Cells grow with the card from 10px (below that, the grid scrolls) up to a size that stays calm on
-// very wide screens; they stay square. The 2px gaps are fixed.
-const MIN_CELL_PX = 10;
-const MAX_CELL_PX = 28;
-const GAP_PX = 2;
-const LABEL_COLUMN = "2.5rem";
-const CELL = "aspect-square w-full rounded-[2px]";
+// 10px squares with 2px gaps; narrower cards scroll the grid.
+const CELL = "size-[10px] rounded-[2px]";
 // Roughly half the widest tooltip; closer to an edge than this, the tooltip aligns inward.
 const TOOLTIP_HALF_WIDTH = 90;
 // Fewer to more quizzes on a day; 4 or more get the full accent color.
@@ -112,11 +107,8 @@ export function ActivityHeatmap({
   };
 
   return (
-    // Never wider than the grid at its largest, so the legend stays right under the cells.
-    <div
-      className="flex flex-col gap-2"
-      style={{ maxWidth: `calc(${LABEL_COLUMN} + ${WEEKS * (MAX_CELL_PX + GAP_PX)}px)` }}
-    >
+    // As wide as the grid, so the legend stays right under the cells.
+    <div className="flex w-max min-w-0 max-w-full flex-col gap-2">
       <div ref={scroller} className="relative overflow-x-auto pb-1 pt-7">
         {tooltip ? (
           <div
@@ -134,11 +126,8 @@ export function ActivityHeatmap({
           role="grid"
           aria-label="Quizzes taken per day in the last year"
           onKeyDown={moveFocus}
-          className="grid w-full gap-[2px]"
-          style={{
-            gridTemplateColumns: `${LABEL_COLUMN} repeat(${WEEKS}, minmax(${MIN_CELL_PX}px, ${MAX_CELL_PX}px))`,
-            minWidth: `calc(${LABEL_COLUMN} + ${WEEKS * (MIN_CELL_PX + GAP_PX)}px)`,
-          }}
+          className="grid w-max gap-[2px]"
+          style={{ gridTemplateColumns: `2.5rem repeat(${WEEKS}, 10px)` }}
         >
           <div aria-hidden className="contents text-xs text-muted-foreground">
             <span className="sticky left-0 bg-card" />
@@ -198,7 +187,7 @@ export function ActivityHeatmap({
       >
         Less
         {SHADES.map((shade) => (
-          <span key={shade} className={cn("size-3 rounded-[2px]", shade)} />
+          <span key={shade} className={cn(CELL, shade)} />
         ))}
         More
       </div>
