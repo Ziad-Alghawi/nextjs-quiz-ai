@@ -1,7 +1,7 @@
 import { eq, inArray, like } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
-import { courses, rateLimits, sources, users } from "@/db/schema";
+import { chapters, courses, rateLimits, users } from "@/db/schema";
 import {
   CHAPTER_UPLOAD_LIMIT,
   MAX_CHAPTERS_PER_COURSE,
@@ -40,7 +40,7 @@ const newCourse = async (userId: string, name = "Biology") => {
   return course.id;
 };
 const addChapters = (courseId: number, count: number) =>
-  db.insert(sources).values(
+  db.insert(chapters).values(
     Array.from({ length: count }, (_, i) => ({
       courseId,
       name: `old-${i}.pdf`,
@@ -75,7 +75,7 @@ describe("POST /api/courses/[courseId]/sources", () => {
     const response = await upload(courseId, file, "  Cells.pdf ");
 
     expect(response.status).toBe(201);
-    const [chapter] = await db.select().from(sources).where(eq(sources.id, response.body.id!));
+    const [chapter] = await db.select().from(chapters).where(eq(chapters.id, response.body.id!));
     expect(chapter).toMatchObject({
       courseId,
       name: "Cells.pdf",
@@ -98,7 +98,7 @@ describe("POST /api/courses/[courseId]/sources", () => {
     const response = await upload(courseId, makePdf(pages));
 
     expect(response.status).toBe(201);
-    const [chapter] = await db.select().from(sources).where(eq(sources.id, response.body.id!));
+    const [chapter] = await db.select().from(chapters).where(eq(chapters.id, response.body.id!));
     expect(chapter.textTruncated).toBe(true);
     expect(chapter.text.length).toBeLessThanOrEqual(MAX_DOCUMENT_CHARS);
   });
@@ -111,7 +111,7 @@ describe("POST /api/courses/[courseId]/sources", () => {
     expect((await upload("abc", pdf)).status).toBe(404);
     session.userId = null;
     expect((await upload(othersCourse, pdf)).status).toBe(401);
-    expect(await db.select().from(sources).where(eq(sources.courseId, othersCourse))).toEqual([]);
+    expect(await db.select().from(chapters).where(eq(chapters.courseId, othersCourse))).toEqual([]);
   });
 
   it("explains files that aren't PDFs, have no text or can't be read", async () => {

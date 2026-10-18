@@ -116,12 +116,13 @@ export const courses = pgTable(
 );
 
 export const coursesRelations = relations(courses, ({ many }) => ({
-  sources: many(sources),
+  chapters: many(chapters),
   quizzes: many(quizzes),
 }));
 
-// A PDF in a course ("Chapter" in the UI). Only the extracted text is kept, not the file.
-export const sources = pgTable(
+// A PDF in a course; only the extracted text is kept, not the file. The table keeps its first name,
+// "sources", so renaming it needs no migration.
+export const chapters = pgTable(
   "sources",
   {
     id: serial("id").primaryKey(),
@@ -139,9 +140,9 @@ export const sources = pgTable(
   (table) => [index("sources_course_id_idx").on(table.courseId)],
 );
 
-export const sourcesRelations = relations(sources, ({ one, many }) => ({
-  course: one(courses, { fields: [sources.courseId], references: [courses.id] }),
-  quizSources: many(quizSources),
+export const chaptersRelations = relations(chapters, ({ one, many }) => ({
+  course: one(courses, { fields: [chapters.courseId], references: [courses.id] }),
+  quizChapters: many(quizChapters),
 }));
 
 ///////////////////////////////////////////
@@ -176,29 +177,29 @@ export const quizzesRelations = relations(quizzes, ({ one, many }) => ({
   course: one(courses, { fields: [quizzes.courseId], references: [courses.id] }),
   questions: many(questions),
   submissions: many(quizSubmissions),
-  quizSources: many(quizSources),
+  quizChapters: many(quizChapters),
 }));
 
 // The chapters a quiz was generated from. Deleting a chapter keeps its quizzes, only the link goes.
-export const quizSources = pgTable(
+export const quizChapters = pgTable(
   "quiz_sources",
   {
     quizId: integer("quiz_id")
       .notNull()
       .references(() => quizzes.id, { onDelete: "cascade" }),
-    sourceId: integer("source_id")
+    chapterId: integer("source_id")
       .notNull()
-      .references(() => sources.id, { onDelete: "cascade" }),
+      .references(() => chapters.id, { onDelete: "cascade" }),
   },
   (table) => [
-    primaryKey({ columns: [table.quizId, table.sourceId] }),
-    index("quiz_sources_source_id_idx").on(table.sourceId),
+    primaryKey({ columns: [table.quizId, table.chapterId] }),
+    index("quiz_sources_source_id_idx").on(table.chapterId),
   ],
 );
 
-export const quizSourcesRelations = relations(quizSources, ({ one }) => ({
-  quiz: one(quizzes, { fields: [quizSources.quizId], references: [quizzes.id] }),
-  source: one(sources, { fields: [quizSources.sourceId], references: [sources.id] }),
+export const quizChaptersRelations = relations(quizChapters, ({ one }) => ({
+  quiz: one(quizzes, { fields: [quizChapters.quizId], references: [quizzes.id] }),
+  chapter: one(chapters, { fields: [quizChapters.chapterId], references: [chapters.id] }),
 }));
 
 export const questions = pgTable(

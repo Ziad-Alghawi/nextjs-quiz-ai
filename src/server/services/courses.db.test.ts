@@ -1,7 +1,7 @@
 import { eq, inArray } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db";
-import { courses, quizzes, sources, users } from "@/db/schema";
+import { chapters, courses, quizzes, users } from "@/db/schema";
 import { MAX_COURSES_PER_USER } from "@/lib/plans";
 import {
   createCourse,
@@ -97,12 +97,12 @@ describe("deleteCourse", () => {
   it("deletes the course with its chapters and quizzes", async () => {
     const courseId = await newCourse(USER, "Biology");
     await db
-      .insert(sources)
+      .insert(chapters)
       .values({ courseId, name: "ch1.pdf", text: "Cells.", pageCount: 1, sizeBytes: 100 });
     await db.insert(quizzes).values({ name: "Cells", userId: USER, courseId });
 
     expect(await deleteCourse(USER, courseId)).toBe(true);
-    expect(await db.select().from(sources).where(eq(sources.courseId, courseId))).toEqual([]);
+    expect(await db.select().from(chapters).where(eq(chapters.courseId, courseId))).toEqual([]);
     expect(await db.select().from(quizzes).where(eq(quizzes.courseId, courseId))).toEqual([]);
   });
 
@@ -173,7 +173,7 @@ describe("listCourses and getCourse", () => {
   it("returns the course with its chapters and quizzes, newest quiz first", async () => {
     const courseId = await newCourse(USER, "Biology");
     await db
-      .insert(sources)
+      .insert(chapters)
       .values({ courseId, name: "ch1.pdf", text: "Cells.", pageCount: 3, sizeBytes: 100 });
     const [older] = await db
       .insert(quizzes)
@@ -187,7 +187,7 @@ describe("listCourses and getCourse", () => {
     const course = await getCourse(USER, courseId);
 
     expect(course?.name).toBe("Biology");
-    expect(course?.sources).toEqual([
+    expect(course?.chapters).toEqual([
       {
         id: expect.any(Number),
         name: "ch1.pdf",

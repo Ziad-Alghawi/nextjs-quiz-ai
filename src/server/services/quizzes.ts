@@ -1,7 +1,7 @@
 import "server-only";
 import { and, asc, count, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { questionAnswers, questions, quizSources, quizzes } from "@/db/schema";
+import { questionAnswers, questions, quizChapters, quizzes } from "@/db/schema";
 import { isQuestionCountAllowed, REVIEW_BURST_LIMIT } from "@/lib/plans";
 import { pickReviewQuestions, reviewName } from "@/lib/review";
 import type { GeneratedQuiz } from "@/lib/validations/quiz";
@@ -65,8 +65,8 @@ export async function createQuiz(
     // A review of quizzes whose chapters were deleted (or Quick quizzes) has no chapters.
     if (origin && origin.chapterIds.length > 0) {
       await tx
-        .insert(quizSources)
-        .values(origin.chapterIds.map((sourceId) => ({ quizId, sourceId })));
+        .insert(quizChapters)
+        .values(origin.chapterIds.map((chapterId) => ({ quizId, chapterId })));
     }
 
     return quizId;
@@ -170,7 +170,7 @@ export async function createReviewQuiz(
           },
         },
       },
-      quizSources: { columns: { sourceId: true } },
+      quizChapters: { columns: { chapterId: true } },
     },
   });
   if (chosen.length !== input.quizIds.length) return { error: "not-found" };
@@ -191,7 +191,9 @@ export async function createReviewQuiz(
     userId,
     {
       courseId: input.courseId,
-      chapterIds: [...new Set(chosen.flatMap((quiz) => quiz.quizSources.map((s) => s.sourceId)))],
+      chapterIds: [
+        ...new Set(chosen.flatMap((quiz) => quiz.quizChapters.map((link) => link.chapterId))),
+      ],
       kind: "review",
     },
   );

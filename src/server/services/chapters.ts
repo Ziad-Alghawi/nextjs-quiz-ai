@@ -1,7 +1,7 @@
 import "server-only";
 import { and, asc, count, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { courses, sources } from "@/db/schema";
+import { chapters, courses } from "@/db/schema";
 import { MAX_CHAPTERS_PER_COURSE, PLANS, type PlanId } from "@/lib/plans";
 import { getPlan } from "./usage";
 
@@ -41,11 +41,11 @@ export async function addChapter(
     if (!course) return { error: "course-not-found" };
 
     const [[{ inCourse }], [{ ofUser }]] = await Promise.all([
-      tx.select({ inCourse: count() }).from(sources).where(eq(sources.courseId, courseId)),
+      tx.select({ inCourse: count() }).from(chapters).where(eq(chapters.courseId, courseId)),
       tx
         .select({ ofUser: count() })
-        .from(sources)
-        .innerJoin(courses, eq(sources.courseId, courses.id))
+        .from(chapters)
+        .innerJoin(courses, eq(chapters.courseId, courses.id))
         .where(eq(courses.userId, userId)),
     ]);
     if (inCourse >= MAX_CHAPTERS_PER_COURSE) {
@@ -54,9 +54,9 @@ export async function addChapter(
     if (ofUser >= maxChapters) return { error: "user-full", limit: maxChapters, plan };
 
     const [{ id }] = await tx
-      .insert(sources)
+      .insert(chapters)
       .values({ courseId, ...chapter })
-      .returning({ id: sources.id });
+      .returning({ id: chapters.id });
     return { id };
   });
 }
@@ -64,13 +64,13 @@ export async function addChapter(
 /** The chapters' names and texts in upload order, leaving out ids that aren't in the user's course. */
 export function getChapterTexts(userId: string, courseId: number, chapterIds: number[]) {
   return db
-    .select({ name: sources.name, text: sources.text })
-    .from(sources)
-    .innerJoin(courses, eq(sources.courseId, courses.id))
+    .select({ name: chapters.name, text: chapters.text })
+    .from(chapters)
+    .innerJoin(courses, eq(chapters.courseId, courses.id))
     .where(
-      and(eq(courses.id, courseId), eq(courses.userId, userId), inArray(sources.id, chapterIds)),
+      and(eq(courses.id, courseId), eq(courses.userId, userId), inArray(chapters.id, chapterIds)),
     )
-    .orderBy(asc(sources.id));
+    .orderBy(asc(chapters.id));
 }
 
 /**
@@ -83,8 +83,8 @@ export async function deleteChapter(userId: string, chapterId: number) {
     .from(courses)
     .where(eq(courses.userId, userId));
   const [deleted] = await db
-    .delete(sources)
-    .where(and(eq(sources.id, chapterId), inArray(sources.courseId, usersCourses)))
-    .returning({ courseId: sources.courseId });
+    .delete(chapters)
+    .where(and(eq(chapters.id, chapterId), inArray(chapters.courseId, usersCourses)))
+    .returning({ courseId: chapters.courseId });
   return deleted?.courseId ?? null;
 }
