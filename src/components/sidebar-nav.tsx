@@ -1,5 +1,5 @@
 "use client";
-import { BookOpen, CreditCard, LayoutDashboard, Settings } from "lucide-react";
+import { BookOpen, CreditCard, LayoutDashboard, Settings, Zap } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ComponentType } from "react";
@@ -28,11 +28,12 @@ function NavLink({ href, icon: Icon, label }: NavLinkProps) {
   );
 }
 
-/** The signed-in navigation: overview, the user's courses, then account pages at the bottom. */
+/** The signed-in navigation: overview, quick quiz, the user's courses, then account pages at the bottom. */
 export function SidebarNav({ courses }: { courses: { id: number; name: string }[] }) {
   return (
     <nav aria-label="Main" className="flex h-full flex-col gap-1">
       <NavLink href="/dashboard" icon={LayoutDashboard} label="Overview" />
+      <NavLink href="/quizzes/new" icon={Zap} label="Quick quiz" />
 
       <div className="mt-4 flex items-center justify-between pl-3">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">

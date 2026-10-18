@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Plus } from "lucide-react";
+import { Zap } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
@@ -31,8 +31,8 @@ export default async function DashboardPage() {
         action={
           <Button className="gap-2" asChild>
             <Link href="/quizzes/new">
-              <Plus className="size-4" aria-hidden />
-              New quiz
+              <Zap className="size-4" aria-hidden />
+              Quick quiz
             </Link>
           </Button>
         }
