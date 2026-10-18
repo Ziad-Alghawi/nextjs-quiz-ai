@@ -8,10 +8,12 @@ import { PageHeading } from "@/components/ui/page-heading";
 import { MAX_CHAPTERS_PER_COURSE } from "@/lib/plans";
 import { courseIdSchema } from "@/lib/validations/course";
 import { getCourse } from "@/server/services/courses";
+import { getMonthlyUsage } from "@/server/services/usage";
 import { requireUser } from "@/server/session";
 import { ChapterUpload } from "./chapter-upload";
 import { CourseActions } from "./course-actions";
 import { DeleteChapterButton } from "./delete-chapter-button";
+import { QuizGenerator } from "./quiz-generator";
 
 type Props = { params: Promise<{ courseId: string }> };
 
@@ -35,6 +37,8 @@ const formatSize = (bytes: number) =>
 
 export default async function CoursePage({ params }: Props) {
   const course = await loadCourse((await params).courseId);
+  const user = await requireUser(`/courses/${course.id}`);
+  const { plan, used, limit } = await getMonthlyUsage(user.id);
 
   return (
     <div className="flex flex-col gap-6">
@@ -93,28 +97,44 @@ export default async function CoursePage({ params }: Props) {
           )}
         </Card>
 
-        <Card className="gap-2">
-          <CardTitle>Quizzes</CardTitle>
-          {course.quizzes.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No quizzes in this course yet.</p>
-          ) : (
-            <ul className="divide-y">
-              {course.quizzes.map((quiz) => (
-                <li key={quiz.id}>
-                  <Link
-                    href={`/quizzes/${quiz.id}`}
-                    className="flex flex-col gap-0.5 rounded-md py-3 hover:bg-accent/50"
-                  >
-                    <span className="font-medium">{quiz.name}</span>
-                    {quiz.description ? (
-                      <span className="text-sm text-muted-foreground">{quiz.description}</span>
-                    ) : null}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
+        <div className="flex flex-col gap-6">
+          <Card>
+            <CardTitle>Generate a quiz</CardTitle>
+            {course.sources.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Upload a chapter first.</p>
+            ) : (
+              <QuizGenerator
+                courseId={course.id}
+                chapters={course.sources.map(({ id, name }) => ({ id, name }))}
+                plan={plan}
+                remaining={Math.max(limit - used, 0)}
+              />
+            )}
+          </Card>
+
+          <Card className="gap-2">
+            <CardTitle>Quizzes</CardTitle>
+            {course.quizzes.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No quizzes in this course yet.</p>
+            ) : (
+              <ul className="divide-y">
+                {course.quizzes.map((quiz) => (
+                  <li key={quiz.id}>
+                    <Link
+                      href={`/quizzes/${quiz.id}`}
+                      className="flex flex-col gap-0.5 rounded-md py-3 hover:bg-accent/50"
+                    >
+                      <span className="font-medium">{quiz.name}</span>
+                      {quiz.description ? (
+                        <span className="text-sm text-muted-foreground">{quiz.description}</span>
+                      ) : null}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+        </div>
       </div>
     </div>
   );
