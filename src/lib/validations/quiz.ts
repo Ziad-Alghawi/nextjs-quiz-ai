@@ -68,6 +68,12 @@ const questionCountSchema = z
   .number()
   .refine((count) => QUESTION_COUNTS.includes(count), "Choose one of the offered question counts.");
 
+/** A question count as a form sends it (a string). */
+const formQuestionCount = z.coerce.number().pipe(questionCountSchema);
+
+/** Generating a quiz from one uploaded PDF; the PDF itself is validated by `pdfUploadSchema`. */
+export const quickQuizSchema = z.object({ questionCount: formQuestionCount });
+
 /** Generating a quiz from chapters of one course. Repeated chapter ids count once. */
 export const chapterQuizSchema = z.object({
   chapterIds: z
@@ -92,7 +98,7 @@ export const reviewQuizSchema = z.object({
       (ids) => ids.length <= MAX_REVIEW_QUIZZES,
       `Select at most ${MAX_REVIEW_QUIZZES} quizzes.`,
     ),
-  questionCount: z.coerce.number().pipe(questionCountSchema),
+  questionCount: formQuestionCount,
 });
 
 export type GeneratedQuiz = z.infer<typeof generatedQuizSchema>;
