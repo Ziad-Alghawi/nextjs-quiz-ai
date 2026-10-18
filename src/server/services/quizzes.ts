@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { questionAnswers, questions, quizSources, quizzes } from "@/db/schema";
 import { PLANS, REVIEW_BURST_LIMIT } from "@/lib/plans";
@@ -108,6 +108,23 @@ export function listQuizzes(userId: string) {
 }
 
 export type QuizSummary = Awaited<ReturnType<typeof listQuizzes>>[number];
+
+/** The course's generated quizzes a review can use, oldest first, with how many questions each has. */
+export function listReviewSources(userId: string, courseId: number) {
+  return db
+    .select({ id: quizzes.id, name: quizzes.name, questionCount: count(questions.id) })
+    .from(quizzes)
+    .innerJoin(questions, eq(questions.quizId, quizzes.id))
+    .where(
+      and(
+        eq(quizzes.userId, userId),
+        eq(quizzes.courseId, courseId),
+        eq(quizzes.kind, "generated"),
+      ),
+    )
+    .groupBy(quizzes.id)
+    .orderBy(asc(quizzes.id));
+}
 
 type ReviewResult =
   | { quizId: number }
