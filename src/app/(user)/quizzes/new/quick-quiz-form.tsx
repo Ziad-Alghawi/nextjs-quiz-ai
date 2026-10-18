@@ -1,12 +1,11 @@
 "use client";
-import { FileText, Loader2, UploadCloud } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { FileText, UploadCloud } from "lucide-react";
 import { useId, useState } from "react";
 import { QuestionCountPicker } from "@/components/question-count-picker";
-import { Button } from "@/components/ui/button";
+import { GenerateQuizActions } from "@/components/generate-quiz-actions";
 import { FormError } from "@/components/ui/form-error";
-import { NETWORK_ERROR, readGenerationResponse } from "@/lib/generation-response";
-import { DEFAULT_QUESTION_COUNT, PLANS, type PlanId } from "@/lib/plans";
+import { useQuizGeneration } from "@/hooks/use-quiz-generation";
+import { DEFAULT_QUESTION_COUNT, type PlanId } from "@/lib/plans";
 import { cn } from "@/lib/utils";
 import { pdfUploadSchema } from "@/lib/validations/quiz";
 
@@ -14,12 +13,10 @@ type QuickQuizFormProps = { plan: PlanId; remaining: number };
 
 /** Generates a quiz from one PDF. The server decides what is allowed; this only displays it. */
 export function QuickQuizForm({ plan, remaining }: QuickQuizFormProps) {
-  const router = useRouter();
   const inputId = useId();
   const [file, setFile] = useState<File>();
   const [questionCount, setQuestionCount] = useState<number>(DEFAULT_QUESTION_COUNT);
-  const [error, setError] = useState<string>();
-  const [generating, setGenerating] = useState(false);
+  const { error, setError, generating, generate } = useQuizGeneration();
   const [dragging, setDragging] = useState(false);
 
   async function choose(chosen: File | undefined) {
@@ -30,34 +27,17 @@ export function QuickQuizForm({ plan, remaining }: QuickQuizFormProps) {
     setError(checked.success ? undefined : checked.error.issues[0].message);
   }
 
-  async function generate(event: React.FormEvent) {
+  function submit(event: React.FormEvent) {
     event.preventDefault();
     if (!file) return;
-    setError(undefined);
-    setGenerating(true);
     const formData = new FormData();
     formData.append("pdf", file);
     formData.append("questionCount", String(questionCount));
-    try {
-      const response = await fetch("/api/quizzes/generate", { method: "POST", body: formData });
-      const result = await readGenerationResponse(response);
-      if ("href" in result) {
-        // The browser keeps this page's server-rendered quota counter for the Back button; a route
-        // handler can't invalidate that cache, so drop it here before leaving.
-        router.refresh();
-        // Stay in the generating state until the quiz page replaces this one.
-        router.push(result.href);
-        return;
-      }
-      setError(result.error);
-    } catch {
-      setError(NETWORK_ERROR);
-    }
-    setGenerating(false);
+    void generate(() => fetch("/api/quizzes/generate", { method: "POST", body: formData }));
   }
 
   return (
-    <form onSubmit={generate} className="flex flex-col gap-4">
+    <form onSubmit={submit} className="flex flex-col gap-4">
       <div>
         <input
           id={inputId}
@@ -115,25 +95,12 @@ export function QuickQuizForm({ plan, remaining }: QuickQuizFormProps) {
         hideUpgradeLink
       />
 
-      <p role="status" aria-live="polite" className="text-sm text-muted-foreground">
-        {generating ? "Generating your quiz. This usually takes 10 to 40 seconds." : null}
-      </p>
-
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <Button type="submit" disabled={generating || !file}>
-          {generating ? (
-            <>
-              <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
-              Generating…
-            </>
-          ) : (
-            "Generate quiz"
-          )}
-        </Button>
-        <span className="text-sm text-muted-foreground">
-          {remaining} of {PLANS[plan].monthlyQuizzes} quizzes left this month
-        </span>
-      </div>
+      <GenerateQuizActions
+        generating={generating}
+        disabled={!file}
+        plan={plan}
+        remaining={remaining}
+      />
     </form>
   );
 }
