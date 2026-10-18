@@ -6,7 +6,7 @@ import { createReview } from "@/app/actions/reviews";
 import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/ui/form-error";
 import { DEFAULT_QUESTION_COUNT, MAX_REVIEW_QUIZZES, type PlanId } from "@/lib/plans";
-import { QuestionCountPicker } from "./question-count-picker";
+import { QuestionCountPicker } from "@/components/question-count-picker";
 
 type ReviewQuizFormProps = {
   courseId: number;

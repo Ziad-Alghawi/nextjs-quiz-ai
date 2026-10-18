@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/ui/form-error";
 import { NETWORK_ERROR, readGenerationResponse } from "@/lib/generation-response";
 import { DEFAULT_QUESTION_COUNT, PLANS, type PlanId } from "@/lib/plans";
-import { QuestionCountPicker } from "./question-count-picker";
+import { QuestionCountPicker } from "@/components/question-count-picker";
 
 type QuizGeneratorProps = {
   courseId: number;
