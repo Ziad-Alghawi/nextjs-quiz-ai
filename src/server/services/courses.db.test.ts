@@ -187,7 +187,7 @@ describe("listCourses and getCourse", () => {
     const course = await getCourse(USER, courseId);
 
     expect(course?.name).toBe("Biology");
-    expect(course?.sources).toEqual([
+    expect(course?.chapters).toEqual([
       {
         id: expect.any(Number),
         name: "ch1.pdf",

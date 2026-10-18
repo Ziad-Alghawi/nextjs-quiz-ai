@@ -51,7 +51,7 @@ export default async function CoursePage({ params }: Props) {
         action={
           <CourseActions
             course={{ id: course.id, name: course.name }}
-            chapterCount={course.sources.length}
+            chapterCount={course.chapters.length}
             quizCount={course.quizzes.length}
           />
         }
@@ -65,36 +65,36 @@ export default async function CoursePage({ params }: Props) {
           <div className="flex items-baseline justify-between gap-3">
             <CardTitle>Chapters</CardTitle>
             <span className="text-sm text-muted-foreground">
-              {course.sources.length} of {MAX_CHAPTERS_PER_COURSE}
+              {course.chapters.length} of {MAX_CHAPTERS_PER_COURSE}
             </span>
           </div>
           <ChapterUpload
             courseId={course.id}
-            full={course.sources.length >= MAX_CHAPTERS_PER_COURSE}
+            full={course.chapters.length >= MAX_CHAPTERS_PER_COURSE}
           />
-          {course.sources.length === 0 ? (
+          {course.chapters.length === 0 ? (
             <p className="text-sm text-muted-foreground">No chapters yet.</p>
           ) : (
             <ul className="divide-y">
-              {course.sources.map((source) => {
-                const meta = `${source.pageCount} ${source.pageCount === 1 ? "page" : "pages"} · ${formatSize(source.sizeBytes)}`;
+              {course.chapters.map((chapter) => {
+                const meta = `${chapter.pageCount} ${chapter.pageCount === 1 ? "page" : "pages"} · ${formatSize(chapter.sizeBytes)}`;
                 return (
-                  <li key={source.id} className="flex items-center gap-3 py-3">
+                  <li key={chapter.id} className="flex items-center gap-3 py-3">
                     <FileText className="size-5 shrink-0 text-muted-foreground" aria-hidden />
                     <div className="min-w-0 flex-1 text-sm text-muted-foreground">
                       <span className="block truncate text-base font-medium text-foreground">
-                        {source.name}
+                        {chapter.name}
                       </span>
                       {/* Beside the name from sm up; on phones it goes under it, so the name and hint keep their width. */}
                       <span className="sm:hidden">{meta}</span>
-                      {source.textTruncated ? (
+                      {chapter.textTruncated ? (
                         <span className="block">Long PDF: quizzes use only its first part.</span>
                       ) : null}
                     </div>
                     <span className="hidden shrink-0 text-sm text-muted-foreground sm:inline">
                       {meta}
                     </span>
-                    <DeleteChapterButton chapter={{ id: source.id, name: source.name }} />
+                    <DeleteChapterButton chapter={{ id: chapter.id, name: chapter.name }} />
                   </li>
                 );
               })}
@@ -105,12 +105,12 @@ export default async function CoursePage({ params }: Props) {
         <div className="flex flex-col gap-6">
           <Card>
             <CardTitle>Generate a quiz</CardTitle>
-            {course.sources.length === 0 ? (
+            {course.chapters.length === 0 ? (
               <p className="text-sm text-muted-foreground">Upload a chapter first.</p>
             ) : (
               <QuizGenerator
                 courseId={course.id}
-                chapters={course.sources.map(({ id, name }) => ({ id, name }))}
+                chapters={course.chapters.map(({ id, name }) => ({ id, name }))}
                 plan={plan}
                 remaining={Math.max(limit - used, 0)}
               />

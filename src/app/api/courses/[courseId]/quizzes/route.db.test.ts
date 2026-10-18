@@ -100,11 +100,11 @@ describe("POST /api/courses/[courseId]/quizzes", () => {
     });
     const quiz = await db.query.quizzes.findFirst({
       where: eq(quizzes.id, response.body.quizId!),
-      with: { questions: true, quizSources: true },
+      with: { questions: true, quizChapters: true },
     });
     expect(quiz?.courseId).toBe(courseId);
     expect(quiz?.questions).toHaveLength(15);
-    expect(quiz?.quizSources.map((link) => link.chapterId).sort()).toEqual([cells, genes].sort());
+    expect(quiz?.quizChapters.map((link) => link.chapterId).sort()).toEqual([cells, genes].sort());
     const [system, human] = model.invoke.mock.calls[0][0] as { content: string }[];
     expect(system.content).toContain("Write exactly 15 questions.");
     expect(human.content).toBe(

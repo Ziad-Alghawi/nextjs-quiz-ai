@@ -170,7 +170,7 @@ export async function createReviewQuiz(
           },
         },
       },
-      quizSources: { columns: { chapterId: true } },
+      quizChapters: { columns: { chapterId: true } },
     },
   });
   if (chosen.length !== input.quizIds.length) return { error: "not-found" };
@@ -191,7 +191,9 @@ export async function createReviewQuiz(
     userId,
     {
       courseId: input.courseId,
-      chapterIds: [...new Set(chosen.flatMap((quiz) => quiz.quizSources.map((s) => s.chapterId)))],
+      chapterIds: [
+        ...new Set(chosen.flatMap((quiz) => quiz.quizChapters.map((link) => link.chapterId))),
+      ],
       kind: "review",
     },
   );

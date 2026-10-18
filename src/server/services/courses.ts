@@ -52,7 +52,7 @@ export function getCourse(userId: string, courseId: number) {
     columns: { id: true, name: true },
     where: and(eq(courses.id, courseId), eq(courses.userId, userId)),
     with: {
-      sources: {
+      chapters: {
         columns: { id: true, name: true, pageCount: true, sizeBytes: true, textTruncated: true },
         orderBy: asc(chapters.id),
       },

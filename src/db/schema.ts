@@ -116,7 +116,7 @@ export const courses = pgTable(
 );
 
 export const coursesRelations = relations(courses, ({ many }) => ({
-  sources: many(chapters),
+  chapters: many(chapters),
   quizzes: many(quizzes),
 }));
 
@@ -142,7 +142,7 @@ export const chapters = pgTable(
 
 export const chaptersRelations = relations(chapters, ({ one, many }) => ({
   course: one(courses, { fields: [chapters.courseId], references: [courses.id] }),
-  quizSources: many(quizChapters),
+  quizChapters: many(quizChapters),
 }));
 
 ///////////////////////////////////////////
@@ -177,7 +177,7 @@ export const quizzesRelations = relations(quizzes, ({ one, many }) => ({
   course: one(courses, { fields: [quizzes.courseId], references: [courses.id] }),
   questions: many(questions),
   submissions: many(quizSubmissions),
-  quizSources: many(quizChapters),
+  quizChapters: many(quizChapters),
 }));
 
 // The chapters a quiz was generated from. Deleting a chapter keeps its quizzes, only the link goes.
@@ -199,7 +199,7 @@ export const quizChapters = pgTable(
 
 export const quizChaptersRelations = relations(quizChapters, ({ one }) => ({
   quiz: one(quizzes, { fields: [quizChapters.quizId], references: [quizzes.id] }),
-  source: one(chapters, { fields: [quizChapters.chapterId], references: [chapters.id] }),
+  chapter: one(chapters, { fields: [quizChapters.chapterId], references: [chapters.id] }),
 }));
 
 export const questions = pgTable(

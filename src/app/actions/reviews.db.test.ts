@@ -104,7 +104,7 @@ describe("createReview", () => {
       where: eq(quizzes.id, lastRedirectId()),
       with: {
         questions: { with: { answers: { orderBy: (a) => asc(a.id) } } },
-        quizSources: true,
+        quizChapters: true,
       },
     });
     expect(review).toMatchObject({
@@ -124,7 +124,7 @@ describe("createReview", () => {
         { answerText: "Wrong", isCorrect: false },
       ],
     });
-    expect(review!.quizSources.map((s) => s.chapterId).sort()).toEqual([ch1, ch2].sort());
+    expect(review!.quizChapters.map((link) => link.chapterId).sort()).toEqual([ch1, ch2].sort());
     // No AI, so nothing counts toward the monthly quota.
     expect(await db.select().from(quizGenerations).where(eq(quizGenerations.userId, USER))).toEqual(
       [],
