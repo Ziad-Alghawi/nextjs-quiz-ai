@@ -1,20 +1,19 @@
-import { NextRequest, NextResponse } from "next/server";
-
-import { getCurrentUser } from "@/server/session";
+import { NextResponse } from "next/server";
 import { pingDatabase } from "@/db/health";
-import { isQuestionCountAllowed, questionCountUpgradeMessage } from "@/lib/plans";
+import { errorResponse } from "@/lib/api-response";
 import { extractPdfText, limitDocumentText, uploadFileName } from "@/lib/pdf";
+import { isQuestionCountAllowed, questionCountUpgradeMessage } from "@/lib/plans";
 import { pdfUploadSchema, quickQuizSchema } from "@/lib/validations/quiz";
 import { GenerationError, generateQuiz } from "@/server/services/generation";
 import { createQuiz } from "@/server/services/quizzes";
 import { GenerationLimitError, getPlan, runGeneration } from "@/server/services/usage";
+import { getCurrentUser } from "@/server/session";
 
-// Gemini needs 10-20 s for a typical document; set explicitly so a lower platform default can't cut it off.
+// The primary model and, when needed, the fallback must both fit (timings in generation.ts).
+// Set explicitly so a lower platform default can't cut a generation off.
 export const maxDuration = 60;
 
-const errorResponse = (error: string, status: number) => NextResponse.json({ error }, { status });
-
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
     const body = await request.formData();
     const upload = await pdfUploadSchema.safeParseAsync(body.get("pdf"));

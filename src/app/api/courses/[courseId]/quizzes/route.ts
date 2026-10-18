@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { errorResponse } from "@/lib/api-response";
 import { shareDocumentBudget } from "@/lib/pdf";
 import { isQuestionCountAllowed, questionCountUpgradeMessage } from "@/lib/plans";
 import { courseIdSchema } from "@/lib/validations/course";
@@ -9,10 +10,9 @@ import { createQuiz } from "@/server/services/quizzes";
 import { GenerationLimitError, getPlan, runGeneration } from "@/server/services/usage";
 import { getCurrentUser } from "@/server/session";
 
-// Gemini needs 10-20 s for a typical document; set explicitly so a lower platform default can't cut it off.
+// The primary model and, when needed, the fallback must both fit (timings in generation.ts).
+// Set explicitly so a lower platform default can't cut a generation off.
 export const maxDuration = 60;
-
-const errorResponse = (error: string, status: number) => NextResponse.json({ error }, { status });
 
 const CHAPTERS_NOT_FOUND = "Some of these chapters don't exist anymore. Reload the page.";
 

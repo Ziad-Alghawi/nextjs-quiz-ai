@@ -1,5 +1,4 @@
 import { eq, like } from "drizzle-orm";
-import { NextRequest } from "next/server";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
 import { courses, quizGenerations, quizzes, rateLimits, users } from "@/db/schema";
@@ -48,7 +47,7 @@ const generate = async (
   if (file) form.set("pdf", file, "cells.pdf");
   if (questionCount !== null) form.set("questionCount", String(questionCount));
   const response = await POST(
-    new NextRequest("http://localhost/api/quizzes/generate", { method: "POST", body: form }),
+    new Request("http://localhost/api/quizzes/generate", { method: "POST", body: form }),
   );
   return {
     status: response.status,
