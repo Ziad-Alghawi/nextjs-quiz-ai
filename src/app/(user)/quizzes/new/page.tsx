@@ -42,8 +42,8 @@ export default async function QuickQuizPage() {
           <QuickQuizForm plan={plan} remaining={remaining} />
         ) : (
           <p className="text-sm text-muted-foreground" role="status">
-            You&apos;ve used all {limit} quizzes of the {PLANS[plan].label} plan this month.
-            {plan === "pro" && ` Your quota resets on ${resetDate}.`}
+            You&apos;ve used all {limit} quizzes of the {PLANS[plan].label} plan this month. Your
+            quota resets on {resetDate}. Review quizzes in your courses are still free.
           </p>
         )}
       </Card>
