@@ -1,11 +1,10 @@
 "use client";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/ui/form-error";
-import { NETWORK_ERROR, readGenerationResponse } from "@/lib/generation-response";
+import { useQuizGeneration } from "@/hooks/use-quiz-generation";
 import { DEFAULT_QUESTION_COUNT, PLANS, type PlanId } from "@/lib/plans";
 import { QuestionCountPicker } from "@/components/question-count-picker";
 
@@ -18,12 +17,10 @@ type QuizGeneratorProps = {
 
 /** Generates a quiz from the ticked chapters. The server decides what is allowed; this only displays it. */
 export function QuizGenerator({ courseId, chapters, plan, remaining }: QuizGeneratorProps) {
-  const router = useRouter();
   // Tracks what is unticked, so a chapter uploaded later starts ticked.
   const [unticked, setUnticked] = useState<ReadonlySet<number>>(new Set());
   const [questionCount, setQuestionCount] = useState<number>(DEFAULT_QUESTION_COUNT);
-  const [error, setError] = useState<string>();
-  const [generating, setGenerating] = useState(false);
+  const { error, generating, generate } = useQuizGeneration();
 
   const chapterIds = chapters.filter((chapter) => !unticked.has(chapter.id)).map(({ id }) => id);
 
@@ -35,29 +32,15 @@ export function QuizGenerator({ courseId, chapters, plan, remaining }: QuizGener
     });
   }
 
-  async function generate(event: React.FormEvent) {
+  function submit(event: React.FormEvent) {
     event.preventDefault();
-    setError(undefined);
-    setGenerating(true);
-    try {
-      const response = await fetch(`/api/courses/${courseId}/quizzes`, {
+    void generate(() =>
+      fetch(`/api/courses/${courseId}/quizzes`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ chapterIds, questionCount }),
-      });
-      const result = await readGenerationResponse(response);
-      if ("href" in result) {
-        // Drops the cached course page (quiz list, quota) before leaving; a route handler can't.
-        router.refresh();
-        // Stay in the generating state until the quiz page replaces this one.
-        router.push(result.href);
-        return;
-      }
-      setError(result.error);
-    } catch {
-      setError(NETWORK_ERROR);
-    }
-    setGenerating(false);
+      }),
+    );
   }
 
   if (remaining === 0) {
@@ -75,7 +58,7 @@ export function QuizGenerator({ courseId, chapters, plan, remaining }: QuizGener
   }
 
   return (
-    <form onSubmit={generate} className="flex flex-col gap-4">
+    <form onSubmit={submit} className="flex flex-col gap-4">
       <fieldset disabled={generating} className="flex min-w-0 flex-col gap-2">
         <legend className="mb-1 text-sm font-medium">Chapters to use</legend>
         {chapters.map((chapter) => (
