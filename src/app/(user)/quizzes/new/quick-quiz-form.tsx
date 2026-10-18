@@ -112,6 +112,7 @@ export function QuickQuizForm({ plan, remaining }: QuickQuizFormProps) {
         value={questionCount}
         onChange={setQuestionCount}
         disabled={generating}
+        hideUpgradeLink
       />
 
       <p role="status" aria-live="polite" className="text-sm text-muted-foreground">

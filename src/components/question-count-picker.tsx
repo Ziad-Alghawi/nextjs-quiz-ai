@@ -10,6 +10,8 @@ type QuestionCountPickerProps = {
   disabled?: boolean;
   /** Counts above it can't be picked, e.g. more than the chosen quizzes have. */
   max?: number;
+  /** Leave out the "Upgrade to Pro" link when the page already has an upgrade offer of its own. */
+  hideUpgradeLink?: boolean;
 };
 
 /**
@@ -22,6 +24,7 @@ export function QuestionCountPicker({
   onChange,
   disabled,
   max = Infinity,
+  hideUpgradeLink,
 }: QuestionCountPickerProps) {
   const hasLockedCounts = QUESTION_COUNTS.some((count) => !isQuestionCountAllowed(plan, count));
 
@@ -58,7 +61,7 @@ export function QuestionCountPicker({
           );
         })}
       </div>
-      {hasLockedCounts ? (
+      {hasLockedCounts && !hideUpgradeLink ? (
         <p className="text-sm text-muted-foreground">
           <Link href="/billing" className="font-medium text-primary hover:underline">
             Upgrade to Pro
