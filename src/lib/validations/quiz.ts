@@ -58,6 +58,11 @@ export const generatedQuizSchema = z.object({
     ),
 });
 
+// Some plan offers it; the caller checks the user's own plan on top.
+const questionCountSchema = z
+  .number()
+  .refine((count) => QUESTION_COUNTS.includes(count), "Choose one of the offered question counts.");
+
 /** Generating a quiz from chapters of one course. Repeated chapter ids count once. */
 export const chapterQuizSchema = z.object({
   chapterIds: z
@@ -65,12 +70,7 @@ export const chapterQuizSchema = z.object({
     .min(1, "Select at least one chapter.")
     .max(MAX_CHAPTERS_PER_COURSE, `Select at most ${MAX_CHAPTERS_PER_COURSE} chapters.`)
     .transform((ids) => [...new Set(ids)]),
-  questionCount: z
-    .number()
-    .refine(
-      (count) => QUESTION_COUNTS.includes(count),
-      "Choose one of the offered question counts.",
-    ),
+  questionCount: questionCountSchema,
 });
 
 /** A quiz id from a URL or form: a positive whole number. */
