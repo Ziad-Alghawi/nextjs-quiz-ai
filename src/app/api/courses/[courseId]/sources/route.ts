@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/api-response";
-import { CHAPTER_UPLOAD_LIMIT, PLANS } from "@/lib/plans";
 import { extractPdfText, limitDocumentText, uploadFileName } from "@/lib/pdf";
+import { CHAPTER_UPLOAD_LIMIT, PLANS } from "@/lib/plans";
 import { courseIdSchema } from "@/lib/validations/course";
 import { pdfUploadSchema } from "@/lib/validations/quiz";
 import { addChapter } from "@/server/services/chapters";
