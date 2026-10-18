@@ -1,6 +1,11 @@
 import { z } from "zod";
-import { MAX_CHAPTERS_PER_COURSE, MAX_QUESTIONS, QUESTION_COUNTS } from "@/lib/plans";
-import { chapterIdSchema } from "./course";
+import {
+  MAX_CHAPTERS_PER_COURSE,
+  MAX_QUESTIONS,
+  MAX_REVIEW_QUIZZES,
+  QUESTION_COUNTS,
+} from "@/lib/plans";
+import { chapterIdSchema, courseIdSchema } from "./course";
 
 // Below Vercel's 4.5 MB request body limit, which rejects larger uploads before our code runs.
 export const MAX_PDF_BYTES = 4 * 1024 * 1024;
@@ -75,5 +80,19 @@ export const chapterQuizSchema = z.object({
 
 /** A quiz id from a URL or form: a positive whole number. */
 export const quizIdSchema = z.coerce.number().int().positive();
+
+/** A review quiz from 2 or more quizzes of one course, as the form sends it. Repeated ids count once. */
+export const reviewQuizSchema = z.object({
+  courseId: courseIdSchema,
+  quizIds: z
+    .array(quizIdSchema)
+    .transform((ids) => [...new Set(ids)])
+    .refine((ids) => ids.length >= 2, "Select at least two quizzes.")
+    .refine(
+      (ids) => ids.length <= MAX_REVIEW_QUIZZES,
+      `Select at most ${MAX_REVIEW_QUIZZES} quizzes.`,
+    ),
+  questionCount: z.coerce.number().pipe(questionCountSchema),
+});
 
 export type GeneratedQuiz = z.infer<typeof generatedQuizSchema>;

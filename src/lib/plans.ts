@@ -31,6 +31,12 @@ export const MAX_CHAPTERS_PER_COURSE = 15;
 /** On every plan, failed uploads included: reading a PDF costs server time even when it fails. */
 export const CHAPTER_UPLOAD_LIMIT = { uploads: 20, windowMinutes: 10 } as const;
 
+/** Review quizzes (questions copied from other quizzes, no AI) take 2 up to this many quizzes. */
+export const MAX_REVIEW_QUIZZES = 10;
+
+/** On every plan. Reviews cost no AI, so this only stops scripted mass creation. */
+export const REVIEW_BURST_LIMIT = { reviews: 10, windowMinutes: 10 } as const;
+
 /** On every plan: at most this many generation attempts per user in the window. */
 export const GENERATION_BURST_LIMIT = { attempts: 3, windowMinutes: 10 } as const;
 
