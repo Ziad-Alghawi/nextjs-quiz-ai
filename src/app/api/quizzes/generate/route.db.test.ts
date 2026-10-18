@@ -116,8 +116,11 @@ describe("POST /api/quizzes/generate", () => {
     expect((await getMonthlyUsage(USER)).used).toBe(0);
   });
 
-  it("refuses signed-out users, non-PDF files and PDFs without text before calling the AI", async () => {
+  it("refuses signed-out users, non-PDF files and unusable PDFs before calling the AI", async () => {
     expect((await generate(makePdf([""]))).status).toBe(422);
+    const damaged = await generate(new Blob(["%PDF-1.4 broken"]));
+    expect(damaged.status).toBe(422);
+    expect(damaged.body.error).toContain("damaged or password-protected");
     expect((await generate(new Blob(["not a pdf"]))).status).toBe(400);
     session.signedIn = false;
     expect((await generate(makePdf(["Text."]))).status).toBe(401);

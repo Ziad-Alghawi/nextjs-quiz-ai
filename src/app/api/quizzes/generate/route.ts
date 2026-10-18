@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { pingDatabase } from "@/db/health";
 import { errorResponse } from "@/lib/api-response";
-import { extractPdfText, limitDocumentText, uploadFileName } from "@/lib/pdf";
+import { readPdfText, uploadFileName } from "@/lib/pdf";
 import { isQuestionCountAllowed, questionCountUpgradeMessage } from "@/lib/plans";
 import { pdfUploadSchema, quickQuizSchema } from "@/lib/validations/quiz";
 import { GenerationError, generateQuiz } from "@/server/services/generation";
@@ -47,26 +47,20 @@ export async function POST(request: Request) {
       return errorResponse(questionCountUpgradeMessage(questionCount), 403);
     }
 
-    const { text, truncated } = limitDocumentText((await extractPdfText(document)).text);
-
-    if (!text) {
-      return errorResponse(
-        "We couldn't find any text in this PDF. Scanned documents aren't supported yet.",
-        422,
-      );
-    }
+    const pdf = await readPdfText(document);
+    if ("error" in pdf) return errorResponse(pdf.error, 422);
 
     // Reserved only after the cheap checks above, right before the call that costs money.
     try {
       const quizId = await runGeneration(user.id, async (onUsage) => {
         const quiz = await generateQuiz({
-          documents: [{ title: uploadFileName(body.get("pdf")), text }],
+          documents: [{ title: uploadFileName(body.get("pdf")), text: pdf.text }],
           questionCount,
           onUsage,
         });
         return createQuiz(quiz, user.id);
       });
-      return NextResponse.json({ quizId, truncated }, { status: 200 });
+      return NextResponse.json({ quizId, truncated: pdf.truncated }, { status: 200 });
     } catch (error) {
       if (error instanceof GenerationLimitError || error instanceof GenerationError) {
         return errorResponse(error.message, error.status);

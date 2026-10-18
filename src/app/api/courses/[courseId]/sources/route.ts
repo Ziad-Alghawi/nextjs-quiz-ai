@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/api-response";
-import { extractPdfText, limitDocumentText, uploadFileName } from "@/lib/pdf";
+import { readPdfText, uploadFileName } from "@/lib/pdf";
 import { CHAPTER_UPLOAD_LIMIT, PLANS } from "@/lib/plans";
 import { courseIdSchema } from "@/lib/validations/course";
 import { pdfUploadSchema } from "@/lib/validations/quiz";
@@ -34,29 +34,14 @@ export async function POST(
   const upload = await pdfUploadSchema.safeParseAsync(body.get("pdf"));
   if (!upload.success) return errorResponse(upload.error.issues[0].message, 400);
 
-  let extracted: Awaited<ReturnType<typeof extractPdfText>>;
-  try {
-    extracted = await extractPdfText(upload.data);
-  } catch {
-    // pdf.js throws on damaged or password-protected files; the user can fix those.
-    return errorResponse(
-      "We couldn't read this PDF. It may be damaged or password-protected.",
-      422,
-    );
-  }
-  const { text, truncated } = limitDocumentText(extracted.text);
-  if (!text) {
-    return errorResponse(
-      "We couldn't find any text in this PDF. Scanned documents aren't supported yet.",
-      422,
-    );
-  }
+  const pdf = await readPdfText(upload.data);
+  if ("error" in pdf) return errorResponse(pdf.error, 422);
 
   const result = await addChapter(user.id, courseId.data, {
     name: uploadFileName(body.get("pdf")),
-    text,
-    textTruncated: truncated,
-    pageCount: extracted.pageCount,
+    text: pdf.text,
+    textTruncated: pdf.truncated,
+    pageCount: pdf.pageCount,
     sizeBytes: upload.data.size,
   });
   if (!("error" in result)) return NextResponse.json({ id: result.id }, { status: 201 });
