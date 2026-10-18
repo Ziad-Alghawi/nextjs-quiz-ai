@@ -111,14 +111,15 @@ export function QuizGenerator({ courseId, chapters, plan, remaining }: QuizGener
 
       <fieldset disabled={generating} className="flex min-w-0 flex-col gap-2">
         <legend className="mb-1 text-sm font-medium">Number of questions</legend>
-        <div className="flex flex-wrap gap-2">
+        {/* Equal columns on phones, so all counts stay in one row next to the lock icons. */}
+        <div className="grid grid-cols-5 gap-2 sm:flex sm:flex-wrap">
           {QUESTION_COUNTS.map((count) => {
             const locked = !allowedCounts.includes(count);
             return (
               <label
                 key={count}
                 className={cn(
-                  "flex h-10 min-w-14 items-center justify-center gap-1.5 rounded-md border px-3 text-sm font-medium transition-colors has-checked:border-primary has-checked:bg-primary/10 has-checked:text-primary has-focus-visible:ring-2 has-focus-visible:ring-ring",
+                  "flex h-10 items-center justify-center gap-1 rounded-md border px-2 text-sm sm:min-w-14 sm:gap-1.5 sm:px-3 font-medium transition-colors has-checked:border-primary has-checked:bg-primary/10 has-checked:text-primary has-focus-visible:ring-2 has-focus-visible:ring-ring",
                   locked
                     ? "cursor-not-allowed text-muted-foreground opacity-60"
                     : "cursor-pointer hover:bg-accent/50",
