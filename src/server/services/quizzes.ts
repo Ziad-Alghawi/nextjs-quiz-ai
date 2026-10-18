@@ -1,9 +1,20 @@
 import "server-only";
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { questionAnswers, questions, quizSources, quizzes } from "@/db/schema";
+import { PLANS, REVIEW_BURST_LIMIT } from "@/lib/plans";
+import { pickReviewQuestions, reviewName } from "@/lib/review";
 import type { GeneratedQuiz } from "@/lib/validations/quiz";
 import { getOrCreateDefaultCourse } from "./courses";
+import { consumeRateLimit } from "./rate-limit";
+import { getPlan } from "./usage";
+
+type QuizQuestion = Omit<GeneratedQuiz["questions"][number], "explanation"> & {
+  // Copied questions from quizzes made before explanations existed have none.
+  explanation: string | null;
+};
+
+type NewQuiz = Omit<GeneratedQuiz, "questions"> & { questions: QuizQuestion[] };
 
 /**
  * Stores a generated quiz with its questions and answers in one transaction: in the given course,
@@ -11,15 +22,21 @@ import { getOrCreateDefaultCourse } from "./courses";
  * user's "My quizzes" course.
  */
 export async function createQuiz(
-  quiz: GeneratedQuiz,
+  quiz: NewQuiz,
   userId: string,
-  source?: { courseId: number; chapterIds: number[] },
+  source?: { courseId: number; chapterIds: number[]; kind?: "review" },
 ) {
   return db.transaction(async (tx) => {
     const courseId = source?.courseId ?? (await getOrCreateDefaultCourse(tx, userId));
     const [{ quizId }] = await tx
       .insert(quizzes)
-      .values({ name: quiz.name, description: quiz.description, userId, courseId })
+      .values({
+        name: quiz.name,
+        description: quiz.description,
+        kind: source?.kind,
+        userId,
+        courseId,
+      })
       .returning({ quizId: quizzes.id });
 
     const inserted = await tx
@@ -45,7 +62,8 @@ export async function createQuiz(
       ),
     );
 
-    if (source) {
+    // A review of quizzes whose chapters were deleted (or Quick quizzes) has no chapters.
+    if (source && source.chapterIds.length > 0) {
       await tx
         .insert(quizSources)
         .values(source.chapterIds.map((sourceId) => ({ quizId, sourceId })));
@@ -90,3 +108,92 @@ export function listQuizzes(userId: string) {
 }
 
 export type QuizSummary = Awaited<ReturnType<typeof listQuizzes>>[number];
+
+/** The course's generated quizzes a review can use, oldest first, with how many questions each has. */
+export function listReviewSources(userId: string, courseId: number) {
+  return db
+    .select({ id: quizzes.id, name: quizzes.name, questionCount: count(questions.id) })
+    .from(quizzes)
+    .innerJoin(questions, eq(questions.quizId, quizzes.id))
+    .where(
+      and(
+        eq(quizzes.userId, userId),
+        eq(quizzes.courseId, courseId),
+        eq(quizzes.kind, "generated"),
+      ),
+    )
+    .groupBy(quizzes.id)
+    .orderBy(asc(quizzes.id));
+}
+
+type ReviewResult =
+  | { quizId: number }
+  | { error: "not-found" | "plan" | "rate-limit" }
+  | { error: "too-few"; available: number };
+
+/**
+ * Makes a review quiz in the course from questions of its generated quizzes, with their answers and
+ * explanations, spread evenly over the quizzes. No AI, so it doesn't count toward the monthly quota.
+ */
+export async function createReviewQuiz(
+  userId: string,
+  input: { courseId: number; quizIds: number[]; questionCount: number },
+): Promise<ReviewResult> {
+  const { reviews, windowMinutes } = REVIEW_BURST_LIMIT;
+  if (!(await consumeRateLimit(`review:${userId}`, reviews, windowMinutes * 60 * 1000))) {
+    return { error: "rate-limit" };
+  }
+
+  const plan = await getPlan(userId);
+  if (!PLANS[plan].questionCounts.some((count) => count === input.questionCount)) {
+    return { error: "plan" };
+  }
+
+  // Reviews are not sources themselves, so a review never copies a review.
+  const chosen = await db.query.quizzes.findMany({
+    columns: { name: true },
+    where: and(
+      inArray(quizzes.id, input.quizIds),
+      eq(quizzes.userId, userId),
+      eq(quizzes.courseId, input.courseId),
+      eq(quizzes.kind, "generated"),
+    ),
+    // Oldest first, so the name and description follow the order of the chapters.
+    orderBy: asc(quizzes.id),
+    with: {
+      questions: {
+        columns: { questionText: true, explanation: true },
+        with: {
+          answers: {
+            columns: { answerText: true, isCorrect: true },
+            orderBy: asc(questionAnswers.id),
+          },
+        },
+      },
+      quizSources: { columns: { sourceId: true } },
+    },
+  });
+  if (chosen.length !== input.quizIds.length) return { error: "not-found" };
+
+  const available = chosen.reduce((total, quiz) => total + quiz.questions.length, 0);
+  if (available < input.questionCount) return { error: "too-few", available };
+
+  const names = chosen.map((quiz) => quiz.name);
+  const quizId = await createQuiz(
+    {
+      name: reviewName(names),
+      description: `Questions from: ${names.join(", ")}.`,
+      questions: pickReviewQuestions(
+        chosen.map((quiz) => quiz.questions),
+        input.questionCount,
+      ),
+    },
+    userId,
+    {
+      courseId: input.courseId,
+      chapterIds: [...new Set(chosen.flatMap((quiz) => quiz.quizSources.map((s) => s.sourceId)))],
+      kind: "review",
+    },
+  );
+  return { quizId };
+}

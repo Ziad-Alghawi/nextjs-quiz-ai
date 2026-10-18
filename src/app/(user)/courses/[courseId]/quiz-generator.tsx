@@ -1,13 +1,13 @@
 "use client";
-import { Loader2, Lock } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/ui/form-error";
 import { NETWORK_ERROR, readGenerationResponse } from "@/lib/generation-response";
-import { DEFAULT_QUESTION_COUNT, PLANS, QUESTION_COUNTS, type PlanId } from "@/lib/plans";
-import { cn } from "@/lib/utils";
+import { DEFAULT_QUESTION_COUNT, PLANS, type PlanId } from "@/lib/plans";
+import { QuestionCountPicker } from "./question-count-picker";
 
 type QuizGeneratorProps = {
   courseId: number;
@@ -26,8 +26,6 @@ export function QuizGenerator({ courseId, chapters, plan, remaining }: QuizGener
   const [generating, setGenerating] = useState(false);
 
   const chapterIds = chapters.filter((chapter) => !unticked.has(chapter.id)).map(({ id }) => id);
-  const allowedCounts: readonly number[] = PLANS[plan].questionCounts;
-  const hasLockedCounts = QUESTION_COUNTS.some((count) => !allowedCounts.includes(count));
 
   function toggle(id: number) {
     setUnticked((current) => {
@@ -112,46 +110,12 @@ export function QuizGenerator({ courseId, chapters, plan, remaining }: QuizGener
         </div>
       </fieldset>
 
-      <fieldset disabled={generating} className="flex min-w-0 flex-col gap-2">
-        <legend className="mb-1 text-sm font-medium">Number of questions</legend>
-        {/* Equal columns on phones, so all counts stay in one row next to the lock icons. */}
-        <div className="grid grid-cols-5 gap-2 sm:flex sm:flex-wrap">
-          {QUESTION_COUNTS.map((count) => {
-            const locked = !allowedCounts.includes(count);
-            return (
-              <label
-                key={count}
-                className={cn(
-                  "flex h-10 items-center justify-center gap-1 rounded-md border px-2 text-sm sm:min-w-14 sm:gap-1.5 sm:px-3 font-medium transition-colors has-checked:border-primary has-checked:bg-primary/10 has-checked:text-primary has-focus-visible:ring-2 has-focus-visible:ring-ring",
-                  locked
-                    ? "cursor-not-allowed text-muted-foreground opacity-60"
-                    : "cursor-pointer hover:bg-accent/50",
-                )}
-              >
-                <input
-                  type="radio"
-                  name="questionCount"
-                  value={count}
-                  checked={questionCount === count}
-                  disabled={locked}
-                  onChange={() => setQuestionCount(count)}
-                  className="sr-only"
-                />
-                {count}
-                {locked ? <Lock className="size-3.5" aria-label="Pro only" /> : null}
-              </label>
-            );
-          })}
-        </div>
-        {hasLockedCounts ? (
-          <p className="text-sm text-muted-foreground">
-            <Link href="/billing" className="font-medium text-primary hover:underline">
-              Upgrade to Pro
-            </Link>{" "}
-            for more questions per quiz.
-          </p>
-        ) : null}
-      </fieldset>
+      <QuestionCountPicker
+        plan={plan}
+        value={questionCount}
+        onChange={setQuestionCount}
+        disabled={generating}
+      />
 
       <FormError>{error}</FormError>
       <p role="status" aria-live="polite" className="text-sm text-muted-foreground">

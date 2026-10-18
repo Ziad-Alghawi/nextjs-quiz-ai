@@ -8,12 +8,14 @@ import { PageHeading } from "@/components/ui/page-heading";
 import { MAX_CHAPTERS_PER_COURSE } from "@/lib/plans";
 import { courseIdSchema } from "@/lib/validations/course";
 import { getCourse } from "@/server/services/courses";
+import { listReviewSources } from "@/server/services/quizzes";
 import { getMonthlyUsage } from "@/server/services/usage";
 import { requireUser } from "@/server/session";
 import { ChapterUpload } from "./chapter-upload";
 import { CourseActions } from "./course-actions";
 import { DeleteChapterButton } from "./delete-chapter-button";
 import { QuizGenerator } from "./quiz-generator";
+import { ReviewQuizForm } from "./review-quiz-form";
 
 type Props = { params: Promise<{ courseId: string }> };
 
@@ -38,7 +40,10 @@ const formatSize = (bytes: number) =>
 export default async function CoursePage({ params }: Props) {
   const course = await loadCourse((await params).courseId);
   const user = await requireUser(`/courses/${course.id}`);
-  const { plan, used, limit } = await getMonthlyUsage(user.id);
+  const [{ plan, used, limit }, reviewSources] = await Promise.all([
+    getMonthlyUsage(user.id),
+    listReviewSources(user.id, course.id),
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -112,6 +117,17 @@ export default async function CoursePage({ params }: Props) {
             )}
           </Card>
 
+          <Card>
+            <CardTitle>Review quiz</CardTitle>
+            {reviewSources.length < 2 ? (
+              <p className="text-sm text-muted-foreground">
+                Make at least 2 quizzes in this course first.
+              </p>
+            ) : (
+              <ReviewQuizForm courseId={course.id} quizzes={reviewSources} plan={plan} />
+            )}
+          </Card>
+
           <Card className="gap-2">
             <CardTitle>Quizzes</CardTitle>
             {course.quizzes.length === 0 ? (
@@ -124,7 +140,14 @@ export default async function CoursePage({ params }: Props) {
                       href={`/quizzes/${quiz.id}`}
                       className="flex flex-col gap-0.5 rounded-md py-3 hover:bg-accent/50"
                     >
-                      <span className="font-medium">{quiz.name}</span>
+                      <span className="font-medium">
+                        {quiz.name}
+                        {quiz.kind === "review" ? (
+                          <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 align-middle text-xs font-medium text-primary">
+                            Review
+                          </span>
+                        ) : null}
+                      </span>
                       {quiz.description ? (
                         <span className="text-sm text-muted-foreground">{quiz.description}</span>
                       ) : null}
