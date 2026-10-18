@@ -3,9 +3,9 @@ import { shareDocumentBudget } from "@/lib/pdf";
 import { isQuestionCountAllowed, questionCountUpgradeMessage } from "@/lib/plans";
 import { courseIdSchema } from "@/lib/validations/course";
 import { chapterQuizSchema } from "@/lib/validations/quiz";
+import { getChapterTexts } from "@/server/services/chapters";
 import { GenerationError, generateQuiz } from "@/server/services/generation";
 import { createQuiz } from "@/server/services/quizzes";
-import { getChapterTexts } from "@/server/services/sources";
 import { GenerationLimitError, getPlan, runGeneration } from "@/server/services/usage";
 import { getCurrentUser } from "@/server/session";
 

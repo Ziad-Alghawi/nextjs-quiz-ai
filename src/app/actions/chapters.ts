@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import type { FormState } from "@/app/actions/account";
 import { chapterIdSchema } from "@/lib/validations/course";
-import * as chapters from "@/server/services/sources";
+import * as chapters from "@/server/services/chapters";
 import { requireUser } from "@/server/session";
 
 const NOT_FOUND = "This chapter doesn't exist anymore. Reload the page.";
