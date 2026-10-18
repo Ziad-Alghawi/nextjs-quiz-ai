@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { shareDocumentBudget } from "@/lib/pdf";
-import { PLANS } from "@/lib/plans";
+import { isQuestionCountAllowed } from "@/lib/plans";
 import { courseIdSchema } from "@/lib/validations/course";
 import { chapterQuizSchema } from "@/lib/validations/quiz";
 import { GenerationError, generateQuiz } from "@/server/services/generation";
@@ -33,7 +33,7 @@ export async function POST(
   const { chapterIds, questionCount } = body.data;
 
   const plan = await getPlan(user.id);
-  if (!PLANS[plan].questionCounts.some((count) => count === questionCount)) {
+  if (!isQuestionCountAllowed(plan, questionCount)) {
     return errorResponse(
       `Quizzes with ${questionCount} questions are part of Pro. Upgrade, or choose fewer questions.`,
       403,

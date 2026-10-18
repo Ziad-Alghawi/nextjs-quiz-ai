@@ -2,7 +2,7 @@ import "server-only";
 import { and, asc, count, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { questionAnswers, questions, quizSources, quizzes } from "@/db/schema";
-import { PLANS, REVIEW_BURST_LIMIT } from "@/lib/plans";
+import { isQuestionCountAllowed, REVIEW_BURST_LIMIT } from "@/lib/plans";
 import { pickReviewQuestions, reviewName } from "@/lib/review";
 import type { GeneratedQuiz } from "@/lib/validations/quiz";
 import { getOrCreateDefaultCourse } from "./courses";
@@ -145,7 +145,7 @@ export async function createReviewQuiz(
   }
 
   const plan = await getPlan(userId);
-  if (!PLANS[plan].questionCounts.some((count) => count === input.questionCount)) {
+  if (!isQuestionCountAllowed(plan, input.questionCount)) {
     return { error: "plan" };
   }
 

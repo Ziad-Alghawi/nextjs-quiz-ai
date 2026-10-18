@@ -1,6 +1,6 @@
 import { Lock } from "lucide-react";
 import Link from "next/link";
-import { PLANS, QUESTION_COUNTS, type PlanId } from "@/lib/plans";
+import { isQuestionCountAllowed, QUESTION_COUNTS, type PlanId } from "@/lib/plans";
 import { cn } from "@/lib/utils";
 
 type QuestionCountPickerProps = {
@@ -23,8 +23,7 @@ export function QuestionCountPicker({
   disabled,
   max = Infinity,
 }: QuestionCountPickerProps) {
-  const allowedCounts: readonly number[] = PLANS[plan].questionCounts;
-  const hasLockedCounts = QUESTION_COUNTS.some((count) => !allowedCounts.includes(count));
+  const hasLockedCounts = QUESTION_COUNTS.some((count) => !isQuestionCountAllowed(plan, count));
 
   return (
     <fieldset disabled={disabled} className="flex min-w-0 flex-col gap-2">
@@ -32,7 +31,7 @@ export function QuestionCountPicker({
       {/* Equal columns on phones, so all counts stay in one row next to the lock icons. */}
       <div className="grid grid-cols-5 gap-2 sm:flex sm:flex-wrap">
         {QUESTION_COUNTS.map((count) => {
-          const locked = !allowedCounts.includes(count);
+          const locked = !isQuestionCountAllowed(plan, count);
           const unavailable = locked || count > max;
           return (
             <label
