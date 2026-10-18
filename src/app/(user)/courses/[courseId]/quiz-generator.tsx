@@ -91,6 +91,9 @@ export function QuizGenerator({ courseId, chapters, plan, remaining }: QuizGener
             <span className="min-w-0 truncate">{chapter.name}</span>
           </label>
         ))}
+        {chapterIds.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Tick at least one chapter.</p>
+        ) : null}
         <div className="flex gap-3 text-sm">
           <button
             type="button"
