@@ -23,6 +23,10 @@ export const QUESTION_COUNTS: readonly number[] = [
 export const isQuestionCountAllowed = (plan: PlanId, count: number) =>
   PLANS[plan].questionCounts.some((allowed) => allowed === count);
 
+/** What to tell a user whose plan doesn't offer the question count they asked for. */
+export const questionCountUpgradeMessage = (count: number) =>
+  `Quizzes with ${count} questions are part of Pro. Upgrade, or choose fewer questions.`;
+
 /** The most questions a quiz can have on any plan; every question-count check uses this. */
 export const MAX_QUESTIONS = Math.max(...QUESTION_COUNTS);
 

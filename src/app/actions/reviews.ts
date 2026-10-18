@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { FormState } from "@/app/actions/account";
-import { REVIEW_BURST_LIMIT } from "@/lib/plans";
+import { questionCountUpgradeMessage, REVIEW_BURST_LIMIT } from "@/lib/plans";
 import { reviewQuizSchema } from "@/lib/validations/quiz";
 import { createReviewQuiz } from "@/server/services/quizzes";
 import { requireUser } from "@/server/session";
@@ -15,7 +15,7 @@ function errorMessage(result: ReviewError, questionCount: number) {
     case "not-found":
       return "Some of these quizzes don't exist anymore. Reload the page.";
     case "plan":
-      return `Quizzes with ${questionCount} questions are part of Pro. Upgrade, or choose fewer questions.`;
+      return questionCountUpgradeMessage(questionCount);
     case "too-few":
       return `These quizzes have only ${result.available} questions together. Choose fewer questions.`;
     case "rate-limit": {
