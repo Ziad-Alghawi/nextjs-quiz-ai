@@ -148,12 +148,16 @@ export const sourcesRelations = relations(sources, ({ one, many }) => ({
 // quiz tables
 ///////////////////////////////////////////
 
+// "review" quizzes are copied from other quizzes of the course, without AI.
+export const quizKind = pgEnum("quiz_kind", ["generated", "review"]);
+
 export const quizzes = pgTable(
   "quizzes",
   {
     id: serial("id").primaryKey(),
     name: text("name").notNull(),
     description: text("description"),
+    kind: quizKind("kind").default("generated").notNull(),
     userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
