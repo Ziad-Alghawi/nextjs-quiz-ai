@@ -158,6 +158,18 @@ describe("listCourses and getCourse", () => {
     ]);
   });
 
+  it('list "My quizzes" first even when it was created after the others', async () => {
+    await newCourse(USER, "Biology");
+    await getOrCreateDefaultCourse(db, USER);
+    await newCourse(USER, "Chemistry");
+
+    expect((await listCourses(USER)).map((course) => course.name)).toEqual([
+      "My quizzes",
+      "Biology",
+      "Chemistry",
+    ]);
+  });
+
   it("returns the course with its chapters and quizzes, newest quiz first", async () => {
     const courseId = await newCourse(USER, "Biology");
     await db

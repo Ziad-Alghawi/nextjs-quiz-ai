@@ -40,9 +40,13 @@ const generated = (questionCount: number): GeneratedQuiz => ({
   })),
 });
 
-const generate = async (file: Blob | null) => {
+const generate = async (
+  file: Blob | null,
+  questionCount: number | null = DEFAULT_QUESTION_COUNT,
+) => {
   const form = new FormData();
   if (file) form.set("pdf", file, "cells.pdf");
+  if (questionCount !== null) form.set("questionCount", String(questionCount));
   const response = await POST(
     new NextRequest("http://localhost/api/quizzes/generate", { method: "POST", body: form }),
   );
@@ -90,6 +94,27 @@ describe("POST /api/quizzes/generate", () => {
       .where(eq(quizGenerations.userId, USER));
     expect(generation).toMatchObject({ inputTokens: 1000, outputTokens: 300 });
     expect(generation.model).toMatch(/^gemini-/);
+  });
+
+  it("asks the AI for the chosen number of questions", async () => {
+    model.invoke.mockResolvedValue(modelResponse(generated(15)));
+
+    const response = await generate(makePdf(["Mitochondria make energy."]), 15);
+
+    expect(response.status).toBe(200);
+    const [system] = model.invoke.mock.calls[0][0] as { content: string }[];
+    expect(system.content).toContain("Write exactly 15 questions.");
+  });
+
+  it("refuses counts nobody offers and counts above the plan before calling the AI", async () => {
+    const pdf = makePdf(["Text."]);
+    expect((await generate(pdf, null)).status).toBe(400);
+    expect((await generate(pdf, 7)).status).toBe(400);
+    const tooMany = await generate(pdf, PLANS.pro.questionCounts.at(-1));
+    expect(tooMany.status).toBe(403);
+    expect(tooMany.body.error).toContain("part of Pro");
+    expect(model.invoke).not.toHaveBeenCalled();
+    expect((await getMonthlyUsage(USER)).used).toBe(0);
   });
 
   it("refuses signed-out users, non-PDF files and PDFs without text before calling the AI", async () => {

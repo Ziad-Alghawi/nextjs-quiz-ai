@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { getCurrentUser } from "@/server/session";
 import { pingDatabase } from "@/db/health";
-import { DEFAULT_QUESTION_COUNT } from "@/lib/plans";
+import { isQuestionCountAllowed, questionCountUpgradeMessage } from "@/lib/plans";
 import { extractPdfText, limitDocumentText, uploadFileName } from "@/lib/pdf";
-import { pdfUploadSchema } from "@/lib/validations/quiz";
+import { pdfUploadSchema, quickQuizSchema } from "@/lib/validations/quiz";
 import { GenerationError, generateQuiz } from "@/server/services/generation";
 import { createQuiz } from "@/server/services/quizzes";
-import { GenerationLimitError, runGeneration } from "@/server/services/usage";
+import { GenerationLimitError, getPlan, runGeneration } from "@/server/services/usage";
 
 // Gemini needs 10-20 s for a typical document; set explicitly so a lower platform default can't cut it off.
 export const maxDuration = 60;
@@ -24,6 +24,12 @@ export async function POST(request: NextRequest) {
     }
     const document = upload.data;
 
+    const quick = quickQuizSchema.safeParse({ questionCount: body.get("questionCount") });
+    if (!quick.success) {
+      return errorResponse(quick.error.issues[0].message, 400);
+    }
+    const { questionCount } = quick.data;
+
     // Checked before the slow model call so an outage doesn't waste a Gemini request.
     if (!(await pingDatabase())) {
       return errorResponse(
@@ -36,6 +42,10 @@ export async function POST(request: NextRequest) {
     const user = await getCurrentUser();
     if (!user) {
       return errorResponse("Please sign in to generate a quiz.", 401);
+    }
+
+    if (!isQuestionCountAllowed(await getPlan(user.id), questionCount)) {
+      return errorResponse(questionCountUpgradeMessage(questionCount), 403);
     }
 
     const { text, truncated } = limitDocumentText((await extractPdfText(document)).text);
@@ -52,7 +62,7 @@ export async function POST(request: NextRequest) {
       const quizId = await runGeneration(user.id, async (onUsage) => {
         const quiz = await generateQuiz({
           documents: [{ title: uploadFileName(body.get("pdf")), text }],
-          questionCount: DEFAULT_QUESTION_COUNT,
+          questionCount,
           onUsage,
         });
         return createQuiz(quiz, user.id);
