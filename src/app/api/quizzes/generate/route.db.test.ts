@@ -74,7 +74,7 @@ describe("POST /api/quizzes/generate", () => {
 
     const response = await generate(makePdf(["Mitochondria make energy."]));
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(201);
     const quiz = await db.query.quizzes.findFirst({
       where: eq(quizzes.id, response.body.quizId!),
       with: { questions: { with: { answers: true } } },
@@ -100,7 +100,7 @@ describe("POST /api/quizzes/generate", () => {
 
     const response = await generate(makePdf(["Mitochondria make energy."]), 15);
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(201);
     const [system] = model.invoke.mock.calls[0][0] as { content: string }[];
     expect(system.content).toContain("Write exactly 15 questions.");
   });
@@ -116,11 +116,20 @@ describe("POST /api/quizzes/generate", () => {
     expect((await getMonthlyUsage(USER)).used).toBe(0);
   });
 
-  it("refuses signed-out users, non-PDF files and PDFs without text before calling the AI", async () => {
+  it("refuses signed-out users, non-PDF files and unusable PDFs before calling the AI", async () => {
     expect((await generate(makePdf([""]))).status).toBe(422);
+    const damaged = await generate(new Blob(["%PDF-1.4 broken"]));
+    expect(damaged.status).toBe(422);
+    expect(damaged.body.error).toContain("damaged or password-protected");
     expect((await generate(new Blob(["not a pdf"]))).status).toBe(400);
+    const notFormData = await POST(
+      new Request("http://localhost/api/quizzes/generate", { method: "POST", body: "{}" }),
+    );
+    expect(notFormData.status).toBe(400);
     session.signedIn = false;
     expect((await generate(makePdf(["Text."]))).status).toBe(401);
+    // Signed out comes first, so the file isn't even looked at.
+    expect((await generate(new Blob(["not a pdf"]))).status).toBe(401);
     expect(model.invoke).not.toHaveBeenCalled();
   });
 

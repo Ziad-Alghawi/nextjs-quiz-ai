@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { MAX_DOCUMENT_CHARS } from "./plans";
 import { makePdf } from "@/test/make-pdf";
-import { extractPdfText, limitDocumentText, shareDocumentBudget } from "./pdf";
+import { limitDocumentText, readPdfText, shareDocumentBudget } from "./pdf";
 
 describe("limitDocumentText", () => {
   it("keeps a document within the limit unchanged", () => {
@@ -52,12 +52,21 @@ describe("shareDocumentBudget", () => {
   });
 });
 
-describe("extractPdfText", () => {
+describe("readPdfText", () => {
   it("returns the text of every page and the page count", async () => {
-    const { text, pageCount } = await extractPdfText(makePdf(["Cells divide.", "Genes mutate."]));
+    expect(await readPdfText(makePdf(["Cells divide.", "Genes mutate."]))).toEqual({
+      text: expect.stringMatching(/Cells divide\.\s+Genes mutate\./),
+      truncated: false,
+      pageCount: 2,
+    });
+  });
 
-    expect(pageCount).toBe(2);
-    expect(text).toContain("Cells divide.");
-    expect(text).toContain("Genes mutate.");
+  it("explains a damaged PDF and a PDF without text", async () => {
+    expect(await readPdfText(new Blob(["%PDF-1.4 broken"]))).toEqual({
+      error: expect.stringContaining("damaged or password-protected"),
+    });
+    expect(await readPdfText(makePdf([""]))).toEqual({
+      error: expect.stringContaining("Scanned documents"),
+    });
   });
 });

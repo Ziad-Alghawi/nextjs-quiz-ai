@@ -16,10 +16,11 @@ describe("readGenerationResponse", () => {
     });
   });
 
-  it("shows the message of the server", async () => {
-    expect(await readGenerationResponse(json({ error: "Daily limit reached." }, 429))).toEqual({
-      error: "Daily limit reached.",
-    });
+  it.each([
+    [422, "We couldn't read this PDF. It may be damaged or password-protected."],
+    [429, "Daily limit reached."],
+  ])("shows the message the server sends with a %i", async (status, error) => {
+    expect(await readGenerationResponse(json({ error }, status))).toEqual({ error });
   });
 
   it.each([
