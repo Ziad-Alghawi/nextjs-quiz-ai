@@ -17,23 +17,23 @@ type QuizQuestion = Omit<GeneratedQuiz["questions"][number], "explanation"> & {
 type NewQuiz = Omit<GeneratedQuiz, "questions"> & { questions: QuizQuestion[] };
 
 /**
- * Stores a generated quiz with its questions and answers in one transaction: in the given course,
- * linked to the chapters it was made from (the caller checked they are the user's), or else in the
- * user's "My quizzes" course.
+ * Stores a generated quiz with its questions and answers in one transaction. `origin` puts it in a
+ * course, linked to the chapters it was made from (the caller checked they are the user's);
+ * without it, the quiz goes into the user's "My quizzes" course.
  */
 export async function createQuiz(
   quiz: NewQuiz,
   userId: string,
-  source?: { courseId: number; chapterIds: number[]; kind?: "review" },
+  origin?: { courseId: number; chapterIds: number[]; kind?: "review" },
 ) {
   return db.transaction(async (tx) => {
-    const courseId = source?.courseId ?? (await getOrCreateDefaultCourse(tx, userId));
+    const courseId = origin?.courseId ?? (await getOrCreateDefaultCourse(tx, userId));
     const [{ quizId }] = await tx
       .insert(quizzes)
       .values({
         name: quiz.name,
         description: quiz.description,
-        kind: source?.kind,
+        kind: origin?.kind,
         userId,
         courseId,
       })
@@ -63,10 +63,10 @@ export async function createQuiz(
     );
 
     // A review of quizzes whose chapters were deleted (or Quick quizzes) has no chapters.
-    if (source && source.chapterIds.length > 0) {
+    if (origin && origin.chapterIds.length > 0) {
       await tx
         .insert(quizSources)
-        .values(source.chapterIds.map((sourceId) => ({ quizId, sourceId })));
+        .values(origin.chapterIds.map((sourceId) => ({ quizId, sourceId })));
     }
 
     return quizId;
