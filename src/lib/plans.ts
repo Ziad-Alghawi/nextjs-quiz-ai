@@ -11,7 +11,7 @@ export const PLANS = {
 
 export type PlanId = keyof typeof PLANS;
 
-/** Quick quiz (one uploaded PDF) uses this until the question picker exists. Allowed on every plan. */
+/** The question count the pickers start on. Allowed on every plan. */
 export const DEFAULT_QUESTION_COUNT = 10;
 
 /** Every question count some plan offers; each plan checks its own on top. */
