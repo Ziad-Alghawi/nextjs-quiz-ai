@@ -1,23 +1,11 @@
 "use client";
 import { useState } from "react";
-import { z } from "zod";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/ui/form-error";
 import { useRouter } from "next/navigation";
+import { NETWORK_ERROR, readGenerationResponse } from "@/lib/generation-response";
 import { pdfUploadSchema } from "@/lib/validations/quiz";
-
-const successResponseSchema = z.object({ quizId: z.number(), truncated: z.boolean() });
-const errorResponseSchema = z.object({ error: z.string() });
-
-// Responses that never reached our route (e.g. Vercel's 413 or 504 pages) are not JSON.
-function getErrorMessage(status: number, body: unknown): string {
-  const parsed = errorResponseSchema.safeParse(body);
-  if (parsed.success) return parsed.data.error;
-  if (status === 413) return "This PDF is too large to upload.";
-  if (status === 504) return "Generating the quiz took too long. Please try a shorter document.";
-  return "Something went wrong while generating your quiz. Please try again.";
-}
 
 const UploadDoc = () => {
   const [document, setDocument] = useState<File | null | undefined>(null);
@@ -41,20 +29,18 @@ const UploadDoc = () => {
         method: "POST",
         body: formData,
       });
-      const body: unknown = await res.json().catch(() => null);
-      const success = successResponseSchema.safeParse(body);
-      if (res.ok && success.success) {
+      const result = await readGenerationResponse(res);
+      if ("href" in result) {
         // The browser keeps this page's server-rendered quota counter for the Back button; a route
         // handler can't invalidate that cache, so drop it here before leaving.
         router.refresh();
         // Stay in the loading state until the quiz page replaces this one.
-        const { quizId, truncated } = success.data;
-        router.push(`/quizzes/${quizId}${truncated ? "?notice=truncated" : ""}`);
+        router.push(result.href);
         return;
       }
-      setError(getErrorMessage(res.status, body));
+      setError(result.error);
     } catch {
-      setError("Could not reach the server. Check your connection and try again.");
+      setError(NETWORK_ERROR);
     }
     setIsLoading(false);
   };
