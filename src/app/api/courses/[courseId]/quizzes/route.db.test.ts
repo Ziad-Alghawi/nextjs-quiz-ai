@@ -1,7 +1,7 @@
 import { eq, inArray, like } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
-import { courses, quizGenerations, quizzes, rateLimits, sources, users } from "@/db/schema";
+import { chapters, courses, quizGenerations, quizzes, rateLimits, users } from "@/db/schema";
 import { MAX_DOCUMENT_CHARS } from "@/lib/plans";
 import type { GeneratedQuiz } from "@/lib/validations/quiz";
 import { getMonthlyUsage } from "@/server/services/usage";
@@ -59,9 +59,9 @@ const newCourse = async (userId: string, name = "Biology") => {
 };
 const addChapter = async (courseId: number, name: string, text: string) => {
   const [chapter] = await db
-    .insert(sources)
+    .insert(chapters)
     .values({ courseId, name, text, pageCount: 1, sizeBytes: 100 })
-    .returning({ id: sources.id });
+    .returning({ id: chapters.id });
   return chapter.id;
 };
 
@@ -104,7 +104,7 @@ describe("POST /api/courses/[courseId]/quizzes", () => {
     });
     expect(quiz?.courseId).toBe(courseId);
     expect(quiz?.questions).toHaveLength(15);
-    expect(quiz?.quizSources.map((link) => link.sourceId).sort()).toEqual([cells, genes].sort());
+    expect(quiz?.quizSources.map((link) => link.chapterId).sort()).toEqual([cells, genes].sort());
     const [system, human] = model.invoke.mock.calls[0][0] as { content: string }[];
     expect(system.content).toContain("Write exactly 15 questions.");
     expect(human.content).toBe(

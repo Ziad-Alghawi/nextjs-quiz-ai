@@ -3,7 +3,7 @@ import { and, asc, count, desc, eq } from "drizzle-orm";
 import { DrizzleQueryError } from "drizzle-orm/errors";
 import postgres from "postgres";
 import { db } from "@/db";
-import { courses, quizzes, sources } from "@/db/schema";
+import { chapters, courses, quizzes } from "@/db/schema";
 import { MAX_COURSES_PER_USER } from "@/lib/plans";
 
 // Migration 0010 uses the same name for the course it moves existing quizzes into.
@@ -54,7 +54,7 @@ export function getCourse(userId: string, courseId: number) {
     with: {
       sources: {
         columns: { id: true, name: true, pageCount: true, sizeBytes: true, textTruncated: true },
-        orderBy: asc(sources.id),
+        orderBy: asc(chapters.id),
       },
       quizzes: {
         columns: { id: true, name: true, description: true, kind: true },

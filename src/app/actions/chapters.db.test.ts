@@ -1,7 +1,7 @@
 import { eq, inArray } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
-import { courses, quizSources, quizzes, sources, users } from "@/db/schema";
+import { chapters, courses, quizChapters, quizzes, users } from "@/db/schema";
 import { deleteChapter } from "./chapters";
 
 const USER = "chapter-actions-db-test-user";
@@ -24,14 +24,14 @@ const form = (chapterId: string | number) => {
 const courseWithChapter = async (userId: string) => {
   const [course] = await db.insert(courses).values({ userId, name: "Biology" }).returning();
   const [chapter] = await db
-    .insert(sources)
+    .insert(chapters)
     .values({ courseId: course.id, name: "ch1.pdf", text: "Cells.", pageCount: 1, sizeBytes: 100 })
     .returning();
   const [quiz] = await db
     .insert(quizzes)
     .values({ name: "Cells", userId, courseId: course.id })
     .returning();
-  await db.insert(quizSources).values({ quizId: quiz.id, sourceId: chapter.id });
+  await db.insert(quizChapters).values({ quizId: quiz.id, chapterId: chapter.id });
   return { course, chapter, quiz };
 };
 
@@ -53,9 +53,11 @@ describe("deleteChapter", () => {
 
     expect(await deleteChapter(IDLE, form(chapter.id))).toEqual({ status: "saved" });
 
-    expect(await db.select().from(sources).where(eq(sources.id, chapter.id))).toEqual([]);
+    expect(await db.select().from(chapters).where(eq(chapters.id, chapter.id))).toEqual([]);
     expect(await db.select().from(quizzes).where(eq(quizzes.id, quiz.id))).toHaveLength(1);
-    expect(await db.select().from(quizSources).where(eq(quizSources.quizId, quiz.id))).toEqual([]);
+    expect(await db.select().from(quizChapters).where(eq(quizChapters.quizId, quiz.id))).toEqual(
+      [],
+    );
     expect(revalidatePath).toHaveBeenCalledWith(`/courses/${course.id}`);
   });
 
@@ -64,7 +66,7 @@ describe("deleteChapter", () => {
 
     expect(await deleteChapter(IDLE, form(chapter.id))).toMatchObject({ status: "error" });
     expect(await deleteChapter(IDLE, form("abc"))).toMatchObject({ status: "error" });
-    expect(await db.select().from(sources).where(eq(sources.id, chapter.id))).toHaveLength(1);
+    expect(await db.select().from(chapters).where(eq(chapters.id, chapter.id))).toHaveLength(1);
     expect(revalidatePath).not.toHaveBeenCalled();
   });
 });

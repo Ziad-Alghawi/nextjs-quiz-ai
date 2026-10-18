@@ -2,12 +2,12 @@ import { asc, eq, inArray } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
 import {
+  chapters,
   courses,
+  quizChapters,
   quizGenerations,
-  quizSources,
   quizzes,
   rateLimits,
-  sources,
   users,
 } from "@/db/schema";
 import { REVIEW_BURST_LIMIT } from "@/lib/plans";
@@ -63,7 +63,7 @@ const addCourse = async (userId = USER) => {
 
 const addChapter = async (courseId: number, name: string) => {
   const [chapter] = await db
-    .insert(sources)
+    .insert(chapters)
     .values({ courseId, name, text: "Text.", pageCount: 1, sizeBytes: 100 })
     .returning();
   return chapter.id;
@@ -124,7 +124,7 @@ describe("createReview", () => {
         { answerText: "Wrong", isCorrect: false },
       ],
     });
-    expect(review!.quizSources.map((s) => s.sourceId).sort()).toEqual([ch1, ch2].sort());
+    expect(review!.quizSources.map((s) => s.chapterId).sort()).toEqual([ch1, ch2].sort());
     // No AI, so nothing counts toward the monthly quota.
     expect(await db.select().from(quizGenerations).where(eq(quizGenerations.userId, USER))).toEqual(
       [],
@@ -140,7 +140,7 @@ describe("createReview", () => {
 
     const review = await db.query.quizzes.findFirst({ where: eq(quizzes.id, lastRedirectId()) });
     expect(review?.name).toBe("Review: Cells, Genes");
-    expect(await db.select().from(quizSources).where(eq(quizSources.quizId, review!.id))).toEqual(
+    expect(await db.select().from(quizChapters).where(eq(quizChapters.quizId, review!.id))).toEqual(
       [],
     );
   });
