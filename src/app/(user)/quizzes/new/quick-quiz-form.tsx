@@ -1,11 +1,11 @@
 "use client";
-import { FileText, Loader2, UploadCloud } from "lucide-react";
+import { FileText, UploadCloud } from "lucide-react";
 import { useId, useState } from "react";
 import { QuestionCountPicker } from "@/components/question-count-picker";
-import { Button } from "@/components/ui/button";
+import { GenerateQuizActions } from "@/components/generate-quiz-actions";
 import { FormError } from "@/components/ui/form-error";
 import { useQuizGeneration } from "@/hooks/use-quiz-generation";
-import { DEFAULT_QUESTION_COUNT, PLANS, type PlanId } from "@/lib/plans";
+import { DEFAULT_QUESTION_COUNT, type PlanId } from "@/lib/plans";
 import { cn } from "@/lib/utils";
 import { pdfUploadSchema } from "@/lib/validations/quiz";
 
@@ -95,25 +95,12 @@ export function QuickQuizForm({ plan, remaining }: QuickQuizFormProps) {
         hideUpgradeLink
       />
 
-      <p role="status" aria-live="polite" className="text-sm text-muted-foreground">
-        {generating ? "Generating your quiz. This usually takes 10 to 40 seconds." : null}
-      </p>
-
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <Button type="submit" disabled={generating || !file}>
-          {generating ? (
-            <>
-              <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
-              Generating…
-            </>
-          ) : (
-            "Generate quiz"
-          )}
-        </Button>
-        <span className="text-sm text-muted-foreground">
-          {remaining} of {PLANS[plan].monthlyQuizzes} quizzes left this month
-        </span>
-      </div>
+      <GenerateQuizActions
+        generating={generating}
+        disabled={!file}
+        plan={plan}
+        remaining={remaining}
+      />
     </form>
   );
 }
