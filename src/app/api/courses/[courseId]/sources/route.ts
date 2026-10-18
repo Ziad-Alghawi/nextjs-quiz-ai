@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { errorResponse } from "@/lib/api-response";
 import { CHAPTER_UPLOAD_LIMIT, PLANS } from "@/lib/plans";
 import { extractPdfText, limitDocumentText, uploadFileName } from "@/lib/pdf";
 import { courseIdSchema } from "@/lib/validations/course";
@@ -6,8 +7,6 @@ import { pdfUploadSchema } from "@/lib/validations/quiz";
 import { addChapter } from "@/server/services/chapters";
 import { consumeRateLimit } from "@/server/services/rate-limit";
 import { getCurrentUser } from "@/server/session";
-
-const errorResponse = (error: string, status: number) => NextResponse.json({ error }, { status });
 
 const COURSE_NOT_FOUND = "This course doesn't exist anymore. Reload the page.";
 

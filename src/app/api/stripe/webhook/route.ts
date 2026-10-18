@@ -1,4 +1,6 @@
+import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { errorResponse } from "@/lib/api-response";
 import { env } from "@/lib/env";
 import { getStripe } from "@/lib/stripe";
 import { setSubscribed } from "@/server/services/billing";
@@ -16,14 +18,14 @@ export async function POST(req: Request) {
   const body = await req.text();
   const signature = req.headers.get("stripe-signature");
   if (!signature) {
-    return Response.json({ error: "Missing stripe signature" }, { status: 400 });
+    return errorResponse("Missing stripe signature", 400);
   }
 
   let event: Stripe.Event;
   try {
     event = getStripe().webhooks.constructEvent(body, signature, env.STRIPE_WEBHOOK_SECRET);
   } catch {
-    return Response.json({ error: "Invalid signature" }, { status: 400 });
+    return errorResponse("Invalid signature", 400);
   }
 
   if (subscriptionEvents.has(event.type)) {
@@ -35,5 +37,5 @@ export async function POST(req: Request) {
     await setSubscribed(customerId, ACTIVE_STATUSES.has(subscription.status));
   }
 
-  return Response.json({ received: true });
+  return NextResponse.json({ received: true });
 }

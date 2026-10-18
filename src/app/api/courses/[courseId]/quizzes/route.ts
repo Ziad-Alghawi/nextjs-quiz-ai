@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { errorResponse } from "@/lib/api-response";
 import { shareDocumentBudget } from "@/lib/pdf";
 import { isQuestionCountAllowed, questionCountUpgradeMessage } from "@/lib/plans";
 import { courseIdSchema } from "@/lib/validations/course";
@@ -11,8 +12,6 @@ import { getCurrentUser } from "@/server/session";
 
 // Gemini needs 10-20 s for a typical document; set explicitly so a lower platform default can't cut it off.
 export const maxDuration = 60;
-
-const errorResponse = (error: string, status: number) => NextResponse.json({ error }, { status });
 
 const CHAPTERS_NOT_FOUND = "Some of these chapters don't exist anymore. Reload the page.";
 

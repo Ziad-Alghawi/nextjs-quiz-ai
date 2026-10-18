@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { errorResponse } from "@/lib/api-response";
 import { getCurrentUser } from "@/server/session";
 import { pingDatabase } from "@/db/health";
 import { isQuestionCountAllowed, questionCountUpgradeMessage } from "@/lib/plans";
@@ -11,8 +12,6 @@ import { GenerationLimitError, getPlan, runGeneration } from "@/server/services/
 
 // Gemini needs 10-20 s for a typical document; set explicitly so a lower platform default can't cut it off.
 export const maxDuration = 60;
-
-const errorResponse = (error: string, status: number) => NextResponse.json({ error }, { status });
 
 export async function POST(request: NextRequest) {
   try {
