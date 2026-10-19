@@ -1,9 +1,10 @@
-import { eq, inArray, like } from "drizzle-orm";
+import { eq, like } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
-import { chapters, courses, quizGenerations, quizzes, rateLimits, users } from "@/db/schema";
+import { quizGenerations, quizzes, rateLimits, users } from "@/db/schema";
 import { MAX_DOCUMENT_CHARS } from "@/lib/plans";
 import { getMonthlyUsage } from "@/server/services/usage";
+import { addChapter, addCourse, createUsers, deleteUsers } from "@/test/db-fixtures";
 import { model, modelResponse, resetModel } from "@/test/gemini-mock";
 import { generatedQuiz } from "@/test/generated-quiz";
 import { POST } from "./route";
@@ -32,37 +33,19 @@ const generate = async (courseId: number | string, body: unknown) => {
   };
 };
 
-const newCourse = async (userId: string, name = "Biology") => {
-  const [course] = await db.insert(courses).values({ userId, name }).returning({ id: courses.id });
-  return course.id;
-};
-const addChapter = async (courseId: number, name: string, text: string) => {
-  const [chapter] = await db
-    .insert(chapters)
-    .values({ courseId, name, text, pageCount: 1, sizeBytes: 100 })
-    .returning({ id: chapters.id });
-  return chapter.id;
-};
-
-const cleanUp = () => db.delete(users).where(inArray(users.id, [USER, OTHER_USER]));
-
 beforeEach(async () => {
-  await cleanUp();
+  await createUsers(USER, OTHER_USER);
   // Repeated test runs would otherwise use up the day's shared generation slots.
   await db.delete(rateLimits).where(like(rateLimits.key, "generation-daily:%"));
-  await db.insert(users).values([
-    { id: USER, name: "Test", email: `${USER}@example.com` },
-    { id: OTHER_USER, name: "Other", email: `${OTHER_USER}@example.com` },
-  ]);
   session.signedIn = true;
   resetModel();
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
-afterAll(cleanUp);
+afterAll(() => deleteUsers(USER, OTHER_USER));
 
 describe("POST /api/courses/[courseId]/quizzes", () => {
   it("saves the quiz in the course, linked to the chapters it was made from", async () => {
-    const courseId = await newCourse(USER);
+    const courseId = await addCourse(USER);
     const cells = await addChapter(courseId, "cells.pdf", "Mitochondria make energy.");
     const genes = await addChapter(courseId, "genes.pdf", "Genes mutate.");
     await addChapter(courseId, "unused.pdf", "Not selected.");
@@ -94,7 +77,7 @@ describe("POST /api/courses/[courseId]/quizzes", () => {
   });
 
   it("shares the text limit between the chapters and says when it shortened them", async () => {
-    const courseId = await newCourse(USER);
+    const courseId = await addCourse(USER);
     const short = await addChapter(courseId, "short.pdf", "short ".repeat(1_000));
     const long = await addChapter(courseId, "long.pdf", "long ".repeat(30_000));
     model.invoke.mockResolvedValue(modelResponse(generatedQuiz(10)));
@@ -109,7 +92,7 @@ describe("POST /api/courses/[courseId]/quizzes", () => {
   });
 
   it("accepts a quiz 2 questions short, and fails a shorter one without using the quota", async () => {
-    const courseId = await newCourse(USER);
+    const courseId = await addCourse(USER);
     const chapterIds = [await addChapter(courseId, "cells.pdf", "Text.")];
     // The second request gets 7 questions from both models.
     model.invoke
@@ -131,7 +114,7 @@ describe("POST /api/courses/[courseId]/quizzes", () => {
   });
 
   it("keeps 20 and 25 questions for Pro", async () => {
-    const courseId = await newCourse(USER);
+    const courseId = await addCourse(USER);
     const chapterIds = [await addChapter(courseId, "cells.pdf", "Text.")];
 
     expect((await generate(courseId, { chapterIds, questionCount: 20 })).status).toBe(403);
@@ -143,10 +126,10 @@ describe("POST /api/courses/[courseId]/quizzes", () => {
   });
 
   it("refuses bad requests and other users' chapters before calling the AI", async () => {
-    const courseId = await newCourse(USER);
+    const courseId = await addCourse(USER);
     const chapterId = await addChapter(courseId, "cells.pdf", "Text.");
-    const otherCourse = await newCourse(USER, "Chemistry");
-    const otherUsersCourse = await newCourse(OTHER_USER);
+    const otherCourse = await addCourse(USER, "Chemistry");
+    const otherUsersCourse = await addCourse(OTHER_USER);
     const otherUsersChapter = await addChapter(otherUsersCourse, "theirs.pdf", "Text.");
 
     const statuses = [

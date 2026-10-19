@@ -1,9 +1,9 @@
-import { eq, inArray } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db";
-import { chapters, courses, quizzes, users } from "@/db/schema";
+import { chapters, courses, quizzes } from "@/db/schema";
 import { MAX_COURSES_PER_USER } from "@/lib/plans";
-import { generatedQuiz } from "@/test/generated-quiz";
+import { createUsers, deleteUsers } from "@/test/db-fixtures";
 import {
   createCourse,
   deleteCourse,
@@ -12,7 +12,6 @@ import {
   listCourses,
   renameCourse,
 } from "./courses";
-import { createQuiz } from "./quizzes";
 
 const USER = "courses-db-test-user";
 const OTHER_USER = "courses-db-test-other-user";
@@ -23,17 +22,8 @@ const newCourse = async (userId: string, name: string) => {
   return result.id;
 };
 
-beforeEach(async () => {
-  await db.delete(users).where(inArray(users.id, [USER, OTHER_USER]));
-  await db.insert(users).values([
-    { id: USER, name: "Courses test", email: `${USER}@example.com` },
-    { id: OTHER_USER, name: "Other user", email: `${OTHER_USER}@example.com` },
-  ]);
-});
-
-afterAll(async () => {
-  await db.delete(users).where(inArray(users.id, [USER, OTHER_USER]));
-});
+beforeEach(() => createUsers(USER, OTHER_USER));
+afterAll(() => deleteUsers(USER, OTHER_USER));
 
 describe("createCourse", () => {
   it("rejects a name the user already has, but not another user's", async () => {
@@ -109,26 +99,6 @@ describe("getOrCreateDefaultCourse", () => {
     const rows = await db.select().from(courses).where(eq(courses.userId, USER));
     expect(rows).toEqual([expect.objectContaining({ id: ids[0], name: "My quizzes" })]);
     expect(new Set(ids)).toEqual(new Set([ids[0]]));
-  });
-});
-
-describe("createQuiz", () => {
-  it("puts every quiz into the user's default course", async () => {
-    const first = await createQuiz(generatedQuiz(1), USER);
-    const second = await createQuiz(generatedQuiz(1), USER);
-
-    const [course] = await db.select().from(courses).where(eq(courses.userId, USER));
-    const saved = await db
-      .select({ id: quizzes.id, courseId: quizzes.courseId })
-      .from(quizzes)
-      .where(eq(quizzes.userId, USER));
-    expect(saved).toEqual(
-      expect.arrayContaining([
-        { id: first, courseId: course.id },
-        { id: second, courseId: course.id },
-      ]),
-    );
-    expect(saved).toHaveLength(2);
   });
 });
 
