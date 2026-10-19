@@ -1,11 +1,12 @@
 import { asc, eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
-import { attemptAnswers, quizAttempts } from "@/db/schema";
+import { attemptAnswers, quizAttempts, quizzes } from "@/db/schema";
 import { createQuiz, getQuizWithQuestions } from "@/server/services/quizzes";
 import { createUsers, deleteUsers } from "@/test/db-fixtures";
+import { formData, IDLE } from "@/test/form-data";
 import { generatedQuiz } from "@/test/generated-quiz";
-import { submitQuiz } from "./attempts";
+import { deleteAttempt, submitQuiz } from "./attempts";
 
 const USER = "attempt-actions-db-test-user";
 const OTHER_USER = "attempt-actions-db-test-other";
@@ -14,7 +15,10 @@ const { session, revalidatePath } = vi.hoisted(() => ({
   session: { user: null as { id: string } | null },
   revalidatePath: vi.fn(),
 }));
-vi.mock("@/server/session", () => ({ getCurrentUser: async () => session.user }));
+vi.mock("@/server/session", () => ({
+  getCurrentUser: async () => session.user,
+  requireUser: async () => session.user,
+}));
 vi.mock("next/cache", () => ({ revalidatePath }));
 
 /** A quiz of `userId` with three questions; answers[0] of each question is the correct one. */
@@ -112,5 +116,40 @@ describe("submitQuiz", () => {
       error: expect.stringContaining("session has expired"),
     });
     expect(await attemptsOf(USER)).toEqual([]);
+  });
+});
+
+describe("deleteAttempt", () => {
+  /** Submits an attempt with every answer right and returns it. */
+  async function submitAttempt() {
+    const { quizId, questions } = await addQuiz();
+    const answers = questions.map((q) => ({ questionId: q.id, answerId: q.answers[0].id }));
+    await submitQuiz({ quizId, answers });
+    const [attempt] = await attemptsOf(USER);
+    return attempt;
+  }
+
+  it("deletes the user's attempt with its answers and refreshes the course and the dashboard", async () => {
+    const attempt = await submitAttempt();
+    const [quiz] = await db.select().from(quizzes).where(eq(quizzes.id, attempt.quizId));
+    vi.clearAllMocks();
+
+    expect(await deleteAttempt(IDLE, formData({ attemptId: attempt.id }))).toEqual({
+      status: "saved",
+    });
+    expect(await attemptsOf(USER)).toEqual([]);
+    expect(await answersOf(attempt.id)).toEqual([]);
+    expect(revalidatePath).toHaveBeenCalledWith(`/courses/${quiz.courseId}`);
+    expect(revalidatePath).toHaveBeenCalledWith("/dashboard");
+  });
+
+  it("refuses other users' attempts and unreadable ids", async () => {
+    const attempt = await submitAttempt();
+    session.user = { id: OTHER_USER };
+    const notFound = { status: "error", error: expect.stringContaining("doesn't exist anymore") };
+
+    expect(await deleteAttempt(IDLE, formData({ attemptId: attempt.id }))).toEqual(notFound);
+    expect(await deleteAttempt(IDLE, formData({ attemptId: "abc" }))).toEqual(notFound);
+    expect(await attemptsOf(USER)).toHaveLength(1);
   });
 });

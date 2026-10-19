@@ -83,7 +83,10 @@ export const chapterQuizSchema = z.object({
   questionCount: questionCountSchema,
 });
 
-export const quizIdSchema = z.coerce.number().int().positive();
+// Ids arrive as strings from forms and URLs.
+const idSchema = z.coerce.number().int().positive();
+export const quizIdSchema = idSchema;
+export const attemptIdSchema = idSchema;
 
 /** A review quiz from 2 or more quizzes of one course, as the form sends it. Repeated ids count once. */
 export const reviewQuizSchema = z.object({

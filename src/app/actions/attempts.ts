@@ -2,10 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import type { FormState } from "@/lib/form-state";
 import { MAX_QUESTIONS } from "@/lib/plans";
-import { quizIdSchema } from "@/lib/validations/quiz";
-import { saveAttempt } from "@/server/services/attempts";
-import { getCurrentUser } from "@/server/session";
+import { attemptIdSchema, quizIdSchema } from "@/lib/validations/quiz";
+import * as attempts from "@/server/services/attempts";
+import { getCurrentUser, requireUser } from "@/server/session";
+
+const ATTEMPT_NOT_FOUND = "This attempt doesn't exist anymore. Reload the page.";
 
 const submitQuizSchema = z.object({
   quizId: quizIdSchema,
@@ -33,7 +36,7 @@ export async function submitQuiz(
   if (!parsed.success) return { status: "error", error: "Your answers couldn't be read." };
   const { quizId, answers } = parsed.data;
 
-  const result = await saveAttempt(user.id, quizId, answers);
+  const result = await attempts.saveAttempt(user.id, quizId, answers);
   if ("error" in result) {
     return {
       status: "error",
@@ -46,4 +49,20 @@ export async function submitQuiz(
   // Also clears the browser's cached dashboard, which the result screen's Back button returns to.
   revalidatePath("/dashboard");
   return { status: "saved", ...result };
+}
+
+/** Deletes one of the user's attempts; the course page and the dashboard stats lose it. */
+export async function deleteAttempt(_previous: FormState, formData: FormData): Promise<FormState> {
+  const user = await requireUser("/dashboard");
+
+  const parsed = z.object({ attemptId: attemptIdSchema }).safeParse({
+    attemptId: formData.get("attemptId"),
+  });
+  if (!parsed.success) return { status: "error", error: ATTEMPT_NOT_FOUND };
+
+  const courseId = await attempts.deleteAttempt(user.id, parsed.data.attemptId);
+  if (courseId === null) return { status: "error", error: ATTEMPT_NOT_FOUND };
+  revalidatePath(`/courses/${courseId}`);
+  revalidatePath("/dashboard");
+  return { status: "saved" };
 }
