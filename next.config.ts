@@ -1,5 +1,6 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
   // Bundling and minifying pdf.js breaks its class inheritance ("Super constructor null"),
   // so unpdf is loaded from node_modules at runtime instead.
   serverExternalPackages: ["unpdf"],
@@ -23,4 +24,4 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+export default nextConfig;

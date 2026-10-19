@@ -1,7 +1,12 @@
 {
   "name": "quiz-ai",
   "version": "0.1.0",
+  "description": "Turns a PDF into a multiple-choice quiz with AI, scores the answers and tracks progress.",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ziad-Alghawi/nextjs-quiz-ai.git"
+  },
   "engines": {
     "node": "24.x"
   },
