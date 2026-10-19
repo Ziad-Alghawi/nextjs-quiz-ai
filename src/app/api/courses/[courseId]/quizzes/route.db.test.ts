@@ -4,8 +4,8 @@ import { db } from "@/db";
 import { chapters, courses, quizGenerations, quizzes, rateLimits, users } from "@/db/schema";
 import { MAX_DOCUMENT_CHARS } from "@/lib/plans";
 import { getMonthlyUsage } from "@/server/services/usage";
+import { model, modelResponse, resetModel } from "@/test/gemini-mock";
 import { generatedQuiz } from "@/test/generated-quiz";
-import { modelResponse } from "@/test/model-response";
 import { POST } from "./route";
 
 const USER = "chapter-quiz-db-test-user";
@@ -16,15 +16,7 @@ vi.mock("@/server/session", () => ({
   getCurrentUser: async () =>
     session.signedIn ? { id: USER, name: "Test", email: "t@example.com", image: null } : null,
 }));
-// No real Gemini calls in tests: the structured-output model is replaced by this mock.
-const model = vi.hoisted(() => ({ invoke: vi.fn() }));
-vi.mock("@langchain/google/node", () => ({
-  ChatGoogle: class {
-    withStructuredOutput() {
-      return model;
-    }
-  },
-}));
+vi.mock("@langchain/google/node", () => import("@/test/gemini-mock"));
 
 const generate = async (courseId: number | string, body: unknown) => {
   const response = await POST(
@@ -63,7 +55,7 @@ beforeEach(async () => {
     { id: OTHER_USER, name: "Other", email: `${OTHER_USER}@example.com` },
   ]);
   session.signedIn = true;
-  model.invoke.mockReset();
+  resetModel();
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
 afterAll(cleanUp);

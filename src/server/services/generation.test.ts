@@ -1,25 +1,13 @@
 import type { BaseMessage } from "@langchain/core/messages";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { model, modelResponse, resetModel } from "@/test/gemini-mock";
 import { generatedQuiz } from "@/test/generated-quiz";
-import { modelResponse } from "@/test/model-response";
 import { GenerationError, generateQuiz } from "./generation";
 
 const PRIMARY = "gemini-3.5-flash-lite";
 const FALLBACK = "gemini-3.8-flash";
 
-// No real Gemini calls in tests: the structured-output model is replaced by this mock, which also
-// records which model each call was made with.
-const model = vi.hoisted(() => ({ invoke: vi.fn(), names: [] as string[] }));
-vi.mock("@langchain/google/node", () => ({
-  ChatGoogle: class {
-    constructor({ model: name }: { model: string }) {
-      model.names.push(name);
-    }
-    withStructuredOutput() {
-      return model;
-    }
-  },
-}));
+vi.mock("@langchain/google/node", () => import("@/test/gemini-mock"));
 
 const rateLimited = {
   statusCode: 429,
@@ -38,8 +26,7 @@ const sentMessages = () => model.invoke.mock.calls[0][0] as BaseMessage[];
 const failure = (promise: Promise<unknown>) => promise.catch((error: unknown) => error);
 
 beforeEach(() => {
-  model.invoke.mockReset();
-  model.names = [];
+  resetModel();
   onUsage.mockReset();
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
