@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { scoreAttempt, type SelectedAnswer } from "@/lib/scoring";
 import { cn } from "@/lib/utils";
 import type { QuizWithQuestions } from "@/server/services/quizzes";
-import { submitQuiz } from "../actions/submitQuiz";
+import { submitQuiz } from "../actions/attempts";
 
 export type PlayerQuiz = Pick<QuizWithQuestions, "id" | "name" | "questions">;
 
