@@ -23,7 +23,8 @@ export async function Header() {
   const user = await getCurrentUser();
   return (
     <header>
-      {/* Signed in, the header spans the screen: the logo sits above the sidebar, the menu at the far right. */}
+      {/* Signed in, the header spans the screen: the logo sits above the sidebar, the menu at the
+          far right. */}
       <nav className={cn("px-4 py-2.5", user && "md:px-6")}>
         <div
           className={cn(
@@ -33,7 +34,8 @@ export async function Header() {
         >
           <div className="flex items-center gap-1">
             {user ? <MobileSidebar courses={await listCourses(user.id)} /> : null}
-            {/* leading-9 keeps the header 3.75rem tall when the logo grows on wide screens; the sidebar relies on it. */}
+            {/* leading-9 keeps the header 3.75rem tall when the logo grows on wide screens; the
+                sidebar relies on it. */}
             <Link href="/" className="text-3xl font-bold leading-9">
               Quiz AI
             </Link>

@@ -12,7 +12,8 @@ export default async function UserPagesLayout({ children }: { children: React.Re
     <div className="flex w-full flex-1">
       {user ? (
         <aside className="hidden w-60 shrink-0 border-r md:block">
-          {/* Pinned to the left edge below the 3.75rem header (40px buttons + 2 x 10px padding), as tall as what is left of the screen. */}
+          {/* Pinned to the left edge below the 3.75rem header (40px buttons + 2 x 10px padding), as
+              tall as what is left of the screen. */}
           <div className="sticky top-0 h-[calc(100dvh-3.75rem)] p-3">
             <SidebarNav courses={courses} />
           </div>

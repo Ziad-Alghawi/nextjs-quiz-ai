@@ -1,6 +1,9 @@
 import { pluralize } from "@/lib/pluralize";
 
-/** Three figures next to the heatmap: rows under it on phones, a column beside it on large screens, and tiles when the room beside it allows. */
+/**
+ * Three figures next to the heatmap: rows under it on phones, a column beside it on large screens,
+ * and tiles when the room beside it allows.
+ */
 export function ActivityStats({
   currentStreak,
   longestStreak,

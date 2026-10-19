@@ -86,7 +86,8 @@ export default async function CoursePage({ params }: Props) {
                       <span className="block truncate text-base font-medium text-foreground">
                         {chapter.name}
                       </span>
-                      {/* Beside the name from sm up; on phones it goes under it, so the name and hint keep their width. */}
+                      {/* Beside the name from sm up; on phones it goes under it, so the name and
+                          hint keep their width. */}
                       <span className="sm:hidden">{meta}</span>
                       {chapter.textTruncated ? (
                         <span className="block">Long PDF: quizzes use only its first part.</span>

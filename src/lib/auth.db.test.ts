@@ -107,8 +107,8 @@ describe("sign-up and sign-in", () => {
     expect((await signIn(address)).cookie).toBeDefined();
   });
 
-  // Production bug: accounts moved over from the old auth library sign in with Google only. Signing
-  // up with their email looked successful, but nothing was created and sign-in said "invalid".
+  // A Google-only account has no password: signing up with its email creates nothing and signing in
+  // says "invalid", so without this email the owner wouldn't know how to get in.
   it("emails the owner of a Google-only account how to sign in when someone signs up with it", async () => {
     const address = email("google-only");
     const [owner] = await db

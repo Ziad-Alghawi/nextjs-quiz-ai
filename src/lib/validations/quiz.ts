@@ -83,7 +83,6 @@ export const chapterQuizSchema = z.object({
   questionCount: questionCountSchema,
 });
 
-/** A quiz id from a URL or form: a positive whole number. */
 export const quizIdSchema = z.coerce.number().int().positive();
 
 /** A review quiz from 2 or more quizzes of one course, as the form sends it. Repeated ids count once. */

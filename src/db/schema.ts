@@ -96,10 +96,6 @@ export const rateLimits = pgTable("rate_limit", {
   lastRequest: bigint("last_request", { mode: "number" }).notNull(),
 });
 
-///////////////////////////////////////////
-// course tables
-///////////////////////////////////////////
-
 export const courses = pgTable(
   "courses",
   {
@@ -110,8 +106,8 @@ export const courses = pgTable(
     name: text("name").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  // Also lets the default course be created with ON CONFLICT DO NOTHING, so parallel requests and
-  // a re-run backfill never create two of them.
+  // Also keeps "My quizzes" unique: getOrCreateDefaultCourse's upsert and the backfill in migration
+  // 0010 rely on it, so parallel requests or a re-run never create two of them.
   (table) => [uniqueIndex("courses_user_id_name_idx").on(table.userId, table.name)],
 );
 
@@ -144,10 +140,6 @@ export const chaptersRelations = relations(chapters, ({ one, many }) => ({
   course: one(courses, { fields: [chapters.courseId], references: [courses.id] }),
   quizChapters: many(quizChapters),
 }));
-
-///////////////////////////////////////////
-// quiz tables
-///////////////////////////////////////////
 
 // "review" quizzes are copied from other quizzes of the course, without AI.
 export const quizKind = pgEnum("quiz_kind", ["generated", "review"]);
@@ -286,7 +278,7 @@ export const quizGenerations = pgTable(
     plan: text("plan").$type<PlanId>().notNull(),
     status: generationStatus("status").default("pending").notNull(),
     // Set when the generation finishes, so the cost per quiz is measured. Tokens add up every model
-    // call of the generation; the model is the one that made the last call. Null before 0013.
+    // call of the generation; the model is the one that made the last call.
     model: text("model"),
     inputTokens: integer("input_tokens"),
     outputTokens: integer("output_tokens"),

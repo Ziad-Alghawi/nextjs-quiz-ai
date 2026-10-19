@@ -145,7 +145,9 @@ export function ActivityHeatmap({
           </div>
           {WEEKDAY_LABELS.map((label, weekday) => (
             <div key={weekday} role="row" className="contents">
-              {/* Stays visible while the grid scrolls on narrow screens. The 10px line height keeps a label from making its row taller than the cells, while the column still covers the cells scrolling under it. */}
+              {/* Stays visible while the grid scrolls on narrow screens. The 10px line height keeps
+                  a label from making its row taller than the cells, while the column still covers
+                  the cells scrolling under it. */}
               <span
                 aria-hidden
                 className="sticky left-0 z-[1] self-center bg-card text-xs leading-[10px] text-muted-foreground"
