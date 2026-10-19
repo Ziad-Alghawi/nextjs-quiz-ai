@@ -6,7 +6,7 @@ import { MAX_QUESTIONS } from "@/lib/plans";
 import { scoreAttempt } from "@/lib/scoring";
 import { quizIdSchema } from "@/lib/validations/quiz";
 import { getQuizWithQuestions } from "@/server/services/quizzes";
-import { createSubmission } from "@/server/services/submissions";
+import { createAttempt } from "@/server/services/attempts";
 import { getCurrentUser } from "@/server/session";
 
 const submitQuizSchema = z.object({
@@ -40,7 +40,7 @@ export async function submitQuiz(
   const { score, total, complete } = scoreAttempt(quiz.questions, answers);
   if (!complete) return { status: "error", error: "Answer every question before submitting." };
 
-  await createSubmission({ quizId, userId: user.id, score, totalQuestions: total });
+  await createAttempt({ quizId, userId: user.id, score, totalQuestions: total });
   // Also clears the browser's cached dashboard, which the result screen's Back button returns to.
   revalidatePath("/dashboard");
   return { status: "saved", score, total };
