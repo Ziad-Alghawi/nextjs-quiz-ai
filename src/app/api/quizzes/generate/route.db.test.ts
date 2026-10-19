@@ -3,9 +3,9 @@ import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
 import { courses, quizGenerations, quizzes, rateLimits, users } from "@/db/schema";
 import { DEFAULT_QUESTION_COUNT, PLANS } from "@/lib/plans";
-import type { GeneratedQuiz } from "@/lib/validations/quiz";
 import { getMonthlyUsage } from "@/server/services/usage";
-import { modelResponse } from "@/test/model-response";
+import { model, modelResponse, resetModel } from "@/test/gemini-mock";
+import { generatedQuiz } from "@/test/generated-quiz";
 import { makePdf } from "@/test/make-pdf";
 import { POST } from "./route";
 
@@ -16,28 +16,7 @@ vi.mock("@/server/session", () => ({
   getCurrentUser: async () =>
     session.signedIn ? { id: USER, name: "Test", email: "t@example.com", image: null } : null,
 }));
-// No real Gemini calls in tests: the structured-output model is replaced by this mock.
-const model = vi.hoisted(() => ({ invoke: vi.fn() }));
-vi.mock("@langchain/google/node", () => ({
-  ChatGoogle: class {
-    withStructuredOutput() {
-      return model;
-    }
-  },
-}));
-
-const generated = (questionCount: number): GeneratedQuiz => ({
-  name: "Cells",
-  description: "Parts of a cell.",
-  questions: Array.from({ length: questionCount }, (_, i) => ({
-    questionText: `Question ${i + 1}?`,
-    explanation: `Explanation ${i + 1}.`,
-    answers: [
-      { answerText: "Right", isCorrect: true },
-      { answerText: "Wrong", isCorrect: false },
-    ],
-  })),
-});
+vi.mock("@langchain/google/node", () => import("@/test/gemini-mock"));
 
 const generate = async (
   file: Blob | null,
@@ -63,14 +42,14 @@ beforeEach(async () => {
   await db.delete(rateLimits).where(like(rateLimits.key, "generation-daily:%"));
   await db.insert(users).values({ id: USER, name: "Test", email: `${USER}@example.com` });
   session.signedIn = true;
-  model.invoke.mockReset();
+  resetModel();
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
 afterAll(cleanUp);
 
 describe("POST /api/quizzes/generate", () => {
   it("saves a 10-question quiz with explanations in the user's default course", async () => {
-    model.invoke.mockResolvedValue(modelResponse(generated(DEFAULT_QUESTION_COUNT)));
+    model.invoke.mockResolvedValue(modelResponse(generatedQuiz(DEFAULT_QUESTION_COUNT)));
 
     const response = await generate(makePdf(["Mitochondria make energy."]));
 
@@ -96,7 +75,7 @@ describe("POST /api/quizzes/generate", () => {
   });
 
   it("asks the AI for the chosen number of questions", async () => {
-    model.invoke.mockResolvedValue(modelResponse(generated(15)));
+    model.invoke.mockResolvedValue(modelResponse(generatedQuiz(15)));
 
     const response = await generate(makePdf(["Mitochondria make energy."]), 15);
 
@@ -134,7 +113,7 @@ describe("POST /api/quizzes/generate", () => {
   });
 
   it("doesn't count a quiz with too few questions toward the monthly quota", async () => {
-    model.invoke.mockResolvedValue(modelResponse(generated(DEFAULT_QUESTION_COUNT - 3)));
+    model.invoke.mockResolvedValue(modelResponse(generatedQuiz(DEFAULT_QUESTION_COUNT - 3)));
 
     const response = await generate(makePdf(["Text."]));
 

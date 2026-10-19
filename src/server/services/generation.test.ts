@@ -1,40 +1,13 @@
 import type { BaseMessage } from "@langchain/core/messages";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { GeneratedQuiz } from "@/lib/validations/quiz";
-import { modelResponse } from "@/test/model-response";
+import { model, modelResponse, resetModel } from "@/test/gemini-mock";
+import { generatedQuiz } from "@/test/generated-quiz";
 import { GenerationError, generateQuiz } from "./generation";
 
 const PRIMARY = "gemini-3.5-flash-lite";
 const FALLBACK = "gemini-3.8-flash";
 
-// No real Gemini calls in tests: the structured-output model is replaced by this mock, which also
-// records which model each call was made with.
-const model = vi.hoisted(() => ({ invoke: vi.fn(), names: [] as string[] }));
-vi.mock("@langchain/google/node", () => ({
-  ChatGoogle: class {
-    constructor({ model: name }: { model: string }) {
-      model.names.push(name);
-    }
-    withStructuredOutput() {
-      return model;
-    }
-  },
-}));
-
-const quiz = (questionCount: number): GeneratedQuiz => ({
-  name: "Cells",
-  description: "Parts of a cell.",
-  questions: Array.from({ length: questionCount }, (_, i) => ({
-    questionText: `Question ${i + 1}?`,
-    explanation: `Explanation ${i + 1}.`,
-    answers: [
-      { answerText: "Right", isCorrect: true },
-      { answerText: "Wrong 1", isCorrect: false },
-      { answerText: "Wrong 2", isCorrect: false },
-      { answerText: "Wrong 3", isCorrect: false },
-    ],
-  })),
-});
+vi.mock("@langchain/google/node", () => import("@/test/gemini-mock"));
 
 const rateLimited = {
   statusCode: 429,
@@ -53,15 +26,14 @@ const sentMessages = () => model.invoke.mock.calls[0][0] as BaseMessage[];
 const failure = (promise: Promise<unknown>) => promise.catch((error: unknown) => error);
 
 beforeEach(() => {
-  model.invoke.mockReset();
-  model.names = [];
+  resetModel();
   onUsage.mockReset();
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
 describe("generateQuiz", () => {
   it("asks for the exact count and explanations, and sends the documents as data", async () => {
-    model.invoke.mockResolvedValue(modelResponse(quiz(15)));
+    model.invoke.mockResolvedValue(modelResponse(generatedQuiz(15)));
 
     await generateQuiz({
       documents: [
@@ -88,7 +60,7 @@ describe("generateQuiz", () => {
   });
 
   it("keeps every question with its explanation and the same answers, in any order", async () => {
-    model.invoke.mockResolvedValue(modelResponse(quiz(10)));
+    model.invoke.mockResolvedValue(modelResponse(generatedQuiz(10)));
 
     const result = await generateQuiz(oneDocument());
 
@@ -104,7 +76,7 @@ describe("generateQuiz", () => {
 
   it("uses only the primary model when its quiz is fine, and reports the call's usage", async () => {
     model.invoke.mockResolvedValue(
-      modelResponse(quiz(10), { input_tokens: 12_000, output_tokens: 3_500 }),
+      modelResponse(generatedQuiz(10), { input_tokens: 12_000, output_tokens: 3_500 }),
     );
 
     await generateQuiz(oneDocument());
@@ -118,14 +90,14 @@ describe("generateQuiz", () => {
   });
 
   it("drops questions beyond the requested count", async () => {
-    model.invoke.mockResolvedValue(modelResponse(quiz(13)));
+    model.invoke.mockResolvedValue(modelResponse(generatedQuiz(13)));
 
     expect((await generateQuiz(oneDocument(10))).questions).toHaveLength(10);
     expect(model.names).toEqual([PRIMARY]);
   });
 
   it("accepts a quiz at most 2 questions short without a retry", async () => {
-    model.invoke.mockResolvedValue(modelResponse(quiz(8)));
+    model.invoke.mockResolvedValue(modelResponse(generatedQuiz(8)));
 
     expect((await generateQuiz(oneDocument(10))).questions).toHaveLength(8);
     expect(model.names).toEqual([PRIMARY]);
@@ -133,15 +105,15 @@ describe("generateQuiz", () => {
 
   it("retries a quiz that is too short on the fallback model", async () => {
     model.invoke
-      .mockResolvedValueOnce(modelResponse(quiz(7)))
-      .mockResolvedValueOnce(modelResponse(quiz(10)));
+      .mockResolvedValueOnce(modelResponse(generatedQuiz(7)))
+      .mockResolvedValueOnce(modelResponse(generatedQuiz(10)));
 
     expect((await generateQuiz(oneDocument(10))).questions).toHaveLength(10);
     expect(model.names).toEqual([PRIMARY, FALLBACK]);
   });
 
   it("fails when the fallback's quiz is too short as well", async () => {
-    model.invoke.mockResolvedValue(modelResponse(quiz(7)));
+    model.invoke.mockResolvedValue(modelResponse(generatedQuiz(7)));
 
     const error = await failure(generateQuiz(oneDocument(10)));
 
@@ -152,7 +124,9 @@ describe("generateQuiz", () => {
   it("retries output that doesn't match the schema, reporting the usage of both calls", async () => {
     model.invoke
       .mockResolvedValueOnce(modelResponse(null, { input_tokens: 1000, output_tokens: 100 }))
-      .mockResolvedValueOnce(modelResponse(quiz(10), { input_tokens: 1000, output_tokens: 400 }));
+      .mockResolvedValueOnce(
+        modelResponse(generatedQuiz(10), { input_tokens: 1000, output_tokens: 400 }),
+      );
 
     await generateQuiz(oneDocument());
 
@@ -173,7 +147,9 @@ describe("generateQuiz", () => {
   });
 
   it("retries on the fallback when the primary model is rate-limited", async () => {
-    model.invoke.mockRejectedValueOnce(rateLimited).mockResolvedValueOnce(modelResponse(quiz(10)));
+    model.invoke
+      .mockRejectedValueOnce(rateLimited)
+      .mockResolvedValueOnce(modelResponse(generatedQuiz(10)));
 
     await generateQuiz(oneDocument());
 
