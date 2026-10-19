@@ -3,10 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { MAX_QUESTIONS } from "@/lib/plans";
-import { scoreAttempt } from "@/lib/scoring";
 import { quizIdSchema } from "@/lib/validations/quiz";
-import { getQuizWithQuestions } from "@/server/services/quizzes";
-import { createAttempt } from "@/server/services/attempts";
+import { saveAttempt } from "@/server/services/attempts";
 import { getCurrentUser } from "@/server/session";
 
 const submitQuizSchema = z.object({
@@ -17,9 +15,10 @@ const submitQuizSchema = z.object({
 });
 
 type SubmitQuizResult =
-  { status: "saved"; score: number; total: number } | { status: "error"; error: string };
+  | { status: "saved"; attemptId: number; score: number; total: number }
+  | { status: "error"; error: string };
 
-/** Scores the chosen answers on the server and stores the result. */
+/** Scores the chosen answers on the server and stores the attempt with them. */
 export async function submitQuiz(
   input: z.input<typeof submitQuizSchema>,
 ): Promise<SubmitQuizResult> {
@@ -34,14 +33,17 @@ export async function submitQuiz(
   if (!parsed.success) return { status: "error", error: "Your answers couldn't be read." };
   const { quizId, answers } = parsed.data;
 
-  const quiz = await getQuizWithQuestions(quizId, user.id);
-  if (!quiz) return { status: "error", error: "This quiz doesn't exist anymore." };
-
-  const { score, total, complete } = scoreAttempt(quiz.questions, answers);
-  if (!complete) return { status: "error", error: "Answer every question before submitting." };
-
-  await createAttempt({ quizId, userId: user.id, score, totalQuestions: total });
+  const result = await saveAttempt(user.id, quizId, answers);
+  if ("error" in result) {
+    return {
+      status: "error",
+      error:
+        result.error === "not-found"
+          ? "This quiz doesn't exist anymore."
+          : "Answer every question before submitting.",
+    };
+  }
   // Also clears the browser's cached dashboard, which the result screen's Back button returns to.
   revalidatePath("/dashboard");
-  return { status: "saved", score, total };
+  return { status: "saved", ...result };
 }
