@@ -1,8 +1,8 @@
 import { eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
-import { chapters, courses, quizChapters, quizzes } from "@/db/schema";
-import { createUsers, deleteUsers } from "@/test/db-fixtures";
+import { chapters, quizChapters, quizzes } from "@/db/schema";
+import { addChapter, addCourse, createUsers, deleteUsers } from "@/test/db-fixtures";
 import { deleteChapter } from "./chapters";
 
 const USER = "chapter-actions-db-test-user";
@@ -23,17 +23,11 @@ const form = (chapterId: string | number) => {
 
 /** A course of `userId` with one chapter and one quiz made from it. */
 const courseWithChapter = async (userId: string) => {
-  const [course] = await db.insert(courses).values({ userId, name: "Biology" }).returning();
-  const [chapter] = await db
-    .insert(chapters)
-    .values({ courseId: course.id, name: "ch1.pdf", text: "Cells.", pageCount: 1, sizeBytes: 100 })
-    .returning();
-  const [quiz] = await db
-    .insert(quizzes)
-    .values({ name: "Cells", userId, courseId: course.id })
-    .returning();
-  await db.insert(quizChapters).values({ quizId: quiz.id, chapterId: chapter.id });
-  return { course, chapter, quiz };
+  const courseId = await addCourse(userId);
+  const chapterId = await addChapter(courseId);
+  const [quiz] = await db.insert(quizzes).values({ name: "Cells", userId, courseId }).returning();
+  await db.insert(quizChapters).values({ quizId: quiz.id, chapterId });
+  return { courseId, chapterId, quizId: quiz.id };
 };
 
 beforeEach(async () => {
@@ -44,24 +38,22 @@ afterAll(() => deleteUsers(USER, OTHER_USER));
 
 describe("deleteChapter", () => {
   it("deletes the chapter, keeps its quizzes and refreshes the course page", async () => {
-    const { course, chapter, quiz } = await courseWithChapter(USER);
+    const { courseId, chapterId, quizId } = await courseWithChapter(USER);
 
-    expect(await deleteChapter(IDLE, form(chapter.id))).toEqual({ status: "saved" });
+    expect(await deleteChapter(IDLE, form(chapterId))).toEqual({ status: "saved" });
 
-    expect(await db.select().from(chapters).where(eq(chapters.id, chapter.id))).toEqual([]);
-    expect(await db.select().from(quizzes).where(eq(quizzes.id, quiz.id))).toHaveLength(1);
-    expect(await db.select().from(quizChapters).where(eq(quizChapters.quizId, quiz.id))).toEqual(
-      [],
-    );
-    expect(revalidatePath).toHaveBeenCalledWith(`/courses/${course.id}`);
+    expect(await db.select().from(chapters).where(eq(chapters.id, chapterId))).toEqual([]);
+    expect(await db.select().from(quizzes).where(eq(quizzes.id, quizId))).toHaveLength(1);
+    expect(await db.select().from(quizChapters).where(eq(quizChapters.quizId, quizId))).toEqual([]);
+    expect(revalidatePath).toHaveBeenCalledWith(`/courses/${courseId}`);
   });
 
   it("doesn't delete another user's chapter and rejects invalid ids", async () => {
-    const { chapter } = await courseWithChapter(OTHER_USER);
+    const { chapterId } = await courseWithChapter(OTHER_USER);
 
-    expect(await deleteChapter(IDLE, form(chapter.id))).toMatchObject({ status: "error" });
+    expect(await deleteChapter(IDLE, form(chapterId))).toMatchObject({ status: "error" });
     expect(await deleteChapter(IDLE, form("abc"))).toMatchObject({ status: "error" });
-    expect(await db.select().from(chapters).where(eq(chapters.id, chapter.id))).toHaveLength(1);
+    expect(await db.select().from(chapters).where(eq(chapters.id, chapterId))).toHaveLength(1);
     expect(revalidatePath).not.toHaveBeenCalled();
   });
 });

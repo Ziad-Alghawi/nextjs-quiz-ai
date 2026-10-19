@@ -1,14 +1,14 @@
 import { eq, like } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
-import { chapters, courses, rateLimits } from "@/db/schema";
+import { chapters, rateLimits } from "@/db/schema";
 import {
   CHAPTER_UPLOAD_LIMIT,
   MAX_CHAPTERS_PER_COURSE,
   MAX_DOCUMENT_CHARS,
   PLANS,
 } from "@/lib/plans";
-import { createUsers, deleteUsers } from "@/test/db-fixtures";
+import { addCourse, createUsers, deleteUsers } from "@/test/db-fixtures";
 import { makePdf } from "@/test/make-pdf";
 import { POST } from "./route";
 
@@ -36,10 +36,6 @@ const upload = async (courseId: number | string, file: Blob | null, fileName = "
   };
 };
 
-const newCourse = async (userId: string, name = "Biology") => {
-  const [course] = await db.insert(courses).values({ userId, name }).returning({ id: courses.id });
-  return course.id;
-};
 const addChapters = (courseId: number, count: number) =>
   db.insert(chapters).values(
     Array.from({ length: count }, (_, i) => ({
@@ -66,7 +62,7 @@ afterAll(async () => {
 
 describe("POST /api/courses/[courseId]/sources", () => {
   it("saves the PDF's text, page count, size and file name as a chapter", async () => {
-    const courseId = await newCourse(USER);
+    const courseId = await addCourse(USER);
     const file = makePdf(["Mitochondria make energy.", "Ribosomes make proteins."]);
 
     const response = await upload(courseId, file, "  Cells.pdf ");
@@ -84,7 +80,7 @@ describe("POST /api/courses/[courseId]/sources", () => {
   });
 
   it("keeps only the first part of a very long PDF and marks it", async () => {
-    const courseId = await newCourse(USER);
+    const courseId = await addCourse(USER);
     // 50 lines of 60 characters: each line fits on the page, so all of it is extracted.
     const page = Array.from({ length: 50 }, () => "word ".repeat(12).trim()).join("\n");
     const pages = Array.from(
@@ -101,7 +97,7 @@ describe("POST /api/courses/[courseId]/sources", () => {
   });
 
   it("refuses signed-out users, other users' courses and invalid ids", async () => {
-    const othersCourse = await newCourse(OTHER_USER);
+    const othersCourse = await addCourse(OTHER_USER);
     const pdf = makePdf(["Text."]);
 
     expect((await upload(othersCourse, pdf)).status).toBe(404);
@@ -112,7 +108,7 @@ describe("POST /api/courses/[courseId]/sources", () => {
   });
 
   it("explains files that aren't PDFs, have no text or can't be read", async () => {
-    const courseId = await newCourse(USER);
+    const courseId = await addCourse(USER);
 
     const notPdf = await upload(courseId, new Blob(["just text"]), "notes.txt");
     expect(notPdf).toEqual({ status: 400, body: { error: "Only PDF files are supported." } });
@@ -124,7 +120,7 @@ describe("POST /api/courses/[courseId]/sources", () => {
   });
 
   it(`stops at ${MAX_CHAPTERS_PER_COURSE} chapters per course, also for parallel uploads`, async () => {
-    const courseId = await newCourse(USER);
+    const courseId = await addCourse(USER);
     await addChapters(courseId, MAX_CHAPTERS_PER_COURSE - 1);
 
     const results = await Promise.all(
@@ -138,17 +134,17 @@ describe("POST /api/courses/[courseId]/sources", () => {
   });
 
   it(`stops a Free user at ${PLANS.free.maxChapters} chapters in all courses`, async () => {
-    await addChapters(await newCourse(USER, "A"), 15);
-    await addChapters(await newCourse(USER, "B"), PLANS.free.maxChapters - 15);
+    await addChapters(await addCourse(USER, "A"), 15);
+    await addChapters(await addCourse(USER, "B"), PLANS.free.maxChapters - 15);
 
-    const response = await upload(await newCourse(USER, "C"), makePdf(["Text."]));
+    const response = await upload(await addCourse(USER, "C"), makePdf(["Text."]));
 
     expect(response.status).toBe(403);
     expect(response.body.error).toContain("Free plan");
   });
 
   it(`allows ${CHAPTER_UPLOAD_LIMIT.uploads} uploads per ${CHAPTER_UPLOAD_LIMIT.windowMinutes} minutes, failed ones included`, async () => {
-    const courseId = await newCourse(USER);
+    const courseId = await addCourse(USER);
     for (let i = 0; i < CHAPTER_UPLOAD_LIMIT.uploads; i++) {
       expect((await upload(courseId, new Blob(["not a pdf"]))).status).toBe(400);
     }
@@ -158,6 +154,6 @@ describe("POST /api/courses/[courseId]/sources", () => {
     expect(response.status).toBe(429);
     expect(response.body.error).toContain("try again in a few minutes");
     session.userId = OTHER_USER;
-    expect((await upload(await newCourse(OTHER_USER), makePdf(["Text."]))).status).toBe(201);
+    expect((await upload(await addCourse(OTHER_USER), makePdf(["Text."]))).status).toBe(201);
   });
 });

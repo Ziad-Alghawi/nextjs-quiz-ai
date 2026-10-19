@@ -1,18 +1,10 @@
 import { asc, eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
-import {
-  chapters,
-  courses,
-  quizChapters,
-  quizGenerations,
-  quizzes,
-  rateLimits,
-  users,
-} from "@/db/schema";
+import { quizChapters, quizGenerations, quizzes, rateLimits, users } from "@/db/schema";
 import { REVIEW_BURST_LIMIT } from "@/lib/plans";
 import { createQuiz, listReviewSources } from "@/server/services/quizzes";
-import { createUsers, deleteUsers } from "@/test/db-fixtures";
+import { addChapter, addCourse, createUsers, deleteUsers } from "@/test/db-fixtures";
 import { generatedQuiz } from "@/test/generated-quiz";
 import { createReview } from "./reviews";
 
@@ -43,19 +35,6 @@ const form = (courseId: number, quizIds: number[], questionCount: number) => {
 const addQuiz = (courseId: number, name: string, size: number, chapterIds: number[] = []) =>
   createQuiz(generatedQuiz(size, name), USER, { courseId, chapterIds });
 
-const addCourse = async (userId = USER) => {
-  const [course] = await db.insert(courses).values({ userId, name: "Biology" }).returning();
-  return course.id;
-};
-
-const addChapter = async (courseId: number, name: string) => {
-  const [chapter] = await db
-    .insert(chapters)
-    .values({ courseId, name, text: "Text.", pageCount: 1, sizeBytes: 100 })
-    .returning();
-  return chapter.id;
-};
-
 const lastRedirectId = () => Number(String(redirect.mock.lastCall?.[0]).split("/").pop());
 
 const resetReviewLimit = () => db.delete(rateLimits).where(eq(rateLimits.key, `review:${USER}`));
@@ -72,7 +51,7 @@ afterAll(async () => {
 
 describe("createReview", () => {
   it("copies balanced questions with answers and explanations into a review of the course", async () => {
-    const courseId = await addCourse();
+    const courseId = await addCourse(USER);
     const [ch1, ch2] = [
       await addChapter(courseId, "ch1.pdf"),
       await addChapter(courseId, "ch2.pdf"),
@@ -118,7 +97,7 @@ describe("createReview", () => {
   });
 
   it("names two quizzes and works without chapters", async () => {
-    const courseId = await addCourse();
+    const courseId = await addCourse(USER);
     const cells = await addQuiz(courseId, "Cells", 5);
     const genes = await addQuiz(courseId, "Genes", 5);
 
@@ -132,7 +111,7 @@ describe("createReview", () => {
   });
 
   it("refuses reviews, other courses' and other users' quizzes as sources", async () => {
-    const courseId = await addCourse();
+    const courseId = await addCourse(USER);
     const otherCourseId = await addCourse(OTHER_USER);
     const cells = await addQuiz(courseId, "Cells", 5);
     const genes = await addQuiz(courseId, "Genes", 5);
@@ -152,7 +131,7 @@ describe("createReview", () => {
   });
 
   it("checks the quiz and question counts", async () => {
-    const courseId = await addCourse();
+    const courseId = await addCourse(USER);
     const cells = await addQuiz(courseId, "Cells", 5);
     const genes = await addQuiz(courseId, "Genes", 5);
 
@@ -171,7 +150,7 @@ describe("createReview", () => {
   });
 
   it("allows 20 and 25 questions only on Pro", async () => {
-    const courseId = await addCourse();
+    const courseId = await addCourse(USER);
     const cells = await addQuiz(courseId, "Cells", 15);
     const genes = await addQuiz(courseId, "Genes", 15);
 
@@ -186,7 +165,7 @@ describe("createReview", () => {
   });
 
   it(`stops after ${REVIEW_BURST_LIMIT.reviews} reviews in the window`, async () => {
-    const courseId = await addCourse();
+    const courseId = await addCourse(USER);
     const cells = await addQuiz(courseId, "Cells", 5);
     const genes = await addQuiz(courseId, "Genes", 5);
 
@@ -203,7 +182,7 @@ describe("createReview", () => {
 
 describe("listReviewSources", () => {
   it("lists the course's generated quizzes oldest first, with their question counts", async () => {
-    const courseId = await addCourse();
+    const courseId = await addCourse(USER);
     const cells = await addQuiz(courseId, "Cells", 5);
     const genes = await addQuiz(courseId, "Genes", 10);
     await addQuiz(await addCourse(OTHER_USER), "In another course", 5);
