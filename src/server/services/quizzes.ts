@@ -80,11 +80,11 @@ export async function createQuiz(
  */
 export function getQuizWithQuestions(quizId: number, userId: string) {
   return db.query.quizzes.findFirst({
-    columns: { id: true, name: true, description: true },
+    columns: { id: true, name: true, courseId: true },
     where: and(eq(quizzes.id, quizId), eq(quizzes.userId, userId)),
     with: {
       questions: {
-        columns: { id: true, questionText: true },
+        columns: { id: true, questionText: true, explanation: true },
         orderBy: asc(questions.id),
         with: {
           answers: {

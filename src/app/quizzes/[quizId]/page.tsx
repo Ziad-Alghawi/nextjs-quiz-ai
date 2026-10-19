@@ -4,7 +4,7 @@ import { cache } from "react";
 import { quizIdSchema } from "@/lib/validations/quiz";
 import { getQuizWithQuestions } from "@/server/services/quizzes";
 import { requireUser } from "@/server/session";
-import QuizQuestions from "../QuizQuestions";
+import { QuizPlayer } from "../quiz-player";
 
 type Props = { params: Promise<{ quizId: string }> };
 
@@ -26,23 +26,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: quiz.name };
 }
 
-const page = async ({
+export default async function QuizPage({
   params,
   searchParams,
-}: Props & { searchParams: Promise<{ notice?: string }> }) => {
+}: Props & { searchParams: Promise<{ notice?: string }> }) {
   const quiz = await loadQuiz((await params).quizId);
   // Set by the upload form when the document was longer than the text limit.
   const { notice } = await searchParams;
 
   return (
-    <>
-      {notice === "truncated" && (
-        <p role="status" className="mt-4 text-center text-sm text-muted-foreground">
-          Only the first part of this long PDF was used.
-        </p>
-      )}
-      <QuizQuestions quiz={quiz} />
-    </>
+    <QuizPlayer
+      quiz={quiz}
+      exitHref={`/courses/${quiz.courseId}`}
+      truncated={notice === "truncated"}
+    />
   );
-};
-export default page;
+}
