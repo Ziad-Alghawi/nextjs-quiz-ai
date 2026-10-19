@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useId, useState } from "react";
 import { z } from "zod";
 import { FormError } from "@/components/ui/form-error";
+import { MAX_PDF_MB } from "@/lib/plans";
 import { cn } from "@/lib/utils";
 import { pdfUploadSchema } from "@/lib/validations/quiz";
 
@@ -122,7 +123,7 @@ export function ChapterUpload({ courseId, full }: { courseId: number; full: bool
       >
         <UploadCloud className="size-6" aria-hidden />
         <span className="font-medium text-foreground">Drop PDFs here or click to choose</span>
-        <span>Up to 4 MB each. The text is saved; the file isn&apos;t.</span>
+        <span>Up to {MAX_PDF_MB} MB each. The text is saved; the file isn&apos;t.</span>
       </label>
 
       {uploads.length > 0 ? (

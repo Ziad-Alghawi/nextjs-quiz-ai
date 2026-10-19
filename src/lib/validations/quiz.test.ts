@@ -1,12 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { MAX_QUESTIONS } from "@/lib/plans";
-import {
-  generatedQuizSchema,
-  MAX_PDF_BYTES,
-  pdfUploadSchema,
-  quizIdSchema,
-  type GeneratedQuiz,
-} from "./quiz";
+import { MAX_PDF_BYTES, MAX_PDF_MB, MAX_QUESTIONS } from "@/lib/plans";
+import { generatedQuizSchema, pdfUploadSchema, quizIdSchema, type GeneratedQuiz } from "./quiz";
 
 const answers = (correctCount: number, total = 4) =>
   Array.from({ length: total }, (_, i) => ({
@@ -75,8 +69,10 @@ describe("pdfUploadSchema", () => {
     expect(await firstError(new Blob([]))).toBe("The selected file is empty.");
   });
 
-  it("rejects a file larger than 4 MB", async () => {
-    expect(await firstError(pdf(new Uint8Array(MAX_PDF_BYTES)))).toMatch(/larger than 4 MB/);
+  it(`rejects a file larger than ${MAX_PDF_MB} MB`, async () => {
+    expect(await firstError(pdf(new Uint8Array(MAX_PDF_BYTES)))).toContain(
+      `larger than ${MAX_PDF_MB} MB`,
+    );
   });
 
   it("rejects a file without a PDF header, whatever its MIME type", async () => {

@@ -5,7 +5,7 @@ import { QuestionCountPicker } from "@/components/question-count-picker";
 import { GenerateQuizActions } from "@/components/generate-quiz-actions";
 import { FormError } from "@/components/ui/form-error";
 import { useQuizGeneration } from "@/hooks/use-quiz-generation";
-import { DEFAULT_QUESTION_COUNT, type PlanId } from "@/lib/plans";
+import { DEFAULT_QUESTION_COUNT, MAX_PDF_MB, type PlanId } from "@/lib/plans";
 import { cn } from "@/lib/utils";
 import { pdfUploadSchema } from "@/lib/validations/quiz";
 
@@ -80,7 +80,7 @@ export function QuickQuizForm({ plan, remaining }: QuickQuizFormProps) {
               <span className="font-medium text-foreground">
                 Drop a PDF here or click to choose
               </span>
-              <span>Up to 4 MB. The file isn&apos;t saved, only the quiz.</span>
+              <span>Up to {MAX_PDF_MB} MB. The file isn&apos;t saved, only the quiz.</span>
             </>
           )}
         </label>

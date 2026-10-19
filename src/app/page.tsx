@@ -3,17 +3,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
-import { PLANS } from "@/lib/plans";
-import { MAX_PDF_BYTES } from "@/lib/validations/quiz";
+import { MAX_PDF_MB, PLANS } from "@/lib/plans";
 import { getCurrentUser } from "@/server/session";
-
-const maxPdfMegabytes = MAX_PDF_BYTES / (1024 * 1024);
 
 const steps = [
   {
     icon: FileUp,
     title: "Upload a PDF",
-    text: `Slides, notes or a chapter, up to ${maxPdfMegabytes} MB.`,
+    text: `Slides, notes or a chapter, up to ${MAX_PDF_MB} MB.`,
   },
   {
     icon: ListChecks,
@@ -35,7 +32,7 @@ const plans: { id: "free" | "pro"; name: string; summary: string; features: stri
     summary: "To get started",
     features: [
       `${PLANS.free.monthlyQuizzes} quizzes a month`,
-      `PDFs up to ${maxPdfMegabytes} MB`,
+      `PDFs up to ${MAX_PDF_MB} MB`,
       "Dashboard with scores and activity",
     ],
   },
