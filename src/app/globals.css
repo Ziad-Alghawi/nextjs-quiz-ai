@@ -117,6 +117,12 @@
     border-color: var(--border);
   }
 
+  /* Keeps the scrollbar's space even when a page fits, so content doesn't shift sideways when a
+     page grows taller than the window (e.g. the explanation after answering a quiz question). */
+  html {
+    scrollbar-gutter: stable;
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
   }
