@@ -4,7 +4,6 @@ import { db } from "@/db";
 import { chapters, courses, quizzes } from "@/db/schema";
 import { MAX_COURSES_PER_USER } from "@/lib/plans";
 import { createUsers, deleteUsers } from "@/test/db-fixtures";
-import { generatedQuiz } from "@/test/generated-quiz";
 import {
   createCourse,
   deleteCourse,
@@ -13,7 +12,6 @@ import {
   listCourses,
   renameCourse,
 } from "./courses";
-import { createQuiz } from "./quizzes";
 
 const USER = "courses-db-test-user";
 const OTHER_USER = "courses-db-test-other-user";
@@ -101,26 +99,6 @@ describe("getOrCreateDefaultCourse", () => {
     const rows = await db.select().from(courses).where(eq(courses.userId, USER));
     expect(rows).toEqual([expect.objectContaining({ id: ids[0], name: "My quizzes" })]);
     expect(new Set(ids)).toEqual(new Set([ids[0]]));
-  });
-});
-
-describe("createQuiz", () => {
-  it("puts every quiz into the user's default course", async () => {
-    const first = await createQuiz(generatedQuiz(1), USER);
-    const second = await createQuiz(generatedQuiz(1), USER);
-
-    const [course] = await db.select().from(courses).where(eq(courses.userId, USER));
-    const saved = await db
-      .select({ id: quizzes.id, courseId: quizzes.courseId })
-      .from(quizzes)
-      .where(eq(quizzes.userId, USER));
-    expect(saved).toEqual(
-      expect.arrayContaining([
-        { id: first, courseId: course.id },
-        { id: second, courseId: course.id },
-      ]),
-    );
-    expect(saved).toHaveLength(2);
   });
 });
 

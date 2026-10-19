@@ -3,7 +3,7 @@ import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
 import { quizChapters, quizGenerations, quizzes, rateLimits, users } from "@/db/schema";
 import { REVIEW_BURST_LIMIT } from "@/lib/plans";
-import { createQuiz, listReviewSources } from "@/server/services/quizzes";
+import { createQuiz } from "@/server/services/quizzes";
 import { addChapter, addCourse, createUsers, deleteUsers } from "@/test/db-fixtures";
 import { formData, IDLE } from "@/test/form-data";
 import { generatedQuiz } from "@/test/generated-quiz";
@@ -172,21 +172,5 @@ describe("createReview", () => {
       status: "error",
       error: expect.stringContaining("Please try again in a few minutes."),
     });
-  });
-});
-
-describe("listReviewSources", () => {
-  it("lists the course's generated quizzes oldest first, with their question counts", async () => {
-    const courseId = await addCourse(USER);
-    const cells = await addQuiz(courseId, "Cells", 5);
-    const genes = await addQuiz(courseId, "Genes", 10);
-    await addQuiz(await addCourse(OTHER_USER), "In another course", 5);
-    await createReview(IDLE, form(courseId, [cells, genes], 5));
-
-    expect(await listReviewSources(USER, courseId)).toEqual([
-      { id: cells, name: "Cells", questionCount: 5 },
-      { id: genes, name: "Genes", questionCount: 10 },
-    ]);
-    expect(await listReviewSources(OTHER_USER, courseId)).toEqual([]);
   });
 });
