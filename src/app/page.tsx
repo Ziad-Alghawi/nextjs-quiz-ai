@@ -3,8 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
-import { PLANS } from "@/lib/plans";
-import { MAX_PDF_BYTES } from "@/lib/validations/quiz";
+import { MAX_PDF_BYTES, PLANS } from "@/lib/plans";
 import { getCurrentUser } from "@/server/session";
 
 const maxPdfMegabytes = MAX_PDF_BYTES / (1024 * 1024);

@@ -1,12 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { MAX_QUESTIONS } from "@/lib/plans";
-import {
-  generatedQuizSchema,
-  MAX_PDF_BYTES,
-  pdfUploadSchema,
-  quizIdSchema,
-  type GeneratedQuiz,
-} from "./quiz";
+import { MAX_PDF_BYTES, MAX_QUESTIONS } from "@/lib/plans";
+import { generatedQuizSchema, pdfUploadSchema, quizIdSchema, type GeneratedQuiz } from "./quiz";
 
 const answers = (correctCount: number, total = 4) =>
   Array.from({ length: total }, (_, i) => ({

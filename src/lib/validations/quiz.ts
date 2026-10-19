@@ -1,14 +1,12 @@
 import { z } from "zod";
 import {
   MAX_CHAPTERS_PER_COURSE,
+  MAX_PDF_BYTES,
   MAX_QUESTIONS,
   MAX_REVIEW_QUIZZES,
   QUESTION_COUNTS,
 } from "@/lib/plans";
 import { chapterIdSchema, courseIdSchema } from "./course";
-
-// Below Vercel's 4.5 MB request body limit, which rejects larger uploads before our code runs.
-export const MAX_PDF_BYTES = 4 * 1024 * 1024;
 
 // The browser-reported MIME type is client-controlled and sometimes empty, so check the file header.
 const PDF_SIGNATURE = "%PDF-";

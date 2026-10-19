@@ -39,6 +39,12 @@ export const MAX_CHAPTERS_PER_COURSE = 15;
 /** On every plan, failed uploads included: reading a PDF costs server time even when it fails. */
 export const CHAPTER_UPLOAD_LIMIT = { uploads: 20, windowMinutes: 10 } as const;
 
+/**
+ * On every plan. Below Vercel's 4.5 MB request body limit, which rejects larger uploads before our
+ * code runs.
+ */
+export const MAX_PDF_BYTES = 4 * 1024 * 1024;
+
 /** Review quizzes (questions copied from other quizzes, no AI) take 2 up to this many quizzes. */
 export const MAX_REVIEW_QUIZZES = 10;
 
