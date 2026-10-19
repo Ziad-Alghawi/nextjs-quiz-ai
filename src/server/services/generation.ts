@@ -6,7 +6,7 @@ import { getQuotaErrorMessage, isBillingStop } from "@/lib/gemini-errors";
 import { shuffle } from "@/lib/shuffle";
 import { generatedQuizSchema, type GeneratedQuiz } from "@/lib/validations/quiz";
 
-/** Generates every quiz first. Same price per token as gemini-2.5-flash, which it replaces. */
+/** Generates every quiz first. */
 const PRIMARY_MODEL = "gemini-3.5-flash-lite";
 
 /** Gets one more try when the primary model fails or its quiz is unusable; about 2.5× the price. */
