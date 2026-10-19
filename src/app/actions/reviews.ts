@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import type { FormState } from "@/app/actions/account";
+import type { FormState } from "@/lib/form-state";
 import { questionCountUpgradeMessage, REVIEW_BURST_LIMIT } from "@/lib/plans";
 import { reviewQuizSchema } from "@/lib/validations/quiz";
 import { createReviewQuiz } from "@/server/services/quizzes";

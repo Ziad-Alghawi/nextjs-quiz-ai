@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import type { FormState } from "@/app/actions/account";
+import type { FormState } from "@/lib/form-state";
 import { chapterIdSchema } from "@/lib/validations/course";
 import * as chapters from "@/server/services/chapters";
 import { requireUser } from "@/server/session";

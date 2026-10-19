@@ -5,11 +5,10 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
+import type { FormState } from "@/lib/form-state";
 import { nameSchema, passwordSchema } from "@/lib/validations/auth";
 import { updateName } from "@/server/services/account";
 import { requireUser } from "@/server/session";
-
-export type FormState = { status: "idle" | "saved" } | { status: "error"; error: string };
 
 /** Changes the signed-in user's display name (form action for useActionState). */
 export async function saveName(_previous: FormState, formData: FormData): Promise<FormState> {

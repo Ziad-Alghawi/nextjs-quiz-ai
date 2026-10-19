@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import type { FormState } from "@/app/actions/account";
+import type { FormState } from "@/lib/form-state";
 import { MAX_COURSES_PER_USER } from "@/lib/plans";
 import { courseIdSchema, courseNameSchema } from "@/lib/validations/course";
 import * as courses from "@/server/services/courses";

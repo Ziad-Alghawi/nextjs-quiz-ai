@@ -1,8 +1,9 @@
 "use client";
 import { useActionState } from "react";
-import { addPassword, type FormState } from "@/app/actions/account";
+import { addPassword } from "@/app/actions/account";
 import { Button } from "@/components/ui/button";
 import { TextField } from "@/components/ui/text-field";
+import type { FormState } from "@/lib/form-state";
 import { PASSWORD_MIN_LENGTH } from "@/lib/validations/auth";
 
 export function AddPasswordForm({ email }: { email: string }) {
