@@ -2,13 +2,13 @@
 import { Check, Loader2, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { QuizResults } from "@/components/quiz-results";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { scoreAttempt, type SelectedAnswer } from "@/lib/scoring";
 import { cn } from "@/lib/utils";
 import type { QuizWithQuestions } from "@/server/services/quizzes";
 import { submitQuiz } from "../actions/submitQuiz";
-import QuizSubmission from "./QuizSubmission";
 
 export type PlayerQuiz = Pick<QuizWithQuestions, "id" | "name" | "questions">;
 
@@ -66,6 +66,14 @@ export function QuizPlayer({ quiz, exitHref, isSample, truncated }: QuizPlayerPr
     setResult(localResult);
   }
 
+  function retry() {
+    setIndex(0);
+    setChosen([]);
+    setSubmitting(false);
+    setResult(null);
+    setSaveError(null);
+  }
+
   function next() {
     if (isLast) return void finish();
     setIndex(index + 1);
@@ -98,14 +106,16 @@ export function QuizPlayer({ quiz, exitHref, isSample, truncated }: QuizPlayerPr
 
   if (result) {
     return (
-      <div className="mx-auto w-full max-w-180 px-4">
-        <QuizSubmission
-          score={result.score}
-          totalQuestions={result.total}
-          scorePercentage={Math.round((result.score / result.total) * 100)}
-          saveError={saveError}
-        />
-      </div>
+      <QuizResults
+        score={result.score}
+        total={result.total}
+        questions={questions}
+        chosen={chosen}
+        saveError={saveError}
+        onRetry={retry}
+        exitHref={exitHref}
+        exitLabel={isSample ? "Back to home" : "Back to course"}
+      />
     );
   }
 
