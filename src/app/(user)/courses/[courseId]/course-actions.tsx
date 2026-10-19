@@ -1,13 +1,12 @@
 "use client";
 import { Pencil, Trash2 } from "lucide-react";
-import { useActionState, useState } from "react";
+import { useState } from "react";
 import { deleteCourse, renameCourse } from "@/app/actions/courses";
+import { ConfirmDeleteForm } from "@/components/confirm-delete-form";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
-import { FormError } from "@/components/ui/form-error";
 import { TextField } from "@/components/ui/text-field";
 import { useDialogForm } from "@/hooks/use-dialog-form";
-import type { FormState } from "@/lib/form-state";
 import { pluralize } from "@/lib/pluralize";
 
 type CourseActionsProps = {
@@ -55,30 +54,19 @@ function DeleteForm({
   quizCount,
   onCancel,
 }: CourseActionsProps & { onCancel: () => void }) {
-  const [state, action, pending] = useActionState<FormState, FormData>(deleteCourse, {
-    status: "idle",
-  });
-
   return (
-    <form action={action} className="flex flex-col gap-4 p-6">
-      <h2 className="text-lg font-semibold">Delete “{course.name}”?</h2>
-      <input type="hidden" name="courseId" value={course.id} />
-      <p className="text-sm">
-        This permanently deletes the course together with its{" "}
-        <strong>{pluralize(chapterCount, "chapter")}</strong> and{" "}
-        <strong>{pluralize(quizCount, "quiz", "quizzes")}</strong>, including the results saved for
-        those quizzes. It can&apos;t be undone.
-      </p>
-      <FormError>{state.status === "error" ? state.error : undefined}</FormError>
-      <div className="flex justify-end gap-3">
-        <Button type="button" variant="ghost" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit" variant="destructive" disabled={pending}>
-          {pending ? "Deleting…" : "Delete course"}
-        </Button>
-      </div>
-    </form>
+    <ConfirmDeleteForm
+      title={`Delete “${course.name}”?`}
+      field={{ name: "courseId", value: course.id }}
+      submitLabel="Delete course"
+      action={deleteCourse}
+      onClose={onCancel}
+    >
+      This permanently deletes the course together with its{" "}
+      <strong>{pluralize(chapterCount, "chapter")}</strong> and{" "}
+      <strong>{pluralize(quizCount, "quiz", "quizzes")}</strong>, including the results saved for
+      those quizzes. It can&apos;t be undone.
+    </ConfirmDeleteForm>
   );
 }
 

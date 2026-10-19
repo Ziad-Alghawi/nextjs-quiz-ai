@@ -2,33 +2,23 @@
 import { Trash2 } from "lucide-react";
 import { useState } from "react";
 import { deleteChapter } from "@/app/actions/chapters";
+import { ConfirmDeleteForm } from "@/components/confirm-delete-form";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
-import { FormError } from "@/components/ui/form-error";
-import { useDialogForm } from "@/hooks/use-dialog-form";
 
 type Chapter = { id: number; name: string };
 
 function DeleteForm({ chapter, onDone }: { chapter: Chapter; onDone: () => void }) {
-  const [state, action, pending] = useDialogForm(deleteChapter, onDone);
-
   return (
-    <form action={action} className="flex flex-col gap-4 p-6">
-      <h2 className="text-lg font-semibold wrap-break-word">Delete “{chapter.name}”?</h2>
-      <input type="hidden" name="chapterId" value={chapter.id} />
-      <p className="text-sm">
-        The chapter&apos;s text is removed. Quizzes already made from it are kept.
-      </p>
-      <FormError>{state.status === "error" ? state.error : undefined}</FormError>
-      <div className="flex justify-end gap-3">
-        <Button type="button" variant="ghost" onClick={onDone}>
-          Cancel
-        </Button>
-        <Button type="submit" variant="destructive" disabled={pending}>
-          {pending ? "Deleting…" : "Delete chapter"}
-        </Button>
-      </div>
-    </form>
+    <ConfirmDeleteForm
+      title={`Delete “${chapter.name}”?`}
+      field={{ name: "chapterId", value: chapter.id }}
+      submitLabel="Delete chapter"
+      action={deleteChapter}
+      onClose={onDone}
+    >
+      The chapter&apos;s text is removed. Quizzes already made from it are kept.
+    </ConfirmDeleteForm>
   );
 }
 
