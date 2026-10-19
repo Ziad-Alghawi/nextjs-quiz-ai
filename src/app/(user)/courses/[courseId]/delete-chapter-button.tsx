@@ -1,11 +1,11 @@
 "use client";
 import { Trash2 } from "lucide-react";
 import { useActionState, useState } from "react";
-import type { FormState } from "@/app/actions/account";
 import { deleteChapter } from "@/app/actions/chapters";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { FormError } from "@/components/ui/form-error";
+import type { FormState } from "@/lib/form-state";
 
 type Chapter = { id: number; name: string };
 

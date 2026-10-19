@@ -1,12 +1,12 @@
 "use client";
 import { Pencil, Trash2 } from "lucide-react";
 import { useActionState, useState } from "react";
-import type { FormState } from "@/app/actions/account";
 import { deleteCourse, renameCourse } from "@/app/actions/courses";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { FormError } from "@/components/ui/form-error";
 import { TextField } from "@/components/ui/text-field";
+import type { FormState } from "@/lib/form-state";
 
 type CourseActionsProps = {
   course: { id: number; name: string };

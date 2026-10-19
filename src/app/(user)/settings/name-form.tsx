@@ -1,8 +1,9 @@
 "use client";
 import { useActionState } from "react";
-import { saveName, type FormState } from "@/app/actions/account";
+import { saveName } from "@/app/actions/account";
 import { Button } from "@/components/ui/button";
 import { TextField } from "@/components/ui/text-field";
+import type { FormState } from "@/lib/form-state";
 
 export function NameForm({ name }: { name: string }) {
   const [state, action, pending] = useActionState<FormState, FormData>(saveName, {

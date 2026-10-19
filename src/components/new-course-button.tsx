@@ -3,10 +3,10 @@ import { Plus } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useActionState, useState } from "react";
 import { createCourse } from "@/app/actions/courses";
-import type { FormState } from "@/app/actions/account";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { TextField } from "@/components/ui/text-field";
+import type { FormState } from "@/lib/form-state";
 
 function NewCourseForm({ onCancel }: { onCancel: () => void }) {
   const [state, action, pending] = useActionState<FormState, FormData>(createCourse, {

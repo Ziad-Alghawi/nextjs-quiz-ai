@@ -1,7 +1,7 @@
-import { redirect } from "next/navigation";
+import { signOut } from "@/app/actions/account";
 import { cn } from "@/lib/utils";
 import { listCourses } from "@/server/services/courses";
-import { getCurrentUser, signOut } from "@/server/session";
+import { getCurrentUser } from "@/server/session";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
@@ -11,13 +11,7 @@ import { NavMenu } from "./nav-menu";
 
 function SignOut() {
   return (
-    <form
-      action={async () => {
-        "use server";
-        await signOut();
-        redirect("/");
-      }}
-    >
+    <form action={signOut}>
       <Button type="submit" variant="ghost">
         Sign out
       </Button>

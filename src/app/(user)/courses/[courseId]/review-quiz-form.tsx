@@ -1,10 +1,10 @@
 "use client";
 import { Loader2 } from "lucide-react";
 import { useActionState, useState } from "react";
-import type { FormState } from "@/app/actions/account";
 import { createReview } from "@/app/actions/reviews";
 import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/ui/form-error";
+import type { FormState } from "@/lib/form-state";
 import { DEFAULT_QUESTION_COUNT, MAX_REVIEW_QUIZZES, type PlanId } from "@/lib/plans";
 import { QuestionCountPicker } from "@/components/question-count-picker";
 
