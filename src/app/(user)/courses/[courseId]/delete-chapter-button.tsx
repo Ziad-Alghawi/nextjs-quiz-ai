@@ -1,23 +1,16 @@
 "use client";
 import { Trash2 } from "lucide-react";
-import { useActionState, useState } from "react";
+import { useState } from "react";
 import { deleteChapter } from "@/app/actions/chapters";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { FormError } from "@/components/ui/form-error";
-import type { FormState } from "@/lib/form-state";
+import { useDialogForm } from "@/hooks/use-dialog-form";
 
 type Chapter = { id: number; name: string };
 
 function DeleteForm({ chapter, onDone }: { chapter: Chapter; onDone: () => void }) {
-  const [state, action, pending] = useActionState<FormState, FormData>(
-    async (previous, formData) => {
-      const next = await deleteChapter(previous, formData);
-      if (next.status === "saved") onDone();
-      return next;
-    },
-    { status: "idle" },
-  );
+  const [state, action, pending] = useDialogForm(deleteChapter, onDone);
 
   return (
     <form action={action} className="flex flex-col gap-4 p-6">
