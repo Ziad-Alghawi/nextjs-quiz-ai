@@ -12,6 +12,7 @@ import {
 } from "@/db/schema";
 import { REVIEW_BURST_LIMIT } from "@/lib/plans";
 import { createQuiz, listReviewSources } from "@/server/services/quizzes";
+import { generatedQuiz } from "@/test/generated-quiz";
 import { createReview } from "./reviews";
 
 const USER = "review-actions-db-test-user";
@@ -39,22 +40,7 @@ const form = (courseId: number, quizIds: number[], questionCount: number) => {
 
 /** A generated quiz in the course with `size` questions named "<name> 1?", "<name> 2?", ... */
 const addQuiz = (courseId: number, name: string, size: number, chapterIds: number[] = []) =>
-  createQuiz(
-    {
-      name,
-      description: `About ${name}.`,
-      questions: Array.from({ length: size }, (_, i) => ({
-        questionText: `${name} ${i + 1}?`,
-        explanation: `Because of ${name}.`,
-        answers: [
-          { answerText: "Right", isCorrect: true },
-          { answerText: "Wrong", isCorrect: false },
-        ],
-      })),
-    },
-    USER,
-    { courseId, chapterIds },
-  );
+  createQuiz(generatedQuiz(size, name), USER, { courseId, chapterIds });
 
 const addCourse = async (userId = USER) => {
   const [course] = await db.insert(courses).values({ userId, name: "Biology" }).returning();
@@ -118,10 +104,12 @@ describe("createReview", () => {
       ["Cells", "Genes", "Energy"].map((name) => perQuiz.filter((n) => n === name).length).sort(),
     ).toEqual([3, 3, 4]);
     expect(review!.questions[0]).toMatchObject({
-      explanation: expect.stringMatching(/^Because of /),
+      explanation: expect.stringMatching(/^Explanation /),
       answers: [
         { answerText: "Right", isCorrect: true },
-        { answerText: "Wrong", isCorrect: false },
+        { answerText: "Wrong 1", isCorrect: false },
+        { answerText: "Wrong 2", isCorrect: false },
+        { answerText: "Wrong 3", isCorrect: false },
       ],
     });
     expect(review!.quizChapters.map((link) => link.chapterId).sort()).toEqual([ch1, ch2].sort());

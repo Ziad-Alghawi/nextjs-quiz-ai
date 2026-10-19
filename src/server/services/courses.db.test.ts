@@ -3,6 +3,7 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db";
 import { chapters, courses, quizzes, users } from "@/db/schema";
 import { MAX_COURSES_PER_USER } from "@/lib/plans";
+import { generatedQuiz } from "@/test/generated-quiz";
 import {
   createCourse,
   deleteCourse,
@@ -20,21 +21,6 @@ const newCourse = async (userId: string, name: string) => {
   const result = await createCourse(userId, name);
   if (!("id" in result)) throw new Error(`Course not created: ${result.error}`);
   return result.id;
-};
-
-const generatedQuiz = {
-  name: "Test quiz",
-  description: "A quiz for the tests.",
-  questions: [
-    {
-      questionText: "Which one is right?",
-      explanation: "Because the document says so.",
-      answers: [
-        { answerText: "This one", isCorrect: true },
-        { answerText: "That one", isCorrect: false },
-      ],
-    },
-  ],
 };
 
 beforeEach(async () => {
@@ -128,8 +114,8 @@ describe("getOrCreateDefaultCourse", () => {
 
 describe("createQuiz", () => {
   it("puts every quiz into the user's default course", async () => {
-    const first = await createQuiz(generatedQuiz, USER);
-    const second = await createQuiz(generatedQuiz, USER);
+    const first = await createQuiz(generatedQuiz(1), USER);
+    const second = await createQuiz(generatedQuiz(1), USER);
 
     const [course] = await db.select().from(courses).where(eq(courses.userId, USER));
     const saved = await db

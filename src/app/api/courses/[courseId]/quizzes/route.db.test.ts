@@ -3,8 +3,8 @@ import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
 import { chapters, courses, quizGenerations, quizzes, rateLimits, users } from "@/db/schema";
 import { MAX_DOCUMENT_CHARS } from "@/lib/plans";
-import type { GeneratedQuiz } from "@/lib/validations/quiz";
 import { getMonthlyUsage } from "@/server/services/usage";
+import { generatedQuiz } from "@/test/generated-quiz";
 import { modelResponse } from "@/test/model-response";
 import { POST } from "./route";
 
@@ -25,19 +25,6 @@ vi.mock("@langchain/google/node", () => ({
     }
   },
 }));
-
-const generated = (questionCount: number): GeneratedQuiz => ({
-  name: "Cells",
-  description: "Parts of a cell.",
-  questions: Array.from({ length: questionCount }, (_, i) => ({
-    questionText: `Question ${i + 1}?`,
-    explanation: `Explanation ${i + 1}.`,
-    answers: [
-      { answerText: "Right", isCorrect: true },
-      { answerText: "Wrong", isCorrect: false },
-    ],
-  })),
-});
 
 const generate = async (courseId: number | string, body: unknown) => {
   const response = await POST(
@@ -87,7 +74,7 @@ describe("POST /api/courses/[courseId]/quizzes", () => {
     const cells = await addChapter(courseId, "cells.pdf", "Mitochondria make energy.");
     const genes = await addChapter(courseId, "genes.pdf", "Genes mutate.");
     await addChapter(courseId, "unused.pdf", "Not selected.");
-    model.invoke.mockResolvedValue(modelResponse(generated(15)));
+    model.invoke.mockResolvedValue(modelResponse(generatedQuiz(15)));
 
     const response = await generate(courseId, {
       chapterIds: [genes, cells, genes],
@@ -118,7 +105,7 @@ describe("POST /api/courses/[courseId]/quizzes", () => {
     const courseId = await newCourse(USER);
     const short = await addChapter(courseId, "short.pdf", "short ".repeat(1_000));
     const long = await addChapter(courseId, "long.pdf", "long ".repeat(30_000));
-    model.invoke.mockResolvedValue(modelResponse(generated(10)));
+    model.invoke.mockResolvedValue(modelResponse(generatedQuiz(10)));
 
     const response = await generate(courseId, { chapterIds: [short, long], questionCount: 10 });
 
@@ -134,8 +121,8 @@ describe("POST /api/courses/[courseId]/quizzes", () => {
     const chapterIds = [await addChapter(courseId, "cells.pdf", "Text.")];
     // The second request gets 7 questions from both models.
     model.invoke
-      .mockResolvedValueOnce(modelResponse(generated(8)))
-      .mockResolvedValue(modelResponse(generated(7)));
+      .mockResolvedValueOnce(modelResponse(generatedQuiz(8)))
+      .mockResolvedValue(modelResponse(generatedQuiz(7)));
 
     expect((await generate(courseId, { chapterIds, questionCount: 10 })).status).toBe(201);
     const failed = await generate(courseId, { chapterIds, questionCount: 10 });
@@ -159,7 +146,7 @@ describe("POST /api/courses/[courseId]/quizzes", () => {
     expect(model.invoke).not.toHaveBeenCalled();
 
     await db.update(users).set({ subscribed: true }).where(eq(users.id, USER));
-    model.invoke.mockResolvedValue(modelResponse(generated(20)));
+    model.invoke.mockResolvedValue(modelResponse(generatedQuiz(20)));
     expect((await generate(courseId, { chapterIds, questionCount: 20 })).status).toBe(201);
   });
 
