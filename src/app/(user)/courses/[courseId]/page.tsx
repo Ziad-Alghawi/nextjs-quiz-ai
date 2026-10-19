@@ -6,6 +6,7 @@ import { cache } from "react";
 import { Card, CardTitle } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
 import { MAX_CHAPTERS_PER_COURSE } from "@/lib/plans";
+import { pluralize } from "@/lib/pluralize";
 import { courseIdSchema } from "@/lib/validations/course";
 import { getCourse } from "@/server/services/courses";
 import { listReviewSources } from "@/server/services/quizzes";
@@ -77,7 +78,7 @@ export default async function CoursePage({ params }: Props) {
           ) : (
             <ul className="divide-y">
               {course.chapters.map((chapter) => {
-                const meta = `${chapter.pageCount} ${chapter.pageCount === 1 ? "page" : "pages"} · ${formatSize(chapter.sizeBytes)}`;
+                const meta = `${pluralize(chapter.pageCount, "page")} · ${formatSize(chapter.sizeBytes)}`;
                 return (
                   <li key={chapter.id} className="flex items-center gap-3 py-3">
                     <FileText className="size-5 shrink-0 text-muted-foreground" aria-hidden />

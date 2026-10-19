@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/api-response";
 import { readPdfText, uploadFileName } from "@/lib/pdf";
 import { CHAPTER_UPLOAD_LIMIT, PLANS } from "@/lib/plans";
+import { MINUTE_MS } from "@/lib/time";
 import { courseIdSchema } from "@/lib/validations/course";
 import { pdfUploadSchema } from "@/lib/validations/quiz";
 import { addChapter } from "@/server/services/chapters";
@@ -20,7 +21,7 @@ export async function POST(
 
   // Before anything else, so failed uploads count too: reading a PDF costs server time either way.
   const { uploads, windowMinutes } = CHAPTER_UPLOAD_LIMIT;
-  if (!(await consumeRateLimit(`chapter-upload:${user.id}`, uploads, windowMinutes * 60 * 1000))) {
+  if (!(await consumeRateLimit(`chapter-upload:${user.id}`, uploads, windowMinutes * MINUTE_MS))) {
     return errorResponse(
       `You can upload up to ${uploads} PDFs every ${windowMinutes} minutes. Please try again in a few minutes.`,
       429,
