@@ -5,6 +5,7 @@ import { quizChapters, quizGenerations, quizzes, rateLimits, users } from "@/db/
 import { REVIEW_BURST_LIMIT } from "@/lib/plans";
 import { createQuiz, listReviewSources } from "@/server/services/quizzes";
 import { addChapter, addCourse, createUsers, deleteUsers } from "@/test/db-fixtures";
+import { formData, IDLE } from "@/test/form-data";
 import { generatedQuiz } from "@/test/generated-quiz";
 import { createReview } from "./reviews";
 
@@ -22,14 +23,8 @@ const { revalidatePath, redirect } = vi.hoisted(() => ({
 vi.mock("next/cache", () => ({ revalidatePath }));
 vi.mock("next/navigation", () => ({ redirect }));
 
-const IDLE = { status: "idle" } as const;
-const form = (courseId: number, quizIds: number[], questionCount: number) => {
-  const data = new FormData();
-  data.set("courseId", String(courseId));
-  for (const id of quizIds) data.append("quizIds", String(id));
-  data.set("questionCount", String(questionCount));
-  return data;
-};
+const form = (courseId: number, quizIds: number[], questionCount: number) =>
+  formData({ courseId, quizIds, questionCount });
 
 /** A generated quiz in the course with `size` questions named "<name> 1?", "<name> 2?", ... */
 const addQuiz = (courseId: number, name: string, size: number, chapterIds: number[] = []) =>
