@@ -1,8 +1,9 @@
-import { eq, inArray } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db";
-import { chapters, courses, quizzes, users } from "@/db/schema";
+import { chapters, courses, quizzes } from "@/db/schema";
 import { MAX_COURSES_PER_USER } from "@/lib/plans";
+import { createUsers, deleteUsers } from "@/test/db-fixtures";
 import { generatedQuiz } from "@/test/generated-quiz";
 import {
   createCourse,
@@ -23,17 +24,8 @@ const newCourse = async (userId: string, name: string) => {
   return result.id;
 };
 
-beforeEach(async () => {
-  await db.delete(users).where(inArray(users.id, [USER, OTHER_USER]));
-  await db.insert(users).values([
-    { id: USER, name: "Courses test", email: `${USER}@example.com` },
-    { id: OTHER_USER, name: "Other user", email: `${OTHER_USER}@example.com` },
-  ]);
-});
-
-afterAll(async () => {
-  await db.delete(users).where(inArray(users.id, [USER, OTHER_USER]));
-});
+beforeEach(() => createUsers(USER, OTHER_USER));
+afterAll(() => deleteUsers(USER, OTHER_USER));
 
 describe("createCourse", () => {
   it("rejects a name the user already has, but not another user's", async () => {

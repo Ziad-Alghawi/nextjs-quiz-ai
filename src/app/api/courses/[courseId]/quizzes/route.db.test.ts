@@ -1,9 +1,10 @@
-import { eq, inArray, like } from "drizzle-orm";
+import { eq, like } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
 import { chapters, courses, quizGenerations, quizzes, rateLimits, users } from "@/db/schema";
 import { MAX_DOCUMENT_CHARS } from "@/lib/plans";
 import { getMonthlyUsage } from "@/server/services/usage";
+import { createUsers, deleteUsers } from "@/test/db-fixtures";
 import { model, modelResponse, resetModel } from "@/test/gemini-mock";
 import { generatedQuiz } from "@/test/generated-quiz";
 import { POST } from "./route";
@@ -44,21 +45,15 @@ const addChapter = async (courseId: number, name: string, text: string) => {
   return chapter.id;
 };
 
-const cleanUp = () => db.delete(users).where(inArray(users.id, [USER, OTHER_USER]));
-
 beforeEach(async () => {
-  await cleanUp();
+  await createUsers(USER, OTHER_USER);
   // Repeated test runs would otherwise use up the day's shared generation slots.
   await db.delete(rateLimits).where(like(rateLimits.key, "generation-daily:%"));
-  await db.insert(users).values([
-    { id: USER, name: "Test", email: `${USER}@example.com` },
-    { id: OTHER_USER, name: "Other", email: `${OTHER_USER}@example.com` },
-  ]);
   session.signedIn = true;
   resetModel();
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
-afterAll(cleanUp);
+afterAll(() => deleteUsers(USER, OTHER_USER));
 
 describe("POST /api/courses/[courseId]/quizzes", () => {
   it("saves the quiz in the course, linked to the chapters it was made from", async () => {

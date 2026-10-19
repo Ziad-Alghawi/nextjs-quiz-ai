@@ -1,9 +1,10 @@
 import { eq, like } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
-import { courses, quizGenerations, quizzes, rateLimits, users } from "@/db/schema";
+import { courses, quizGenerations, quizzes, rateLimits } from "@/db/schema";
 import { DEFAULT_QUESTION_COUNT, PLANS } from "@/lib/plans";
 import { getMonthlyUsage } from "@/server/services/usage";
+import { createUsers, deleteUsers } from "@/test/db-fixtures";
 import { model, modelResponse, resetModel } from "@/test/gemini-mock";
 import { generatedQuiz } from "@/test/generated-quiz";
 import { makePdf } from "@/test/make-pdf";
@@ -34,18 +35,15 @@ const generate = async (
   };
 };
 
-const cleanUp = () => db.delete(users).where(eq(users.id, USER));
-
 beforeEach(async () => {
-  await cleanUp();
+  await createUsers(USER);
   // Repeated test runs would otherwise use up the day's shared generation slots.
   await db.delete(rateLimits).where(like(rateLimits.key, "generation-daily:%"));
-  await db.insert(users).values({ id: USER, name: "Test", email: `${USER}@example.com` });
   session.signedIn = true;
   resetModel();
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
-afterAll(cleanUp);
+afterAll(() => deleteUsers(USER));
 
 describe("POST /api/quizzes/generate", () => {
   it("saves a 10-question quiz with explanations in the user's default course", async () => {

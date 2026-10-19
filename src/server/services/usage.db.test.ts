@@ -3,6 +3,7 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db";
 import { quizGenerations, rateLimits, users } from "@/db/schema";
 import { DAILY_GENERATION_LIMIT, GENERATION_BURST_LIMIT, PLANS } from "@/lib/plans";
+import { createUsers, deleteUsers } from "@/test/db-fixtures";
 import {
   finishGeneration,
   GenerationLimitError,
@@ -43,17 +44,11 @@ const limitError = (promise: Promise<unknown>) =>
 const dailyKey = () => `generation-daily:${new Date().toISOString().slice(0, 10)}`;
 
 beforeEach(async () => {
-  await db.delete(users).where(eq(users.id, USER)); // cascades to its generations
+  await createUsers(USER);
   // Repeated test runs would otherwise use up the day's shared generation slots.
   await db.delete(rateLimits).where(like(rateLimits.key, "generation-daily:%"));
-  await db
-    .insert(users)
-    .values({ id: USER, name: "Usage test", email: `${USER}@example.com`, subscribed: false });
 });
-
-afterAll(async () => {
-  await db.delete(users).where(eq(users.id, USER));
-});
+afterAll(() => deleteUsers(USER));
 
 describe("usage service", () => {
   it("counts pending and succeeded generations, not failed ones", async () => {

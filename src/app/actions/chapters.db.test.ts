@@ -1,7 +1,8 @@
-import { eq, inArray } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
-import { chapters, courses, quizChapters, quizzes, users } from "@/db/schema";
+import { chapters, courses, quizChapters, quizzes } from "@/db/schema";
+import { createUsers, deleteUsers } from "@/test/db-fixtures";
 import { deleteChapter } from "./chapters";
 
 const USER = "chapter-actions-db-test-user";
@@ -35,17 +36,11 @@ const courseWithChapter = async (userId: string) => {
   return { course, chapter, quiz };
 };
 
-const cleanUp = () => db.delete(users).where(inArray(users.id, [USER, OTHER_USER]));
-
 beforeEach(async () => {
-  await cleanUp();
-  await db.insert(users).values([
-    { id: USER, name: "Test", email: `${USER}@example.com` },
-    { id: OTHER_USER, name: "Other", email: `${OTHER_USER}@example.com` },
-  ]);
+  await createUsers(USER, OTHER_USER);
   vi.clearAllMocks();
 });
-afterAll(cleanUp);
+afterAll(() => deleteUsers(USER, OTHER_USER));
 
 describe("deleteChapter", () => {
   it("deletes the chapter, keeps its quizzes and refreshes the course page", async () => {

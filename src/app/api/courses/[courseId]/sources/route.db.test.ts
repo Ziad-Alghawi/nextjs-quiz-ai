@@ -1,13 +1,14 @@
-import { eq, inArray, like } from "drizzle-orm";
+import { eq, like } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
-import { chapters, courses, rateLimits, users } from "@/db/schema";
+import { chapters, courses, rateLimits } from "@/db/schema";
 import {
   CHAPTER_UPLOAD_LIMIT,
   MAX_CHAPTERS_PER_COURSE,
   MAX_DOCUMENT_CHARS,
   PLANS,
 } from "@/lib/plans";
+import { createUsers, deleteUsers } from "@/test/db-fixtures";
 import { makePdf } from "@/test/make-pdf";
 import { POST } from "./route";
 
@@ -50,22 +51,18 @@ const addChapters = (courseId: number, count: number) =>
     })),
   );
 
-const cleanUp = async () => {
-  await db.delete(users).where(inArray(users.id, [USER, OTHER_USER]));
-  await db
-    .delete(rateLimits)
-    .where(like(rateLimits.key, "chapter-upload:chapter-upload-db-test-%"));
-};
+const resetUploadLimits = () =>
+  db.delete(rateLimits).where(like(rateLimits.key, "chapter-upload:chapter-upload-db-test-%"));
 
 beforeEach(async () => {
-  await cleanUp();
-  await db.insert(users).values([
-    { id: USER, name: "Uploader", email: `${USER}@example.com` },
-    { id: OTHER_USER, name: "Other", email: `${OTHER_USER}@example.com` },
-  ]);
+  await createUsers(USER, OTHER_USER);
+  await resetUploadLimits();
   session.userId = USER;
 });
-afterAll(cleanUp);
+afterAll(async () => {
+  await deleteUsers(USER, OTHER_USER);
+  await resetUploadLimits();
+});
 
 describe("POST /api/courses/[courseId]/sources", () => {
   it("saves the PDF's text, page count, size and file name as a chapter", async () => {

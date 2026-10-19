@@ -1,4 +1,4 @@
-import { asc, eq, inArray } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
 import {
@@ -12,6 +12,7 @@ import {
 } from "@/db/schema";
 import { REVIEW_BURST_LIMIT } from "@/lib/plans";
 import { createQuiz, listReviewSources } from "@/server/services/quizzes";
+import { createUsers, deleteUsers } from "@/test/db-fixtures";
 import { generatedQuiz } from "@/test/generated-quiz";
 import { createReview } from "./reviews";
 
@@ -57,20 +58,17 @@ const addChapter = async (courseId: number, name: string) => {
 
 const lastRedirectId = () => Number(String(redirect.mock.lastCall?.[0]).split("/").pop());
 
-const cleanUp = async () => {
-  await db.delete(users).where(inArray(users.id, [USER, OTHER_USER]));
-  await db.delete(rateLimits).where(eq(rateLimits.key, `review:${USER}`));
-};
+const resetReviewLimit = () => db.delete(rateLimits).where(eq(rateLimits.key, `review:${USER}`));
 
 beforeEach(async () => {
-  await cleanUp();
-  await db.insert(users).values([
-    { id: USER, name: "Test", email: `${USER}@example.com` },
-    { id: OTHER_USER, name: "Other", email: `${OTHER_USER}@example.com` },
-  ]);
+  await createUsers(USER, OTHER_USER);
+  await resetReviewLimit();
   vi.clearAllMocks();
 });
-afterAll(cleanUp);
+afterAll(async () => {
+  await deleteUsers(USER, OTHER_USER);
+  await resetReviewLimit();
+});
 
 describe("createReview", () => {
   it("copies balanced questions with answers and explanations into a review of the course", async () => {

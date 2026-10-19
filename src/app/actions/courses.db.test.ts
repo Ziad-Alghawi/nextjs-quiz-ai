@@ -1,7 +1,8 @@
 import { eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
-import { courses, users } from "@/db/schema";
+import { courses } from "@/db/schema";
+import { createUsers, deleteUsers } from "@/test/db-fixtures";
 import { createCourse, deleteCourse, renameCourse } from "./courses";
 
 const USER = "course-actions-db-test-user";
@@ -27,14 +28,10 @@ const courseNamed = async (name: string) =>
   (await db.select().from(courses).where(eq(courses.userId, USER))).find((c) => c.name === name);
 
 beforeEach(async () => {
-  await db.delete(users).where(eq(users.id, USER));
-  await db.insert(users).values({ id: USER, name: "Test", email: `${USER}@example.com` });
+  await createUsers(USER);
   vi.clearAllMocks();
 });
-
-afterAll(async () => {
-  await db.delete(users).where(eq(users.id, USER));
-});
+afterAll(() => deleteUsers(USER));
 
 describe("course actions", () => {
   it("create trims the name, refreshes the sidebar and opens the course", async () => {
