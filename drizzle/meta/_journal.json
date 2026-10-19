@@ -106,6 +106,13 @@
       "when": 1792350228614,
       "tag": "0014_quiz_kind",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1792446660018,
+      "tag": "0015_rename_submissions_to_attempts",
+      "breakpoints": true
     }
   ]
 }

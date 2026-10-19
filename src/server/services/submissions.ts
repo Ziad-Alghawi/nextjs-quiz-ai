@@ -1,6 +1,6 @@
 import "server-only";
 import { db } from "@/db";
-import { quizSubmissions } from "@/db/schema";
+import { quizAttempts } from "@/db/schema";
 
 export async function createSubmission(submission: {
   quizId: number;
@@ -9,8 +9,8 @@ export async function createSubmission(submission: {
   totalQuestions: number;
 }) {
   const [{ id }] = await db
-    .insert(quizSubmissions)
+    .insert(quizAttempts)
     .values(submission)
-    .returning({ id: quizSubmissions.id });
+    .returning({ id: quizAttempts.id });
   return id;
 }

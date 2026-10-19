@@ -1,7 +1,7 @@
 import "server-only";
 import { and, count, eq, gte, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { questions, quizSubmissions, quizzes } from "@/db/schema";
+import { questions, quizAttempts, quizzes } from "@/db/schema";
 import { DAY_MS } from "@/lib/time";
 
 export async function getUserMetrics(userId: string) {
@@ -18,10 +18,10 @@ export async function getUserMetrics(userId: string) {
         // Average of each attempt's percentage, so a 3/4 and a 3/10 aren't both counted as "3".
         averagePercent: sql<
           number | null
-        >`cast(round(avg(${quizSubmissions.score} * 100.0 / nullif(${quizSubmissions.totalQuestions}, 0))) as int)`,
+        >`cast(round(avg(${quizAttempts.score} * 100.0 / nullif(${quizAttempts.totalQuestions}, 0))) as int)`,
       })
-      .from(quizSubmissions)
-      .where(eq(quizSubmissions.userId, userId)),
+      .from(quizAttempts)
+      .where(eq(quizAttempts.userId, userId)),
   ]);
 
   return [
@@ -34,15 +34,15 @@ export async function getUserMetrics(userId: string) {
 
 /** The user's submissions per day (UTC dates, YYYY-MM-DD) over the last year. */
 export async function getSubmissionActivity(userId: string) {
-  const day = sql<string>`to_char(${quizSubmissions.createdAt}, 'YYYY-MM-DD')`;
+  const day = sql<string>`to_char(${quizAttempts.createdAt}, 'YYYY-MM-DD')`;
 
   return db
     .select({ date: day, count: sql<number>`cast(count(*) as int)` })
-    .from(quizSubmissions)
+    .from(quizAttempts)
     .where(
       and(
-        eq(quizSubmissions.userId, userId),
-        gte(quizSubmissions.createdAt, sql`now() - interval '1 year'`),
+        eq(quizAttempts.userId, userId),
+        gte(quizAttempts.createdAt, sql`now() - interval '1 year'`),
       ),
     )
     .groupBy(day);

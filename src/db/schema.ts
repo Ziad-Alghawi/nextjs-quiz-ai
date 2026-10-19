@@ -168,7 +168,7 @@ export const quizzes = pgTable(
 export const quizzesRelations = relations(quizzes, ({ one, many }) => ({
   course: one(courses, { fields: [quizzes.courseId], references: [courses.id] }),
   questions: many(questions),
-  submissions: many(quizSubmissions),
+  attempts: many(quizAttempts),
   quizChapters: many(quizChapters),
 }));
 
@@ -236,8 +236,8 @@ export const questionAnswersRelations = relations(questionAnswers, ({ one }) => 
   }),
 }));
 
-export const quizSubmissions = pgTable(
-  "quiz_submissions",
+export const quizAttempts = pgTable(
+  "quiz_attempts",
   {
     id: serial("id").primaryKey(),
     quizId: integer("quiz_id")
@@ -252,14 +252,14 @@ export const quizSubmissions = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [
-    index("quiz_submissions_quiz_id_idx").on(table.quizId),
-    index("quiz_submissions_user_id_idx").on(table.userId),
+    index("quiz_attempts_quiz_id_idx").on(table.quizId),
+    index("quiz_attempts_user_id_idx").on(table.userId),
   ],
 );
 
-export const quizSubmissionsRelations = relations(quizSubmissions, ({ one }) => ({
+export const quizAttemptsRelations = relations(quizAttempts, ({ one }) => ({
   quiz: one(quizzes, {
-    fields: [quizSubmissions.quizId],
+    fields: [quizAttempts.quizId],
     references: [quizzes.id],
   }),
 }));
