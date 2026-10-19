@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { questionAnswers, questions, quizChapters, quizzes } from "@/db/schema";
 import { isQuestionCountAllowed, REVIEW_BURST_LIMIT } from "@/lib/plans";
 import { pickReviewQuestions, reviewName } from "@/lib/review";
+import { MINUTE_MS } from "@/lib/time";
 import type { GeneratedQuiz } from "@/lib/validations/quiz";
 import { getOrCreateDefaultCourse } from "./courses";
 import { consumeRateLimit } from "./rate-limit";
@@ -140,7 +141,7 @@ export async function createReviewQuiz(
   input: { courseId: number; quizIds: number[]; questionCount: number },
 ): Promise<ReviewResult> {
   const { reviews, windowMinutes } = REVIEW_BURST_LIMIT;
-  if (!(await consumeRateLimit(`review:${userId}`, reviews, windowMinutes * 60 * 1000))) {
+  if (!(await consumeRateLimit(`review:${userId}`, reviews, windowMinutes * MINUTE_MS))) {
     return { error: "rate-limit" };
   }
 

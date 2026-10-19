@@ -2,6 +2,7 @@ import "server-only";
 import { and, count, eq, gte, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { questions, quizSubmissions, quizzes } from "@/db/schema";
+import { DAY_MS } from "@/lib/time";
 
 export async function getUserMetrics(userId: string) {
   const [[quizCount], [questionCount], [submissionStats]] = await Promise.all([
@@ -47,7 +48,6 @@ export async function getSubmissionActivity(userId: string) {
     .groupBy(day);
 }
 
-const DAY_MS = 24 * 60 * 60 * 1000;
 const dayNumber = (date: string) => Date.parse(date) / DAY_MS;
 
 /** Streaks in consecutive UTC days with a submission, and the submissions in the current month. */

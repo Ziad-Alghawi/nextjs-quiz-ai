@@ -2,9 +2,9 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
 import { pluralize } from "@/lib/pluralize";
+import { DAY_MS } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
-const DAY_MS = 24 * 60 * 60 * 1000;
 const WEEKS = 53;
 // 10px squares with 2px gaps; narrower cards scroll the grid.
 const CELL = "size-[10px] rounded-[2px]";

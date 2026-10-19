@@ -3,15 +3,13 @@ import { and, count, eq, gte, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { quizGenerations } from "@/db/schema";
 import { DAILY_GENERATION_LIMIT, GENERATION_BURST_LIMIT, PLANS, type PlanId } from "@/lib/plans";
+import { DAY_MS } from "@/lib/time";
 import { isSubscribed } from "./billing";
 import type { ModelUsage } from "./generation";
 import { consumeRateLimit } from "./rate-limit";
 
 /** A request that died after reserving (e.g. a timeout) stops holding its slot after this. */
 const PENDING_TIMEOUT = sql`interval '5 minutes'`;
-
-// The daily key changes at midnight UTC, so its window never needs to end within the day.
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 export class GenerationLimitError extends Error {
   constructor(
@@ -94,6 +92,7 @@ export async function reserveGeneration(userId: string) {
     // rolls the transaction back, so a request stopped here doesn't count toward the user's quota.
     const today = new Date().toISOString().slice(0, 10);
     const key = `generation-daily:${today}`;
+    // The key changes at midnight UTC, so its window never needs to end within the day.
     if (!(await consumeRateLimit(key, DAILY_GENERATION_LIMIT, DAY_MS, tx))) {
       throw new GenerationLimitError("Daily limit reached. Please try again tomorrow.", 429);
     }
