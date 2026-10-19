@@ -7,15 +7,13 @@ import { Dialog } from "@/components/ui/dialog";
 import { FormError } from "@/components/ui/form-error";
 import { TextField } from "@/components/ui/text-field";
 import type { FormState } from "@/lib/form-state";
+import { pluralize } from "@/lib/pluralize";
 
 type CourseActionsProps = {
   course: { id: number; name: string };
   chapterCount: number;
   quizCount: number;
 };
-
-const count = (n: number, singular: string, plural: string) =>
-  `${n} ${n === 1 ? singular : plural}`;
 
 function RenameForm({
   course,
@@ -73,8 +71,8 @@ function DeleteForm({
       <input type="hidden" name="courseId" value={course.id} />
       <p className="text-sm">
         This permanently deletes the course together with its{" "}
-        <strong>{count(chapterCount, "chapter", "chapters")}</strong> and{" "}
-        <strong>{count(quizCount, "quiz", "quizzes")}</strong>, including the results saved for
+        <strong>{pluralize(chapterCount, "chapter")}</strong> and{" "}
+        <strong>{pluralize(quizCount, "quiz", "quizzes")}</strong>, including the results saved for
         those quizzes. It can&apos;t be undone.
       </p>
       <FormError>{state.status === "error" ? state.error : undefined}</FormError>

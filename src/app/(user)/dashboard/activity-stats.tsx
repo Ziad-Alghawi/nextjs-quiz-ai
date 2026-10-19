@@ -1,4 +1,4 @@
-const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+import { pluralize } from "@/lib/pluralize";
 
 /** Three figures next to the heatmap: rows under it on phones, a column beside it on large screens, and tiles when the room beside it allows. */
 export function ActivityStats({
@@ -11,9 +11,9 @@ export function ActivityStats({
   quizzesThisMonth: number;
 }) {
   const stats = [
-    { label: "Current streak", value: count(currentStreak, "day", "days") },
-    { label: "Longest streak", value: count(longestStreak, "day", "days") },
-    { label: "This month", value: count(quizzesThisMonth, "quiz", "quizzes") },
+    { label: "Current streak", value: pluralize(currentStreak, "day") },
+    { label: "Longest streak", value: pluralize(longestStreak, "day") },
+    { label: "This month", value: pluralize(quizzesThisMonth, "quiz", "quizzes") },
   ];
 
   return (

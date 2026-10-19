@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
+import { pluralize } from "@/lib/pluralize";
 import { cn } from "@/lib/utils";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -40,7 +41,7 @@ function buildWeeks(activity: { date: string; count: number }[], today: string):
 }
 
 const describe = (day: { time: number; count: number }) =>
-  `${day.count === 0 ? "No" : day.count} ${day.count === 1 ? "quiz" : "quizzes"} on ${dayFormat.format(day.time)}`;
+  `${day.count === 0 ? "No quizzes" : pluralize(day.count, "quiz", "quizzes")} on ${dayFormat.format(day.time)}`;
 
 /**
  * The user's quiz submissions per day over the last year. One cell at a time is focusable and the

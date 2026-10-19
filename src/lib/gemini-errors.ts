@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { pluralize } from "@/lib/pluralize";
 
 const QUOTA_FAILURE = "type.googleapis.com/google.rpc.QuotaFailure";
 const RETRY_INFO = "type.googleapis.com/google.rpc.RetryInfo";
@@ -23,8 +24,6 @@ const quotaErrorSchema = z.object({
     })
     .optional(),
 });
-
-const plural = (count: number, unit: string) => `${count} ${unit}${count === 1 ? "" : "s"}`;
 
 // 402: prepaid credits used up (Google's billing docs). 429 with this text: the spend cap was reached.
 // 403: the project lost API access, e.g. billing stopped. Waiting a minute or another model won't help.
@@ -61,7 +60,7 @@ export function getQuotaErrorMessage(error: unknown): string | null {
   const seconds = Math.ceil(Number.parseFloat(retryDelay ?? ""));
   if (Number.isFinite(seconds) && seconds > 0) {
     const wait =
-      seconds < 120 ? plural(seconds, "second") : plural(Math.ceil(seconds / 60), "minute");
+      seconds < 120 ? pluralize(seconds, "second") : pluralize(Math.ceil(seconds / 60), "minute");
     return `The AI service is busy right now. Please try again in ${wait}.`;
   }
 
