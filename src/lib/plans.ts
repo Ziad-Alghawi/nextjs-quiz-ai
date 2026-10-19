@@ -43,7 +43,8 @@ export const CHAPTER_UPLOAD_LIMIT = { uploads: 20, windowMinutes: 10 } as const;
  * On every plan. Below Vercel's 4.5 MB request body limit, which rejects larger uploads before our
  * code runs.
  */
-export const MAX_PDF_BYTES = 4 * 1024 * 1024;
+export const MAX_PDF_MB = 4;
+export const MAX_PDF_BYTES = MAX_PDF_MB * 1024 * 1024;
 
 /** Review quizzes (questions copied from other quizzes, no AI) take 2 up to this many quizzes. */
 export const MAX_REVIEW_QUIZZES = 10;
