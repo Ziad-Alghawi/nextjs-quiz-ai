@@ -19,7 +19,6 @@ export const QUESTION_COUNTS: readonly number[] = [
   ...new Set(Object.values(PLANS).flatMap((plan) => plan.questionCounts)),
 ];
 
-/** Whether the plan offers quizzes with this many questions. */
 export const isQuestionCountAllowed = (plan: PlanId, count: number) =>
   PLANS[plan].questionCounts.some((allowed) => allowed === count);
 
