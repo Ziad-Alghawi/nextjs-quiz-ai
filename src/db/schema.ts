@@ -257,10 +257,43 @@ export const quizAttempts = pgTable(
   ],
 );
 
-export const quizAttemptsRelations = relations(quizAttempts, ({ one }) => ({
+export const quizAttemptsRelations = relations(quizAttempts, ({ one, many }) => ({
   quiz: one(quizzes, {
     fields: [quizAttempts.quizId],
     references: [quizzes.id],
+  }),
+  answers: many(attemptAnswers),
+}));
+
+// The answer chosen for each question of an attempt; correctness comes from answers.is_correct.
+export const attemptAnswers = pgTable(
+  "attempt_answers",
+  {
+    attemptId: integer("attempt_id")
+      .notNull()
+      .references(() => quizAttempts.id, { onDelete: "cascade" }),
+    questionId: integer("question_id")
+      .notNull()
+      .references(() => questions.id, { onDelete: "cascade" }),
+    answerId: integer("answer_id")
+      .notNull()
+      .references(() => questionAnswers.id, { onDelete: "cascade" }),
+  },
+  // One chosen answer per question. The other two indexes keep cascading deletes of questions and
+  // answers from scanning the whole table.
+  (table) => [
+    primaryKey({ columns: [table.attemptId, table.questionId] }),
+    index("attempt_answers_question_id_idx").on(table.questionId),
+    index("attempt_answers_answer_id_idx").on(table.answerId),
+  ],
+);
+
+export const attemptAnswersRelations = relations(attemptAnswers, ({ one }) => ({
+  attempt: one(quizAttempts, { fields: [attemptAnswers.attemptId], references: [quizAttempts.id] }),
+  question: one(questions, { fields: [attemptAnswers.questionId], references: [questions.id] }),
+  answer: one(questionAnswers, {
+    fields: [attemptAnswers.answerId],
+    references: [questionAnswers.id],
   }),
 }));
 
