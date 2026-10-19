@@ -1,13 +1,17 @@
 import { eq, like } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
-
-// CI runs these tests with only DATABASE_URL set (SKIP_ENV_VALIDATION); Better Auth needs these.
-vi.hoisted(() => {
-  process.env.AUTH_SECRET ??= "auth-db-test-secret-with-enough-length";
-  process.env.APP_URL ??= "http://localhost:3000";
-  process.env.GOOGLE_CLIENT_ID ??= "test-client-id";
-  process.env.GOOGLE_CLIENT_SECRET ??= "test-client-secret";
-});
+import { db } from "@/db";
+import {
+  authAccounts,
+  authSessions,
+  authVerifications,
+  courses,
+  quizzes,
+  rateLimits,
+  users,
+} from "@/db/schema";
+import { getSignInMethods } from "@/server/services/account";
+import { auth } from "./auth";
 
 // Collects the emails instead of sending them, also when .env configures SMTP.
 const sent = vi.hoisted(() => [] as { to: string; subject: string; text: string }[]);
@@ -18,12 +22,6 @@ vi.mock("@/server/services/mail", () => ({
 }));
 // after() needs a Next.js request; the email promise has already started and simply runs.
 vi.mock("next/server", () => ({ after: () => {} }));
-
-const { db } = await import("@/db");
-const { authAccounts, authSessions, authVerifications, courses, quizzes, rateLimits, users } =
-  await import("@/db/schema");
-const { auth } = await import("./auth");
-const { getSignInMethods } = await import("@/server/services/account");
 
 const PREFIX = "auth-db-test-";
 const email = (name: string) => `${PREFIX}${name}@example.com`;
