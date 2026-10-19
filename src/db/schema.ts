@@ -168,7 +168,7 @@ export const quizzes = pgTable(
 export const quizzesRelations = relations(quizzes, ({ one, many }) => ({
   course: one(courses, { fields: [quizzes.courseId], references: [courses.id] }),
   questions: many(questions),
-  submissions: many(quizSubmissions),
+  attempts: many(quizAttempts),
   quizChapters: many(quizChapters),
 }));
 
@@ -236,8 +236,8 @@ export const questionAnswersRelations = relations(questionAnswers, ({ one }) => 
   }),
 }));
 
-export const quizSubmissions = pgTable(
-  "quiz_submissions",
+export const quizAttempts = pgTable(
+  "quiz_attempts",
   {
     id: serial("id").primaryKey(),
     quizId: integer("quiz_id")
@@ -252,15 +252,48 @@ export const quizSubmissions = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [
-    index("quiz_submissions_quiz_id_idx").on(table.quizId),
-    index("quiz_submissions_user_id_idx").on(table.userId),
+    index("quiz_attempts_quiz_id_idx").on(table.quizId),
+    index("quiz_attempts_user_id_idx").on(table.userId),
   ],
 );
 
-export const quizSubmissionsRelations = relations(quizSubmissions, ({ one }) => ({
+export const quizAttemptsRelations = relations(quizAttempts, ({ one, many }) => ({
   quiz: one(quizzes, {
-    fields: [quizSubmissions.quizId],
+    fields: [quizAttempts.quizId],
     references: [quizzes.id],
+  }),
+  answers: many(attemptAnswers),
+}));
+
+// The answer chosen for each question of an attempt; correctness comes from answers.is_correct.
+export const attemptAnswers = pgTable(
+  "attempt_answers",
+  {
+    attemptId: integer("attempt_id")
+      .notNull()
+      .references(() => quizAttempts.id, { onDelete: "cascade" }),
+    questionId: integer("question_id")
+      .notNull()
+      .references(() => questions.id, { onDelete: "cascade" }),
+    answerId: integer("answer_id")
+      .notNull()
+      .references(() => questionAnswers.id, { onDelete: "cascade" }),
+  },
+  // One chosen answer per question. The other two indexes keep cascading deletes of questions and
+  // answers from scanning the whole table.
+  (table) => [
+    primaryKey({ columns: [table.attemptId, table.questionId] }),
+    index("attempt_answers_question_id_idx").on(table.questionId),
+    index("attempt_answers_answer_id_idx").on(table.answerId),
+  ],
+);
+
+export const attemptAnswersRelations = relations(attemptAnswers, ({ one }) => ({
+  attempt: one(quizAttempts, { fields: [attemptAnswers.attemptId], references: [quizAttempts.id] }),
+  question: one(questions, { fields: [attemptAnswers.questionId], references: [questions.id] }),
+  answer: one(questionAnswers, {
+    fields: [attemptAnswers.answerId],
+    references: [questionAnswers.id],
   }),
 }));
 
