@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useId, useState } from "react";
 import { z } from "zod";
 import { FormError } from "@/components/ui/form-error";
+import { NETWORK_ERROR, PDF_TOO_LARGE } from "@/lib/generation-response";
 import { MAX_PDF_MB } from "@/lib/plans";
 import { cn } from "@/lib/utils";
 import { pdfUploadSchema } from "@/lib/validations/quiz";
@@ -17,7 +18,7 @@ async function uploadError(response: Response) {
   const body = errorBodySchema.safeParse(await response.json().catch(() => null));
   if (body.success) return body.data.error;
   return response.status === 413
-    ? "This PDF is too large to upload."
+    ? PDF_TOO_LARGE
     : "Something went wrong while uploading. Please try again.";
 }
 
@@ -73,7 +74,7 @@ export function ChapterUpload({ courseId, full }: { courseId: number; full: bool
         if (response.status === 429 || response.status === 403) limitMessage = message;
         update(id, { error: message });
       } catch {
-        update(id, { error: "Could not reach the server. Check your connection and try again." });
+        update(id, { error: NETWORK_ERROR });
       }
     }
   }

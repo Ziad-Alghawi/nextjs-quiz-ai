@@ -5,9 +5,11 @@ const errorSchema = z.object({ error: z.string() });
 
 export type GenerationResult = { href: string } | { error: string };
 
+export const PDF_TOO_LARGE = "This PDF is too large to upload.";
+
 // Responses that never reached our route (e.g. Vercel's 413 or 504 pages) are not JSON.
 function fallbackMessage(status: number) {
-  if (status === 413) return "This PDF is too large to upload.";
+  if (status === 413) return PDF_TOO_LARGE;
   if (status === 504) return "Generating the quiz took too long. Please try a shorter document.";
   return "Something went wrong while generating your quiz. Please try again.";
 }
