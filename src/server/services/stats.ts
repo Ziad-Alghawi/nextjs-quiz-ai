@@ -4,14 +4,18 @@ import { db } from "@/db";
 import { questions, quizAttempts, quizzes } from "@/db/schema";
 import { DAY_MS } from "@/lib/time";
 
+// Reviews and exams are copies of generated questions, so counting them would inflate both totals.
+const generatedBy = (userId: string) =>
+  and(eq(quizzes.userId, userId), eq(quizzes.kind, "generated"));
+
 export async function getUserMetrics(userId: string) {
   const [[quizCount], [questionCount], [attemptStats]] = await Promise.all([
-    db.select({ value: count() }).from(quizzes).where(eq(quizzes.userId, userId)),
+    db.select({ value: count() }).from(quizzes).where(generatedBy(userId)),
     db
       .select({ value: count() })
       .from(questions)
       .innerJoin(quizzes, eq(questions.quizId, quizzes.id))
-      .where(eq(quizzes.userId, userId)),
+      .where(generatedBy(userId)),
     db
       .select({
         count: count(),
