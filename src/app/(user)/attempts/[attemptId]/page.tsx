@@ -1,45 +1,31 @@
 import type { Metadata } from "next";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, Shuffle } from "lucide-react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { cache } from "react";
+import { loadAttempt } from "@/app/attempts/load-attempt";
 import { QuestionReview } from "@/components/question-review";
 import { Button } from "@/components/ui/button";
 import { PageHeading } from "@/components/ui/page-heading";
+import { missedQuestions } from "@/lib/practice";
 import { scorePercent } from "@/lib/scoring";
 import { cn } from "@/lib/utils";
-import { attemptIdSchema } from "@/lib/validations/quiz";
-import { getAttempt } from "@/server/services/attempts";
-import { getQuizWithQuestions } from "@/server/services/quizzes";
-import { requireUser } from "@/server/session";
 
 type Props = { params: Promise<{ attemptId: string }> };
 
 const dateFormat = new Intl.DateTimeFormat("en", { dateStyle: "long", timeZone: "UTC" });
 
-// The title and the page both need the attempt; cache() runs the lookups once per request.
-const loadAttempt = cache(async (attemptId: string) => {
-  const user = await requireUser(`/attempts/${attemptId}`);
-
-  const id = attemptIdSchema.safeParse(attemptId);
-  if (!id.success) notFound();
-
-  // Someone else's attempt is a 404 as well, so attempt ids can't be probed.
-  const attempt = await getAttempt(user.id, id.data);
-  if (!attempt) notFound();
-  const quiz = await getQuizWithQuestions(attempt.quizId, user.id);
-  if (!quiz) notFound();
-  return { attempt, quiz };
-});
-
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { quiz } = await loadAttempt((await params).attemptId);
+  const { attemptId } = await params;
+  const { quiz } = await loadAttempt(attemptId, `/attempts/${attemptId}`);
   return { title: `Attempt at ${quiz.name}` };
 }
 
 export default async function AttemptPage({ params }: Props) {
-  const { attempt, quiz } = await loadAttempt((await params).attemptId);
+  const { attemptId } = await params;
+  const { attempt, quiz } = await loadAttempt(attemptId, `/attempts/${attemptId}`);
   const percentage = scorePercent(attempt.score, attempt.totalQuestions);
+  // Attempts saved before the chosen answers were stored have nothing to practise.
+  const missedCount =
+    attempt.answers.length > 0 ? missedQuestions(quiz.questions, attempt.answers).length : 0;
 
   return (
     <div className="mx-auto flex w-full max-w-180 flex-col gap-6">
@@ -71,6 +57,14 @@ export default async function AttemptPage({ params }: Props) {
             Try again
           </Link>
         </Button>
+        {missedCount > 0 ? (
+          <Button variant="outline" asChild className="gap-2">
+            <Link href={`/attempts/${attempt.id}/practice`}>
+              <Shuffle className="size-4" aria-hidden />
+              Practice mistakes ({missedCount})
+            </Link>
+          </Button>
+        ) : null}
         <Button variant="outline" asChild>
           <Link href={`/courses/${quiz.courseId}`}>Back to course</Link>
         </Button>
