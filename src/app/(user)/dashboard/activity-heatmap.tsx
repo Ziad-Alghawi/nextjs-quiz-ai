@@ -44,7 +44,7 @@ const describe = (day: { time: number; count: number }) =>
   `${day.count === 0 ? "No quizzes" : pluralize(day.count, "quiz", "quizzes")} on ${dayFormat.format(day.time)}`;
 
 /**
- * The user's quiz submissions per day over the last year. One cell at a time is focusable and the
+ * The user's quiz attempts per day over the last year. One cell at a time is focusable and the
  * arrow keys move between days (a roving tabindex), so keyboard users don't tab through 371 cells.
  */
 export function ActivityHeatmap({

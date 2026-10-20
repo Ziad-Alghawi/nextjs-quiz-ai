@@ -5,7 +5,7 @@ import { questions, quizAttempts, quizzes } from "@/db/schema";
 import { DAY_MS } from "@/lib/time";
 
 export async function getUserMetrics(userId: string) {
-  const [[quizCount], [questionCount], [submissionStats]] = await Promise.all([
+  const [[quizCount], [questionCount], [attemptStats]] = await Promise.all([
     db.select({ value: count() }).from(quizzes).where(eq(quizzes.userId, userId)),
     db
       .select({ value: count() })
@@ -27,13 +27,13 @@ export async function getUserMetrics(userId: string) {
   return [
     { label: "Quizzes", value: quizCount.value },
     { label: "Questions", value: questionCount.value },
-    { label: "Submissions", value: submissionStats.count },
-    { label: "Average Score", value: submissionStats.averagePercent, unit: "%" },
+    { label: "Submissions", value: attemptStats.count },
+    { label: "Average Score", value: attemptStats.averagePercent, unit: "%" },
   ];
 }
 
-/** The user's submissions per day (UTC dates, YYYY-MM-DD) over the last year. */
-export async function getSubmissionActivity(userId: string) {
+/** The user's attempts per day (UTC dates, YYYY-MM-DD) over the last year. */
+export async function getAttemptActivity(userId: string) {
   const day = sql<string>`to_char(${quizAttempts.createdAt}, 'YYYY-MM-DD')`;
 
   return db
@@ -50,7 +50,7 @@ export async function getSubmissionActivity(userId: string) {
 
 const dayNumber = (date: string) => Date.parse(date) / DAY_MS;
 
-/** Streaks in consecutive UTC days with a submission, and the submissions in the current month. */
+/** Streaks in consecutive UTC days with an attempt, and the attempts in the current month. */
 export function summarizeActivity(activity: { date: string; count: number }[], today: string) {
   const active = new Set(activity.filter((day) => day.count > 0).map((day) => dayNumber(day.date)));
 
