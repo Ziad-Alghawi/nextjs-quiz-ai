@@ -3,7 +3,7 @@ import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
 import { attemptAnswers, quizAttempts, quizzes } from "@/db/schema";
 import { createQuiz, getQuizWithQuestions } from "@/server/services/quizzes";
-import { createUsers, deleteUsers } from "@/test/db-fixtures";
+import { addCourse, createUsers, deleteUsers } from "@/test/db-fixtures";
 import { formData, IDLE } from "@/test/form-data";
 import { generatedQuiz } from "@/test/generated-quiz";
 import { deleteAttempt, submitQuiz } from "./attempts";
@@ -25,6 +25,18 @@ vi.mock("next/cache", () => ({ revalidatePath }));
 async function addQuiz(userId = USER) {
   const quizId = await createQuiz(generatedQuiz(3), userId);
   const quiz = await getQuizWithQuestions(quizId, userId);
+  return { quizId, questions: quiz!.questions };
+}
+
+/** An exam of the user with `size` questions; answers[0] of each question is the correct one. */
+async function addExam(size: number) {
+  const courseId = await addCourse(USER);
+  const quizId = await createQuiz(generatedQuiz(size), USER, {
+    courseId,
+    chapterIds: [],
+    kind: "exam",
+  });
+  const quiz = await getQuizWithQuestions(quizId, USER);
   return { quizId, questions: quiz!.questions };
 }
 
@@ -90,6 +102,43 @@ describe("submitQuiz", () => {
       error: "Answer every question before submitting.",
     });
     expect(await attemptsOf(USER)).toEqual([]);
+  });
+
+  it("counts an exam's unanswered questions as wrong and stores no answer for them", async () => {
+    const { quizId, questions } = await addExam(10);
+    const chosen = questions
+      .slice(0, 8)
+      .map((q, i) => ({ questionId: q.id, answerId: q.answers[i < 6 ? 0 : 1].id }));
+
+    const result = await submitQuiz({ quizId, answers: chosen });
+
+    const [attempt] = await attemptsOf(USER);
+    expect(result).toEqual({ status: "saved", attemptId: attempt.id, score: 6, total: 10 });
+    expect(attempt).toMatchObject({ score: 6, totalQuestions: 10 });
+    expect(await answersOf(attempt.id)).toEqual(chosen);
+  });
+
+  it("saves an exam with nothing answered as 0 correct", async () => {
+    const { quizId } = await addExam(10);
+
+    expect(await submitQuiz({ quizId, answers: [] })).toMatchObject({
+      status: "saved",
+      score: 0,
+      total: 10,
+    });
+    const [attempt] = await attemptsOf(USER);
+    expect(await answersOf(attempt.id)).toEqual([]);
+  });
+
+  it("takes answers to every question of a 30-question exam, but no more", async () => {
+    const { quizId, questions } = await addExam(30);
+    const answers = questions.map((q) => ({ questionId: q.id, answerId: q.answers[0].id }));
+
+    expect(await submitQuiz({ quizId, answers })).toMatchObject({ score: 30, total: 30 });
+    expect(await submitQuiz({ quizId, answers: [...answers, answers[0]] })).toEqual({
+      status: "error",
+      error: "Your answers couldn't be read.",
+    });
   });
 
   it("refuses other users' and missing quizzes", async () => {

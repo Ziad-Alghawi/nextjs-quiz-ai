@@ -1,15 +1,16 @@
 "use client";
-import { Check, Loader2, X } from "lucide-react";
-import Link from "next/link";
+import { Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { QuizResults } from "@/components/quiz-results";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { missedQuestions, shuffleRound } from "@/lib/practice";
 import { scoreAttempt, type SelectedAnswer } from "@/lib/scoring";
 import { cn } from "@/lib/utils";
 import type { QuizWithQuestions } from "@/server/services/quizzes";
 import { submitQuiz } from "../actions/attempts";
+import { AnswerOption, LETTERS } from "./answer-option";
+import { PlayerTopBar } from "./player-top-bar";
+import { QuestionHeading } from "./question-heading";
 
 export type PlayerQuiz = Pick<QuizWithQuestions, "id" | "name" | "questions">;
 
@@ -26,8 +27,6 @@ type QuizPlayerProps = {
   /** Set when the quiz was made from only the first part of a long PDF. */
   truncated?: boolean;
 };
-
-const LETTERS = "ABCDEF";
 
 /**
  * One question at a time: the user picks an answer, sees right away whether it was correct and why,
@@ -149,33 +148,15 @@ export function QuizPlayer({
 
   return (
     <div className="flex flex-col">
-      <div className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-180 items-center gap-3 px-4 py-3">
-          <Button variant="ghost" size="icon" className="-ml-2 shrink-0" asChild>
-            <Link href={exitHref} aria-label="Exit quiz">
-              <X className="size-5" aria-hidden />
-            </Link>
-          </Button>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-baseline gap-2">
-              <h1 className="min-w-0 truncate text-sm font-medium">{quiz.name}</h1>
-              {round.practice ? (
-                <span className="shrink-0 text-xs text-muted-foreground">Practice · not saved</span>
-              ) : null}
-            </div>
-            <div className="mt-1.5 flex items-center gap-3">
-              <Progress
-                value={(chosen.length / questions.length) * 100}
-                label="Quiz progress"
-                className="h-2"
-              />
-              <span className="shrink-0 text-sm text-muted-foreground">
-                Question {index + 1} of {questions.length}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <PlayerTopBar
+        name={quiz.name}
+        tag={round.practice ? "Practice · not saved" : undefined}
+        exitHref={exitHref}
+        exitLabel="Exit quiz"
+        index={index}
+        answered={chosen.length}
+        total={questions.length}
+      />
 
       <div className="mx-auto w-full max-w-180 px-4 pt-6 pb-16">
         {truncated ? (
@@ -184,13 +165,7 @@ export function QuizPlayer({
           </p>
         ) : null}
 
-        <h2
-          ref={questionRef}
-          tabIndex={-1}
-          className="text-xl font-semibold leading-snug wrap-break-word outline-none sm:text-2xl"
-        >
-          {question.questionText}
-        </h2>
+        <QuestionHeading ref={questionRef}>{question.questionText}</QuestionHeading>
 
         <div role="group" aria-label="Answers" className="mt-6 flex flex-col gap-3">
           {question.answers.map((answer, i) => {
@@ -203,38 +178,15 @@ export function QuizPlayer({
                   ? "wrong"
                   : "other";
             return (
-              <button
+              <AnswerOption
                 key={answer.id}
-                type="button"
+                index={i}
+                text={answer.answerText}
+                state={state}
+                pressed={isChosen}
                 disabled={answered}
-                aria-pressed={isChosen}
                 onClick={() => choose(answer.id)}
-                className={cn(
-                  "flex w-full items-start gap-3 rounded-lg border-2 bg-card px-4 py-3 text-left transition-colors",
-                  state === "open" && "border-input hover:border-primary hover:bg-accent",
-                  state === "correct" && "border-success bg-success/10",
-                  state === "wrong" && "border-destructive bg-destructive/10",
-                  state === "other" && "border-input opacity-60",
-                )}
-              >
-                <span
-                  aria-hidden
-                  className={cn(
-                    "flex size-7 shrink-0 items-center justify-center rounded-md border text-sm font-semibold",
-                    state === "correct" && "border-success bg-success text-background",
-                    state === "wrong" && "border-destructive bg-destructive text-background",
-                  )}
-                >
-                  {state === "correct" ? (
-                    <Check className="size-4" />
-                  ) : state === "wrong" ? (
-                    <X className="size-4" />
-                  ) : (
-                    LETTERS[i]
-                  )}
-                </span>
-                <span className="min-w-0 flex-1 pt-0.5 wrap-break-word">{answer.answerText}</span>
-              </button>
+              />
             );
           })}
         </div>

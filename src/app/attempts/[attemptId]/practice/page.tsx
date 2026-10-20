@@ -15,11 +15,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 /** The attempt's missed questions in the quiz player; nothing is saved. */
 export default async function PracticePage({ params }: Props) {
   const { attemptId } = await params;
-  const { attempt, quiz } = await loadAttempt(attemptId, `/attempts/${attemptId}/practice`);
+  const { attempt, quiz, detailed } = await loadAttempt(
+    attemptId,
+    `/attempts/${attemptId}/practice`,
+  );
   const reviewHref = `/attempts/${attempt.id}`;
 
   // Old attempts have no saved answers, and a perfect one has nothing to practise.
-  const missed = attempt.answers.length > 0 ? missedQuestions(quiz.questions, attempt.answers) : [];
+  const missed = detailed ? missedQuestions(quiz.questions, attempt.answers) : [];
   if (missed.length === 0) redirect(reviewHref);
 
   return (

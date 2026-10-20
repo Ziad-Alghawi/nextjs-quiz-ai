@@ -120,6 +120,13 @@
       "when": 1792446793195,
       "tag": "0016_attempt_answers",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792515540035,
+      "tag": "0017_quiz_kind_exam",
+      "breakpoints": true
     }
   ]
 }

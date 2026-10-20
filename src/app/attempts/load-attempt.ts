@@ -20,5 +20,8 @@ export const loadAttempt = cache(async (attemptId: string, returnTo: string) => 
   if (!attempt) notFound();
   const quiz = await getQuizWithQuestions(attempt.quizId, user.id);
   if (!quiz) notFound();
-  return { attempt, quiz };
+  // Attempts saved before the chosen answers were stored have none. Exams came later, so an exam
+  // attempt without answers is one where nothing was answered.
+  const detailed = attempt.answers.length > 0 || quiz.kind === "exam";
+  return { attempt, quiz, detailed };
 });

@@ -29,6 +29,12 @@ export const questionCountUpgradeMessage = (count: number) =>
 /** The most questions a quiz can have on any plan; every question-count check uses this. */
 export const MAX_QUESTIONS = Math.max(...QUESTION_COUNTS);
 
+/** Course exams copy questions without AI, so every plan offers every count. */
+const EXAM_QUESTION_COUNTS = [10, 20, 30] as const;
+
+/** The most questions an attempt can answer: a generated quiz's or an exam's. */
+export const MAX_ATTEMPT_QUESTIONS = Math.max(MAX_QUESTIONS, ...EXAM_QUESTION_COUNTS);
+
 /** On every plan. Courses cost nothing to create, so this only stops scripted mass creation. */
 export const MAX_COURSES_PER_USER = 30;
 

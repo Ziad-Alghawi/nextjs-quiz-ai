@@ -25,7 +25,7 @@ type NewQuiz = Omit<GeneratedQuiz, "questions"> & { questions: QuizQuestion[] };
 export async function createQuiz(
   quiz: NewQuiz,
   userId: string,
-  origin?: { courseId: number; chapterIds: number[]; kind?: "review" },
+  origin?: { courseId: number; chapterIds: number[]; kind?: "review" | "exam" },
 ) {
   return db.transaction(async (tx) => {
     const courseId = origin?.courseId ?? (await getOrCreateDefaultCourse(tx, userId));
@@ -80,7 +80,7 @@ export async function createQuiz(
  */
 export function getQuizWithQuestions(quizId: number, userId: string) {
   return db.query.quizzes.findFirst({
-    columns: { id: true, name: true, courseId: true },
+    columns: { id: true, name: true, kind: true, courseId: true },
     where: and(eq(quizzes.id, quizId), eq(quizzes.userId, userId)),
     with: {
       questions: {
