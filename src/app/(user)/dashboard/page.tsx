@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
 import { listQuizzes } from "@/server/services/quizzes";
-import { getSubmissionActivity, getUserMetrics, summarizeActivity } from "@/server/services/stats";
+import { getAttemptActivity, getUserMetrics, summarizeActivity } from "@/server/services/stats";
 import { requireUser } from "@/server/session";
 import { ActivityHeatmap } from "./activity-heatmap";
 import { ActivityStats } from "./activity-stats";
@@ -20,7 +20,7 @@ export default async function DashboardPage() {
   const [quizzes, metrics, activity] = await Promise.all([
     listQuizzes(userId),
     getUserMetrics(userId),
-    getSubmissionActivity(userId),
+    getAttemptActivity(userId),
   ]);
 
   const today = new Date().toISOString().slice(0, 10);
