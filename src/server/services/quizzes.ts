@@ -2,6 +2,7 @@ import "server-only";
 import { and, asc, count, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { courses, questionAnswers, questions, quizChapters, quizzes } from "@/db/schema";
+import { examName } from "@/lib/exam";
 import { EXAM_BURST_LIMIT, isQuestionCountAllowed, REVIEW_BURST_LIMIT } from "@/lib/plans";
 import { pluralize } from "@/lib/pluralize";
 import { pickReviewQuestions, reviewName } from "@/lib/review";
@@ -186,7 +187,7 @@ export async function createExamQuiz(
 
   const sources = await findCopySources(userId, input.courseId);
   return copyQuestions(userId, input.courseId, sources, input.questionCount, {
-    name: `Exam: ${course.name}`,
+    name: examName(course.name, new Date()),
     kind: "exam",
   });
 }

@@ -71,7 +71,7 @@ describe("createExam", () => {
       },
     });
     expect(exam).toMatchObject({
-      name: "Exam: Biology",
+      name: expect.stringMatching(/^Exam: Biology · [A-Z][a-z]{2} \d{1,2}$/),
       description: "20 questions from 3 quizzes.",
       kind: "exam",
       courseId,
