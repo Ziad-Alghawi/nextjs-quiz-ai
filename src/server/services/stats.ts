@@ -4,14 +4,18 @@ import { db } from "@/db";
 import { questions, quizAttempts, quizzes } from "@/db/schema";
 import { DAY_MS } from "@/lib/time";
 
+// Reviews and exams are copies of generated questions, so counting them would inflate both totals.
+const generatedBy = (userId: string) =>
+  and(eq(quizzes.userId, userId), eq(quizzes.kind, "generated"));
+
 export async function getUserMetrics(userId: string) {
   const [[quizCount], [questionCount], [attemptStats]] = await Promise.all([
-    db.select({ value: count() }).from(quizzes).where(eq(quizzes.userId, userId)),
+    db.select({ value: count() }).from(quizzes).where(generatedBy(userId)),
     db
       .select({ value: count() })
       .from(questions)
       .innerJoin(quizzes, eq(questions.quizId, quizzes.id))
-      .where(eq(quizzes.userId, userId)),
+      .where(generatedBy(userId)),
     db
       .select({
         count: count(),
@@ -24,12 +28,12 @@ export async function getUserMetrics(userId: string) {
       .where(eq(quizAttempts.userId, userId)),
   ]);
 
-  return [
-    { label: "Quizzes", value: quizCount.value },
-    { label: "Questions", value: questionCount.value },
-    { label: "Submissions", value: attemptStats.count },
-    { label: "Average Score", value: attemptStats.averagePercent, unit: "%" },
-  ];
+  return {
+    quizzes: quizCount.value,
+    questions: questionCount.value,
+    attempts: attemptStats.count,
+    averagePercent: attemptStats.averagePercent,
+  };
 }
 
 /** The user's attempts per day (UTC dates, YYYY-MM-DD) over the last year. */
@@ -61,7 +65,7 @@ export function summarizeActivity(activity: { date: string; count: number }[], t
     longestStreak = Math.max(longestStreak, run);
   }
 
-  // A day without a quiz yet doesn't end the streak until the day is over.
+  // A day without an attempt yet doesn't end the streak until the day is over.
   let currentStreak = 0;
   const todayNumber = dayNumber(today);
   for (let day = active.has(todayNumber) ? todayNumber : todayNumber - 1; active.has(day); day--) {
@@ -69,9 +73,9 @@ export function summarizeActivity(activity: { date: string; count: number }[], t
   }
 
   const month = today.slice(0, 7);
-  const quizzesThisMonth = activity
+  const attemptsThisMonth = activity
     .filter((day) => day.date.startsWith(month))
     .reduce((total, day) => total + day.count, 0);
 
-  return { currentStreak, longestStreak, quizzesThisMonth };
+  return { currentStreak, longestStreak, attemptsThisMonth };
 }

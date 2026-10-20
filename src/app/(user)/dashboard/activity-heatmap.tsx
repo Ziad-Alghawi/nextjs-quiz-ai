@@ -10,7 +10,7 @@ const WEEKS = 53;
 const CELL = "size-[10px] rounded-[2px]";
 // Roughly half the widest tooltip; closer to an edge than this, the tooltip aligns inward.
 const TOOLTIP_HALF_WIDTH = 90;
-// Fewer to more quizzes on a day; 4 or more get the full accent color.
+// Fewer to more attempts on a day; 4 or more get the full accent color.
 const SHADES = ["bg-muted", "bg-primary/30", "bg-primary/55", "bg-primary/80", "bg-primary"];
 const WEEKDAY_LABELS = ["", "Mon", "", "Wed", "", "Fri", ""];
 
@@ -41,10 +41,10 @@ function buildWeeks(activity: { date: string; count: number }[], today: string):
 }
 
 const describe = (day: { time: number; count: number }) =>
-  `${day.count === 0 ? "No quizzes" : pluralize(day.count, "quiz", "quizzes")} on ${dayFormat.format(day.time)}`;
+  `${day.count === 0 ? "No attempts" : pluralize(day.count, "attempt")} on ${dayFormat.format(day.time)}`;
 
 /**
- * The user's quiz attempts per day over the last year. One cell at a time is focusable and the
+ * The user's attempts per day over the last year. One cell at a time is focusable and the
  * arrow keys move between days (a roving tabindex), so keyboard users don't tab through 371 cells.
  */
 export function ActivityHeatmap({
@@ -125,7 +125,7 @@ export function ActivityHeatmap({
         ) : null}
         <div
           role="grid"
-          aria-label="Quizzes taken per day in the last year"
+          aria-label="Attempts per day in the last year"
           onKeyDown={moveFocus}
           className="grid w-max gap-[2px]"
           style={{ gridTemplateColumns: `2.5rem repeat(${WEEKS}, 10px)` }}

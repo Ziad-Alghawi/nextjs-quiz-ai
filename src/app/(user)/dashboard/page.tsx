@@ -17,7 +17,7 @@ export const metadata: Metadata = { title: "Overview" };
 export default async function DashboardPage() {
   const { id: userId } = await requireUser("/dashboard");
 
-  const [quizzes, metrics, activity] = await Promise.all([
+  const [quizzes, stats, activity] = await Promise.all([
     listQuizzes(userId),
     getUserMetrics(userId),
     getAttemptActivity(userId),
@@ -40,9 +40,10 @@ export default async function DashboardPage() {
         Overview
       </PageHeading>
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        {metrics.map((metric) => (
-          <MetricCard key={metric.label} {...metric} />
-        ))}
+        <MetricCard label="Quizzes" value={stats.quizzes} />
+        <MetricCard label="Questions" value={stats.questions} />
+        <MetricCard label="Attempts" value={stats.attempts} />
+        <MetricCard label="Average Score" value={stats.averagePercent} unit="%" />
       </div>
       <Card>
         <CardTitle>Activity</CardTitle>
