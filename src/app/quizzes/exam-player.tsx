@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { submitQuiz } from "../actions/attempts";
 import { AnswerOption } from "./answer-option";
 import { PlayerTopBar } from "./player-top-bar";
+import { QuestionHeading } from "./question-heading";
 
 type ExamPlayerProps = {
   exam: ExamPaper;
@@ -110,13 +111,7 @@ export function ExamPlayer({ exam, exitHref }: ExamPlayerProps) {
       />
 
       <div className="mx-auto w-full max-w-180 px-4 pt-6 pb-16">
-        <h2
-          ref={questionRef}
-          tabIndex={-1}
-          className="text-xl font-semibold leading-snug wrap-break-word outline-none sm:text-2xl"
-        >
-          {question.questionText}
-        </h2>
+        <QuestionHeading ref={questionRef}>{question.questionText}</QuestionHeading>
 
         <div role="group" aria-label="Answers" className="mt-6 flex flex-col gap-3">
           {question.answers.map((answer, i) => {

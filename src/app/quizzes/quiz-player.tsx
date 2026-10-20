@@ -10,6 +10,7 @@ import type { QuizWithQuestions } from "@/server/services/quizzes";
 import { submitQuiz } from "../actions/attempts";
 import { AnswerOption, LETTERS } from "./answer-option";
 import { PlayerTopBar } from "./player-top-bar";
+import { QuestionHeading } from "./question-heading";
 
 export type PlayerQuiz = Pick<QuizWithQuestions, "id" | "name" | "questions">;
 
@@ -164,13 +165,7 @@ export function QuizPlayer({
           </p>
         ) : null}
 
-        <h2
-          ref={questionRef}
-          tabIndex={-1}
-          className="text-xl font-semibold leading-snug wrap-break-word outline-none sm:text-2xl"
-        >
-          {question.questionText}
-        </h2>
+        <QuestionHeading ref={questionRef}>{question.questionText}</QuestionHeading>
 
         <div role="group" aria-label="Answers" className="mt-6 flex flex-col gap-3">
           {question.answers.map((answer, i) => {
