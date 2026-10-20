@@ -150,16 +150,31 @@ export async function createReviewQuiz(
     return { error: "plan" };
   }
 
-  // Reviews are not sources themselves, so a review never copies a review.
-  const chosen = await db.query.quizzes.findMany({
+  const chosen = await findCopySources(userId, input.courseId, input.quizIds);
+  if (chosen.length !== input.quizIds.length) return { error: "not-found" };
+
+  const names = chosen.map((quiz) => quiz.name);
+  return copyQuestions(userId, input.courseId, chosen, input.questionCount, {
+    name: reviewName(names),
+    description: `Questions from: ${names.join(", ")}.`,
+    kind: "review",
+  });
+}
+
+/**
+ * The user's generated quizzes of the course (only those in `quizIds`, if given) with what copying
+ * their questions needs. Copies are not sources themselves, so a copy never copies a copy.
+ */
+function findCopySources(userId: string, courseId: number, quizIds?: number[]) {
+  return db.query.quizzes.findMany({
     columns: { name: true },
     where: and(
-      inArray(quizzes.id, input.quizIds),
+      quizIds ? inArray(quizzes.id, quizIds) : undefined,
       eq(quizzes.userId, userId),
-      eq(quizzes.courseId, input.courseId),
+      eq(quizzes.courseId, courseId),
       eq(quizzes.kind, "generated"),
     ),
-    // Oldest first, so the name and description follow the order of the chapters.
+    // Oldest first, so names and descriptions follow the order of the chapters.
     orderBy: asc(quizzes.id),
     with: {
       questions: {
@@ -174,28 +189,38 @@ export async function createReviewQuiz(
       quizChapters: { columns: { chapterId: true } },
     },
   });
-  if (chosen.length !== input.quizIds.length) return { error: "not-found" };
+}
 
-  const available = chosen.reduce((total, quiz) => total + quiz.questions.length, 0);
-  if (available < input.questionCount) return { error: "too-few", available };
+/**
+ * Stores a new quiz in the course with `count` questions copied from the sources, with their answers
+ * and explanations, spread evenly over them and linked to their chapters.
+ */
+async function copyQuestions(
+  userId: string,
+  courseId: number,
+  sources: Awaited<ReturnType<typeof findCopySources>>,
+  count: number,
+  quiz: { name: string; description: string; kind: "review" },
+): Promise<{ quizId: number } | { error: "too-few"; available: number }> {
+  const available = sources.reduce((total, source) => total + source.questions.length, 0);
+  if (available < count) return { error: "too-few", available };
 
-  const names = chosen.map((quiz) => quiz.name);
   const quizId = await createQuiz(
     {
-      name: reviewName(names),
-      description: `Questions from: ${names.join(", ")}.`,
+      name: quiz.name,
+      description: quiz.description,
       questions: pickReviewQuestions(
-        chosen.map((quiz) => quiz.questions),
-        input.questionCount,
+        sources.map((source) => source.questions),
+        count,
       ),
     },
     userId,
     {
-      courseId: input.courseId,
+      courseId,
       chapterIds: [
-        ...new Set(chosen.flatMap((quiz) => quiz.quizChapters.map((link) => link.chapterId))),
+        ...new Set(sources.flatMap((source) => source.quizChapters.map((link) => link.chapterId))),
       ],
-      kind: "review",
+      kind: quiz.kind,
     },
   );
   return { quizId };
