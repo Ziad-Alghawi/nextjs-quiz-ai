@@ -7,16 +7,16 @@ import { pluralize } from "@/lib/pluralize";
 export function ActivityStats({
   currentStreak,
   longestStreak,
-  quizzesThisMonth,
+  attemptsThisMonth,
 }: {
   currentStreak: number;
   longestStreak: number;
-  quizzesThisMonth: number;
+  attemptsThisMonth: number;
 }) {
   const stats = [
     { label: "Current streak", value: pluralize(currentStreak, "day") },
     { label: "Longest streak", value: pluralize(longestStreak, "day") },
-    { label: "This month", value: pluralize(quizzesThisMonth, "quiz", "quizzes") },
+    { label: "This month", value: pluralize(attemptsThisMonth, "attempt") },
   ];
 
   return (

@@ -65,7 +65,7 @@ export function summarizeActivity(activity: { date: string; count: number }[], t
     longestStreak = Math.max(longestStreak, run);
   }
 
-  // A day without a quiz yet doesn't end the streak until the day is over.
+  // A day without an attempt yet doesn't end the streak until the day is over.
   let currentStreak = 0;
   const todayNumber = dayNumber(today);
   for (let day = active.has(todayNumber) ? todayNumber : todayNumber - 1; active.has(day); day--) {
@@ -73,9 +73,9 @@ export function summarizeActivity(activity: { date: string; count: number }[], t
   }
 
   const month = today.slice(0, 7);
-  const quizzesThisMonth = activity
+  const attemptsThisMonth = activity
     .filter((day) => day.date.startsWith(month))
     .reduce((total, day) => total + day.count, 0);
 
-  return { currentStreak, longestStreak, quizzesThisMonth };
+  return { currentStreak, longestStreak, attemptsThisMonth };
 }

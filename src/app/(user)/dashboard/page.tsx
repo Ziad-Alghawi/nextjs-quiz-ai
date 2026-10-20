@@ -42,7 +42,7 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <MetricCard label="Quizzes" value={stats.quizzes} />
         <MetricCard label="Questions" value={stats.questions} />
-        <MetricCard label="Submissions" value={stats.attempts} />
+        <MetricCard label="Attempts" value={stats.attempts} />
         <MetricCard label="Average Score" value={stats.averagePercent} unit="%" />
       </div>
       <Card>

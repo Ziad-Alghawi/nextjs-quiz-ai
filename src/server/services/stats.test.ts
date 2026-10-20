@@ -8,7 +8,7 @@ describe("summarizeActivity", () => {
     expect(summarizeActivity([], "2026-10-15")).toEqual({
       currentStreak: 0,
       longestStreak: 0,
-      quizzesThisMonth: 0,
+      attemptsThisMonth: 0,
     });
   });
 
@@ -17,7 +17,7 @@ describe("summarizeActivity", () => {
     expect(summarizeActivity(activity, "2026-10-15").currentStreak).toBe(3);
   });
 
-  it("keeps the streak alive when today has no quiz yet", () => {
+  it("keeps the streak alive when today has no attempt yet", () => {
     const activity = days("2026-10-13", "2026-10-14");
     expect(summarizeActivity(activity, "2026-10-15").currentStreak).toBe(2);
   });
@@ -34,12 +34,12 @@ describe("summarizeActivity", () => {
     expect(summarizeActivity(activity, "2026-10-15").longestStreak).toBe(4);
   });
 
-  it("sums only the current month, several quizzes a day included", () => {
+  it("sums only the current month, several attempts a day included", () => {
     const activity = [
       { date: "2026-09-30", count: 4 },
       { date: "2026-10-02", count: 2 },
       { date: "2026-10-15", count: 3 },
     ];
-    expect(summarizeActivity(activity, "2026-10-15").quizzesThisMonth).toBe(5);
+    expect(summarizeActivity(activity, "2026-10-15").attemptsThisMonth).toBe(5);
   });
 });
