@@ -1,9 +1,8 @@
 "use client";
-import { Loader2 } from "lucide-react";
 import { useActionState, useState } from "react";
 import { createReview } from "@/app/actions/reviews";
-import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/ui/form-error";
+import { SubmitButton } from "@/components/ui/submit-button";
 import type { FormState } from "@/lib/form-state";
 import { DEFAULT_QUESTION_COUNT, MAX_REVIEW_QUIZZES, type PlanId } from "@/lib/plans";
 import { QuestionCountPicker } from "@/components/question-count-picker";
@@ -78,16 +77,9 @@ export function ReviewQuizForm({ courseId, quizzes, plan }: ReviewQuizFormProps)
       {hint ? <p className="text-sm text-muted-foreground">{hint}</p> : null}
 
       <div>
-        <Button type="submit" variant="outline" disabled={pending || hint !== null}>
-          {pending ? (
-            <>
-              <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
-              Creating…
-            </>
-          ) : (
-            "Create review quiz"
-          )}
-        </Button>
+        <SubmitButton variant="outline" disabled={hint !== null} pendingText="Creating…">
+          Create review quiz
+        </SubmitButton>
       </div>
     </form>
   );
