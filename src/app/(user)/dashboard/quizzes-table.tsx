@@ -19,7 +19,7 @@ export function QuizzesTable({ quizzes }: { quizzes: QuizSummary[] }) {
           <thead className="text-muted-foreground">
             <tr>
               <th className="py-2 pr-4 font-medium">Name</th>
-              <th className="py-2 pr-4 font-medium">Description</th>
+              <th className="hidden py-2 pr-4 font-medium sm:table-cell">Description</th>
               <th className="py-2 font-medium">Course</th>
             </tr>
           </thead>
@@ -35,7 +35,9 @@ export function QuizzesTable({ quizzes }: { quizzes: QuizSummary[] }) {
                   </Link>
                   <QuizKindLabel kind={quiz.kind} />
                 </td>
-                <td className="py-3 pr-4 align-top text-muted-foreground">{quiz.description}</td>
+                <td className="hidden py-3 pr-4 align-top text-muted-foreground sm:table-cell">
+                  {quiz.description}
+                </td>
                 <td className="py-3 align-top text-muted-foreground sm:whitespace-nowrap">
                   <Link href={`/courses/${quiz.course.id}`} className="hover:underline">
                     {quiz.course.name}
