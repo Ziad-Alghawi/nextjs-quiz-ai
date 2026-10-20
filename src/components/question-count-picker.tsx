@@ -4,7 +4,10 @@ import { isQuestionCountAllowed, QUESTION_COUNTS, type PlanId } from "@/lib/plan
 import { cn } from "@/lib/utils";
 
 type QuestionCountPickerProps = {
-  plan: PlanId;
+  /** Counts of a higher plan are locked; without a plan (exams), every count can be picked. */
+  plan?: PlanId;
+  /** Defaults to every count some plan offers. */
+  counts?: readonly number[];
   value: number;
   onChange: (count: number) => void;
   disabled?: boolean;
@@ -20,21 +23,23 @@ type QuestionCountPickerProps = {
  */
 export function QuestionCountPicker({
   plan,
+  counts = QUESTION_COUNTS,
   value,
   onChange,
   disabled,
   max = Infinity,
   hideUpgradeLink,
 }: QuestionCountPickerProps) {
-  const hasLockedCounts = QUESTION_COUNTS.some((count) => !isQuestionCountAllowed(plan, count));
+  const isLocked = (count: number) => plan !== undefined && !isQuestionCountAllowed(plan, count);
+  const hasLockedCounts = counts.some(isLocked);
 
   return (
     <fieldset disabled={disabled} className="flex min-w-0 flex-col gap-2">
       <legend className="mb-1 text-sm font-medium">Number of questions</legend>
       {/* Equal columns on phones, so all counts stay in one row next to the lock icons. */}
       <div className="grid grid-cols-5 gap-2 sm:flex sm:flex-wrap">
-        {QUESTION_COUNTS.map((count) => {
-          const locked = !isQuestionCountAllowed(plan, count);
+        {counts.map((count) => {
+          const locked = isLocked(count);
           const unavailable = locked || count > max;
           return (
             <label
