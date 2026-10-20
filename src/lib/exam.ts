@@ -1,3 +1,15 @@
+// In UTC, like the dates on attempt pages: the server doesn't know the user's time zone.
+const shortDate = new Intl.DateTimeFormat("en", {
+  month: "short",
+  day: "numeric",
+  timeZone: "UTC",
+});
+
+/** "Exam: Cell biology · Oct 20": a course gets many exams, and the date tells them apart. */
+export function examName(courseName: string, date: Date) {
+  return `Exam: ${courseName} · ${shortDate.format(date)}`;
+}
+
 type ExamSource = {
   id: number;
   name: string;

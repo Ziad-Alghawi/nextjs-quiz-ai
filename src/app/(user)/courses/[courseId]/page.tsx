@@ -17,11 +17,15 @@ import { requireUser } from "@/server/session";
 import { ChapterUpload } from "./chapter-upload";
 import { CourseActions } from "./course-actions";
 import { DeleteChapterButton } from "./delete-chapter-button";
+import { ExamForm } from "./exam-form";
 import { QuizAttempts } from "./quiz-attempts";
 import { QuizGenerator } from "./quiz-generator";
 import { ReviewQuizForm } from "./review-quiz-form";
 
 type Props = { params: Promise<{ courseId: string }> };
+
+// Copied quizzes get a label in the quiz list; generated ones need none.
+const KIND_LABELS = { review: "Review", exam: "Exam" } as const;
 
 // Shared by generateMetadata and the page, so a request loads the course once.
 const loadCourse = cache(async (courseId: string) => {
@@ -64,49 +68,92 @@ export default async function CoursePage({ params }: Props) {
         {course.name}
       </PageHeading>
 
-      {/* Side by side on wide screens, stacked below. */}
+      {/* Content on the left, actions on the right on wide screens; stacked below, the content
+          comes first. */}
       <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-2">
-        <Card className="gap-2">
-          <div className="flex items-baseline justify-between gap-3">
-            <CardTitle>Chapters</CardTitle>
-            <span className="text-sm text-muted-foreground">
-              {course.chapters.length} of {MAX_CHAPTERS_PER_COURSE}
-            </span>
-          </div>
-          <ChapterUpload
-            courseId={course.id}
-            full={course.chapters.length >= MAX_CHAPTERS_PER_COURSE}
-          />
-          {course.chapters.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No chapters yet.</p>
-          ) : (
-            <ul className="divide-y">
-              {course.chapters.map((chapter) => {
-                const meta = `${pluralize(chapter.pageCount, "page")} · ${formatSize(chapter.sizeBytes)}`;
-                return (
-                  <li key={chapter.id} className="flex items-center gap-3 py-3">
-                    <FileText className="size-5 shrink-0 text-muted-foreground" aria-hidden />
-                    <div className="min-w-0 flex-1 text-sm text-muted-foreground">
-                      <span className="block truncate text-base font-medium text-foreground">
-                        {chapter.name}
+        <div className="flex flex-col gap-6">
+          <Card className="gap-2">
+            <div className="flex items-baseline justify-between gap-3">
+              <CardTitle>Chapters</CardTitle>
+              <span className="text-sm text-muted-foreground">
+                {course.chapters.length} of {MAX_CHAPTERS_PER_COURSE}
+              </span>
+            </div>
+            <ChapterUpload
+              courseId={course.id}
+              full={course.chapters.length >= MAX_CHAPTERS_PER_COURSE}
+            />
+            {course.chapters.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No chapters yet.</p>
+            ) : (
+              <ul className="divide-y">
+                {course.chapters.map((chapter) => {
+                  const meta = `${pluralize(chapter.pageCount, "page")} · ${formatSize(chapter.sizeBytes)}`;
+                  return (
+                    <li key={chapter.id} className="flex items-center gap-3 py-3">
+                      <FileText className="size-5 shrink-0 text-muted-foreground" aria-hidden />
+                      <div className="min-w-0 flex-1 text-sm text-muted-foreground">
+                        <span className="block truncate text-base font-medium text-foreground">
+                          {chapter.name}
+                        </span>
+                        {/* Beside the name from sm up; on phones it goes under it, so the name and
+                            hint keep their width. */}
+                        <span className="sm:hidden">{meta}</span>
+                        {chapter.textTruncated ? (
+                          <span className="block">Long PDF: quizzes use only its first part.</span>
+                        ) : null}
+                      </div>
+                      <span className="hidden shrink-0 text-sm text-muted-foreground sm:inline">
+                        {meta}
                       </span>
-                      {/* Beside the name from sm up; on phones it goes under it, so the name and
-                          hint keep their width. */}
-                      <span className="sm:hidden">{meta}</span>
-                      {chapter.textTruncated ? (
-                        <span className="block">Long PDF: quizzes use only its first part.</span>
-                      ) : null}
+                      <DeleteChapterButton chapter={{ id: chapter.id, name: chapter.name }} />
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </Card>
+
+          <Card className="gap-2">
+            <CardTitle>Quizzes</CardTitle>
+            {course.quizzes.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No quizzes in this course yet.</p>
+            ) : (
+              <ul className="divide-y">
+                {course.quizzes.map((quiz) => (
+                  <li key={quiz.id}>
+                    <div className="flex items-start gap-3 pt-3 pb-2">
+                      <div className="min-w-0 flex-1">
+                        <Link
+                          href={`/quizzes/${quiz.id}`}
+                          className="font-medium text-primary underline-offset-4 wrap-break-word hover:underline"
+                        >
+                          {quiz.name}
+                        </Link>
+                        {quiz.kind === "generated" ? null : (
+                          <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 align-middle text-xs font-medium text-primary">
+                            {KIND_LABELS[quiz.kind]}
+                          </span>
+                        )}
+                        {quiz.description ? (
+                          <p className="mt-0.5 text-sm text-muted-foreground">{quiz.description}</p>
+                        ) : null}
+                      </div>
+                      {/* Touch screens have no hover, so a visible button says where the quiz starts. */}
+                      <Button variant="outline" size="sm" asChild className="shrink-0 gap-1.5">
+                        <Link href={`/quizzes/${quiz.id}`} aria-label={`Start ${quiz.name}`}>
+                          <Play className="size-3.5" aria-hidden />
+                          Start
+                        </Link>
+                      </Button>
                     </div>
-                    <span className="hidden shrink-0 text-sm text-muted-foreground sm:inline">
-                      {meta}
-                    </span>
-                    <DeleteChapterButton chapter={{ id: chapter.id, name: chapter.name }} />
+                    <QuizAttempts entry={attempts.get(quiz.id)} />
                   </li>
-                );
-              })}
-            </ul>
-          )}
-        </Card>
+                ))}
+              </ul>
+            )}
+          </Card>
+        </div>
 
         <div className="flex flex-col gap-6">
           <Card>
@@ -134,43 +181,15 @@ export default async function CoursePage({ params }: Props) {
             )}
           </Card>
 
-          <Card className="gap-2">
-            <CardTitle>Quizzes</CardTitle>
-            {course.quizzes.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No quizzes in this course yet.</p>
+          <Card>
+            <CardTitle>Course exam</CardTitle>
+            {reviewSources.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Make a quiz in this course first.</p>
             ) : (
-              <ul className="divide-y">
-                {course.quizzes.map((quiz) => (
-                  <li key={quiz.id}>
-                    <div className="flex items-start gap-3 pt-3 pb-2">
-                      <div className="min-w-0 flex-1">
-                        <Link
-                          href={`/quizzes/${quiz.id}`}
-                          className="font-medium text-primary underline-offset-4 wrap-break-word hover:underline"
-                        >
-                          {quiz.name}
-                        </Link>
-                        {quiz.kind === "review" ? (
-                          <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 align-middle text-xs font-medium text-primary">
-                            Review
-                          </span>
-                        ) : null}
-                        {quiz.description ? (
-                          <p className="mt-0.5 text-sm text-muted-foreground">{quiz.description}</p>
-                        ) : null}
-                      </div>
-                      {/* Touch screens have no hover, so a visible button says where the quiz starts. */}
-                      <Button variant="outline" size="sm" asChild className="shrink-0 gap-1.5">
-                        <Link href={`/quizzes/${quiz.id}`} aria-label={`Start ${quiz.name}`}>
-                          <Play className="size-3.5" aria-hidden />
-                          Start
-                        </Link>
-                      </Button>
-                    </div>
-                    <QuizAttempts entry={attempts.get(quiz.id)} />
-                  </li>
-                ))}
-              </ul>
+              <ExamForm
+                courseId={course.id}
+                available={reviewSources.reduce((total, quiz) => total + quiz.questionCount, 0)}
+              />
             )}
           </Card>
         </div>

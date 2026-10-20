@@ -30,7 +30,7 @@ export const questionCountUpgradeMessage = (count: number) =>
 export const MAX_QUESTIONS = Math.max(...QUESTION_COUNTS);
 
 /** Course exams copy questions without AI, so every plan offers every count. */
-const EXAM_QUESTION_COUNTS = [10, 20, 30] as const;
+export const EXAM_QUESTION_COUNTS: readonly number[] = [10, 20, 30];
 
 /** The most questions an attempt can answer: a generated quiz's or an exam's. */
 export const MAX_ATTEMPT_QUESTIONS = Math.max(MAX_QUESTIONS, ...EXAM_QUESTION_COUNTS);
@@ -56,6 +56,9 @@ export const MAX_REVIEW_QUIZZES = 10;
 
 /** On every plan. Reviews cost no AI, so this only stops scripted mass creation. */
 export const REVIEW_BURST_LIMIT = { reviews: 10, windowMinutes: 10 } as const;
+
+/** On every plan. Exams cost no AI either, so this only stops scripted mass creation. */
+export const EXAM_BURST_LIMIT = { exams: 10, windowMinutes: 10 } as const;
 
 /** On every plan: at most this many generation attempts per user in the window. */
 export const GENERATION_BURST_LIMIT = { attempts: 3, windowMinutes: 10 } as const;

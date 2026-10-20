@@ -1,8 +1,10 @@
 import "server-only";
 import { and, asc, count, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { questionAnswers, questions, quizChapters, quizzes } from "@/db/schema";
-import { isQuestionCountAllowed, REVIEW_BURST_LIMIT } from "@/lib/plans";
+import { courses, questionAnswers, questions, quizChapters, quizzes } from "@/db/schema";
+import { examName } from "@/lib/exam";
+import { EXAM_BURST_LIMIT, isQuestionCountAllowed, REVIEW_BURST_LIMIT } from "@/lib/plans";
+import { pluralize } from "@/lib/pluralize";
 import { pickReviewQuestions, reviewName } from "@/lib/review";
 import { MINUTE_MS } from "@/lib/time";
 import type { GeneratedQuiz } from "@/lib/validations/quiz";
@@ -150,16 +152,60 @@ export async function createReviewQuiz(
     return { error: "plan" };
   }
 
-  // Reviews are not sources themselves, so a review never copies a review.
-  const chosen = await db.query.quizzes.findMany({
+  const chosen = await findCopySources(userId, input.courseId, input.quizIds);
+  if (chosen.length !== input.quizIds.length) return { error: "not-found" };
+
+  return copyQuestions(userId, input.courseId, chosen, input.questionCount, {
+    name: reviewName(chosen.map((quiz) => quiz.name)),
+    kind: "review",
+  });
+}
+
+type ExamResult =
+  | { quizId: number }
+  | { error: "not-found" | "rate-limit" }
+  | { error: "too-few"; available: number };
+
+/**
+ * Makes a course exam from questions of all the course's generated quizzes, spread evenly over them.
+ * No AI, so it doesn't count toward the monthly quota, and every plan offers every exam count.
+ */
+export async function createExamQuiz(
+  userId: string,
+  input: { courseId: number; questionCount: number },
+): Promise<ExamResult> {
+  const { exams, windowMinutes } = EXAM_BURST_LIMIT;
+  if (!(await consumeRateLimit(`exam:${userId}`, exams, windowMinutes * MINUTE_MS))) {
+    return { error: "rate-limit" };
+  }
+
+  const [course] = await db
+    .select({ name: courses.name })
+    .from(courses)
+    .where(and(eq(courses.id, input.courseId), eq(courses.userId, userId)));
+  if (!course) return { error: "not-found" };
+
+  const sources = await findCopySources(userId, input.courseId);
+  return copyQuestions(userId, input.courseId, sources, input.questionCount, {
+    name: examName(course.name, new Date()),
+    kind: "exam",
+  });
+}
+
+/**
+ * The user's generated quizzes of the course (only those in `quizIds`, if given) with what copying
+ * their questions needs. Copies are not sources themselves, so a copy never copies a copy.
+ */
+function findCopySources(userId: string, courseId: number, quizIds?: number[]) {
+  return db.query.quizzes.findMany({
     columns: { name: true },
     where: and(
-      inArray(quizzes.id, input.quizIds),
+      quizIds ? inArray(quizzes.id, quizIds) : undefined,
       eq(quizzes.userId, userId),
-      eq(quizzes.courseId, input.courseId),
+      eq(quizzes.courseId, courseId),
       eq(quizzes.kind, "generated"),
     ),
-    // Oldest first, so the name and description follow the order of the chapters.
+    // Oldest first, so names and descriptions follow the order of the chapters.
     orderBy: asc(quizzes.id),
     with: {
       questions: {
@@ -174,28 +220,39 @@ export async function createReviewQuiz(
       quizChapters: { columns: { chapterId: true } },
     },
   });
-  if (chosen.length !== input.quizIds.length) return { error: "not-found" };
+}
 
-  const available = chosen.reduce((total, quiz) => total + quiz.questions.length, 0);
-  if (available < input.questionCount) return { error: "too-few", available };
+/**
+ * Stores a new quiz in the course with `count` questions copied from the sources, with their answers
+ * and explanations, spread evenly over them and linked to their chapters. The description says how
+ * many questions came from how many quizzes.
+ */
+async function copyQuestions(
+  userId: string,
+  courseId: number,
+  sources: Awaited<ReturnType<typeof findCopySources>>,
+  count: number,
+  quiz: { name: string; kind: "review" | "exam" },
+): Promise<{ quizId: number } | { error: "too-few"; available: number }> {
+  const available = sources.reduce((total, source) => total + source.questions.length, 0);
+  if (available < count) return { error: "too-few", available };
 
-  const names = chosen.map((quiz) => quiz.name);
   const quizId = await createQuiz(
     {
-      name: reviewName(names),
-      description: `Questions from: ${names.join(", ")}.`,
+      name: quiz.name,
+      description: `${pluralize(count, "question")} from ${pluralize(sources.length, "quiz", "quizzes")}.`,
       questions: pickReviewQuestions(
-        chosen.map((quiz) => quiz.questions),
-        input.questionCount,
+        sources.map((source) => source.questions),
+        count,
       ),
     },
     userId,
     {
-      courseId: input.courseId,
+      courseId,
       chapterIds: [
-        ...new Set(chosen.flatMap((quiz) => quiz.quizChapters.map((link) => link.chapterId))),
+        ...new Set(sources.flatMap((source) => source.quizChapters.map((link) => link.chapterId))),
       ],
-      kind: "review",
+      kind: quiz.kind,
     },
   );
   return { quizId };
