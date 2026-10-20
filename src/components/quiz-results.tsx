@@ -1,5 +1,5 @@
 "use client";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, Shuffle } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, type ComponentProps } from "react";
@@ -15,7 +15,12 @@ type QuizResultsProps = {
   chosen: SelectedAnswer[];
   /** Set when the result could not be saved; the score is still shown. */
   saveError: string | null;
+  /** A practice round: shown as not saved. */
+  practice: boolean;
+  /** How many questions were answered wrong; they can be practised right away. */
+  missedCount: number;
   onRetry: () => void;
+  onPracticeMistakes: () => void;
   exitHref: string;
   exitLabel: string;
 };
@@ -34,7 +39,10 @@ export function QuizResults({
   questions,
   chosen,
   saveError,
+  practice,
+  missedCount,
   onRetry,
+  onPracticeMistakes,
   exitHref,
   exitLabel,
 }: QuizResultsProps) {
@@ -71,6 +79,9 @@ export function QuizResults({
           {percentage}%
         </p>
         <p className="mt-2 text-muted-foreground">{verdict(percentage)}</p>
+        {practice ? (
+          <p className="mt-1 text-sm text-muted-foreground">Practice round · not saved</p>
+        ) : null}
         {saveError ? (
           <p role="alert" className="mt-4 text-sm text-destructive">
             Your result couldn&apos;t be saved. {saveError}
@@ -81,6 +92,12 @@ export function QuizResults({
             <RotateCcw className="size-4" aria-hidden />
             Try again
           </Button>
+          {missedCount > 0 ? (
+            <Button variant="outline" onClick={onPracticeMistakes} className="gap-2">
+              <Shuffle className="size-4" aria-hidden />
+              Practice mistakes ({missedCount})
+            </Button>
+          ) : null}
           <Button variant="outline" asChild>
             <Link href={exitHref}>{exitLabel}</Link>
           </Button>

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { QuizResults } from "@/components/quiz-results";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { missedQuestions, shuffleRound } from "@/lib/practice";
 import { scoreAttempt, type SelectedAnswer } from "@/lib/scoring";
 import { cn } from "@/lib/utils";
 import type { QuizWithQuestions } from "@/server/services/quizzes";
@@ -29,7 +30,10 @@ const LETTERS = "ABCDEF";
  * then moves on. The score is computed again on the server when the quiz is submitted.
  */
 export function QuizPlayer({ quiz, exitHref, isSample, truncated }: QuizPlayerProps) {
-  const { questions } = quiz;
+  // The questions being played: the whole quiz, or a practice round of missed ones. `number`
+  // counts the restarts, so focus can move to the first question of a new round.
+  const [round, setRound] = useState({ questions: quiz.questions, practice: false, number: 0 });
+  const { questions } = round;
   const [index, setIndex] = useState(0);
   const [chosen, setChosen] = useState<SelectedAnswer[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -53,7 +57,7 @@ export function QuizPlayer({ quiz, exitHref, isSample, truncated }: QuizPlayerPr
 
   async function finish() {
     const localResult = scoreAttempt(questions, chosen);
-    if (isSample) return setResult(localResult);
+    if (isSample || round.practice) return setResult(localResult);
     setSubmitting(true);
     try {
       const saved = await submitQuiz({ quizId: quiz.id, answers: chosen });
@@ -66,12 +70,22 @@ export function QuizPlayer({ quiz, exitHref, isSample, truncated }: QuizPlayerPr
     setResult(localResult);
   }
 
-  function retry() {
+  function start(nextQuestions: PlayerQuiz["questions"], nextPractice: boolean) {
+    setRound({ questions: nextQuestions, practice: nextPractice, number: round.number + 1 });
     setIndex(0);
     setChosen([]);
     setSubmitting(false);
     setResult(null);
     setSaveError(null);
+  }
+
+  // A practice round is reshuffled each time, so positions can't be remembered.
+  function retry() {
+    start(round.practice ? shuffleRound(questions) : questions, round.practice);
+  }
+
+  function practiceMistakes() {
+    start(shuffleRound(missedQuestions(questions, chosen)), true);
   }
 
   function next() {
@@ -87,8 +101,8 @@ export function QuizPlayer({ quiz, exitHref, isSample, truncated }: QuizPlayerPr
     if (answered) nextRef.current?.focus();
   }, [answered]);
   useEffect(() => {
-    if (index > 0) questionRef.current?.focus();
-  }, [index]);
+    if (index > 0 || round.number > 0) questionRef.current?.focus();
+  }, [index, round.number]);
 
   // 1-4 picks an answer.
   useEffect(() => {
@@ -112,7 +126,10 @@ export function QuizPlayer({ quiz, exitHref, isSample, truncated }: QuizPlayerPr
         questions={questions}
         chosen={chosen}
         saveError={saveError}
+        practice={round.practice}
+        missedCount={result.total - result.score}
         onRetry={retry}
+        onPracticeMistakes={practiceMistakes}
         exitHref={exitHref}
         exitLabel={isSample ? "Back to home" : "Back to course"}
       />
@@ -129,7 +146,12 @@ export function QuizPlayer({ quiz, exitHref, isSample, truncated }: QuizPlayerPr
             </Link>
           </Button>
           <div className="min-w-0 flex-1">
-            <h1 className="truncate text-sm font-medium">{quiz.name}</h1>
+            <div className="flex items-baseline gap-2">
+              <h1 className="min-w-0 truncate text-sm font-medium">{quiz.name}</h1>
+              {round.practice ? (
+                <span className="shrink-0 text-xs text-muted-foreground">Practice · not saved</span>
+              ) : null}
+            </div>
             <div className="mt-1.5 flex items-center gap-3">
               <Progress
                 value={(chosen.length / questions.length) * 100}
