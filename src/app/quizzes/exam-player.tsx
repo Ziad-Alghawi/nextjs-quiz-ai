@@ -11,6 +11,7 @@ import { submitQuiz } from "../actions/attempts";
 import { AnswerOption } from "./answer-option";
 import { PlayerTopBar } from "./player-top-bar";
 import { QuestionHeading } from "./question-heading";
+import { usePlayerKeys } from "./use-player-keys";
 
 type ExamPlayerProps = {
   exam: ExamPaper;
@@ -82,20 +83,14 @@ export function ExamPlayer({ exam, exitHref }: ExamPlayerProps) {
     if (movedRef.current) questionRef.current?.focus();
   }, [index]);
 
-  // 1-4 picks an answer, the arrow keys move between questions.
-  useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.altKey || event.ctrlKey || event.metaKey || confirming || submitting) return;
-      if (event.key === "ArrowRight") return goTo(index + 1);
-      if (event.key === "ArrowLeft") return goTo(index - 1);
-      const number = Number(event.key);
-      if (Number.isInteger(number) && number >= 1) {
-        const answer = question.answers[number - 1];
-        if (answer) choose(answer.id);
-      }
-    }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+  usePlayerKeys({
+    enabled: !confirming && !submitting,
+    answers: question.answers,
+    onAnswer: choose,
+    onOtherKey: (key) => {
+      if (key === "ArrowRight") goTo(index + 1);
+      if (key === "ArrowLeft") goTo(index - 1);
+    },
   });
 
   return (

@@ -11,6 +11,7 @@ import { submitQuiz } from "../actions/attempts";
 import { AnswerOption, LETTERS } from "./answer-option";
 import { PlayerTopBar } from "./player-top-bar";
 import { QuestionHeading } from "./question-heading";
+import { usePlayerKeys } from "./use-player-keys";
 
 export type PlayerQuiz = Pick<QuizWithQuestions, "id" | "name" | "questions">;
 
@@ -114,18 +115,10 @@ export function QuizPlayer({
     if (index > 0 || round.number > 0) questionRef.current?.focus();
   }, [index, round.number]);
 
-  // 1-4 picks an answer.
-  useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.altKey || event.ctrlKey || event.metaKey || result || submitting) return;
-      const number = Number(event.key);
-      if (!answered && Number.isInteger(number) && number >= 1) {
-        const answer = question.answers[number - 1];
-        if (answer) choose(answer.id);
-      }
-    }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+  usePlayerKeys({
+    enabled: !answered && !result && !submitting,
+    answers: question.answers,
+    onAnswer: choose,
   });
 
   if (result) {
