@@ -154,10 +154,8 @@ export async function createReviewQuiz(
   const chosen = await findCopySources(userId, input.courseId, input.quizIds);
   if (chosen.length !== input.quizIds.length) return { error: "not-found" };
 
-  const names = chosen.map((quiz) => quiz.name);
   return copyQuestions(userId, input.courseId, chosen, input.questionCount, {
-    name: reviewName(names),
-    description: `Questions from: ${names.join(", ")}.`,
+    name: reviewName(chosen.map((quiz) => quiz.name)),
     kind: "review",
   });
 }
@@ -189,7 +187,6 @@ export async function createExamQuiz(
   const sources = await findCopySources(userId, input.courseId);
   return copyQuestions(userId, input.courseId, sources, input.questionCount, {
     name: `Exam: ${course.name}`,
-    description: `${pluralize(input.questionCount, "question")} from ${pluralize(sources.length, "quiz", "quizzes")}.`,
     kind: "exam",
   });
 }
@@ -226,14 +223,15 @@ function findCopySources(userId: string, courseId: number, quizIds?: number[]) {
 
 /**
  * Stores a new quiz in the course with `count` questions copied from the sources, with their answers
- * and explanations, spread evenly over them and linked to their chapters.
+ * and explanations, spread evenly over them and linked to their chapters. The description says how
+ * many questions came from how many quizzes.
  */
 async function copyQuestions(
   userId: string,
   courseId: number,
   sources: Awaited<ReturnType<typeof findCopySources>>,
   count: number,
-  quiz: { name: string; description: string; kind: "review" | "exam" },
+  quiz: { name: string; kind: "review" | "exam" },
 ): Promise<{ quizId: number } | { error: "too-few"; available: number }> {
   const available = sources.reduce((total, source) => total + source.questions.length, 0);
   if (available < count) return { error: "too-few", available };
@@ -241,7 +239,7 @@ async function copyQuestions(
   const quizId = await createQuiz(
     {
       name: quiz.name,
-      description: quiz.description,
+      description: `${pluralize(count, "question")} from ${pluralize(sources.length, "quiz", "quizzes")}.`,
       questions: pickReviewQuestions(
         sources.map((source) => source.questions),
         count,

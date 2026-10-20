@@ -67,7 +67,7 @@ describe("createReview", () => {
     });
     expect(review).toMatchObject({
       name: "Review: Cells + 2 more",
-      description: "Questions from: Cells, Genes, Energy.",
+      description: "10 questions from 3 quizzes.",
       kind: "review",
       courseId,
     });
