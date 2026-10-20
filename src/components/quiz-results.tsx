@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect, useRef, type ComponentProps } from "react";
 import { QuestionReview } from "@/components/question-review";
 import { Button } from "@/components/ui/button";
-import type { SelectedAnswer } from "@/lib/scoring";
+import { scorePercent, type SelectedAnswer } from "@/lib/scoring";
 import { cn } from "@/lib/utils";
 
 type QuizResultsProps = {
@@ -38,7 +38,7 @@ export function QuizResults({
   exitHref,
   exitLabel,
 }: QuizResultsProps) {
-  const percentage = Math.round((score / total) * 100);
+  const percentage = scorePercent(score, total);
   const headingRef = useRef<HTMLHeadingElement>(null);
 
   // The questions above were scrolled out of view; announce the result from the top.

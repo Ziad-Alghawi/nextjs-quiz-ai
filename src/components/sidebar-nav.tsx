@@ -7,15 +7,22 @@ import type { ComponentType } from "react";
 import { cn } from "@/lib/utils";
 import { NewCourseButton } from "./new-course-button";
 
-type NavLinkProps = { href: string; icon: ComponentType<{ className?: string }>; label: string };
+type NavLinkProps = {
+  href: string;
+  icon: ComponentType<{ className?: string }>;
+  label: string;
+  /** Shown on hover; for labels that may be cut off. */
+  title?: string;
+};
 
-function NavLink({ href, icon: Icon, label }: NavLinkProps) {
+function NavLink({ href, icon: Icon, label, title }: NavLinkProps) {
   const pathname = usePathname();
   const active = pathname === href || pathname.startsWith(`${href}/`);
 
   return (
     <Link
       href={href}
+      title={title}
       aria-current={active ? "page" : undefined}
       className={cn(
         "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground",
@@ -44,7 +51,12 @@ export function SidebarNav({ courses }: { courses: { id: number; name: string }[
       <ul className="flex flex-col gap-1 overflow-y-auto">
         {courses.map((course) => (
           <li key={course.id}>
-            <NavLink href={`/courses/${course.id}`} icon={BookOpen} label={course.name} />
+            <NavLink
+              href={`/courses/${course.id}`}
+              icon={BookOpen}
+              label={course.name}
+              title={course.name}
+            />
           </li>
         ))}
       </ul>
