@@ -1,0 +1,1 @@
+ALTER TYPE "public"."quiz_kind" ADD VALUE 'exam';

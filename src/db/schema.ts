@@ -141,8 +141,9 @@ export const chaptersRelations = relations(chapters, ({ one, many }) => ({
   quizChapters: many(quizChapters),
 }));
 
-// "review" quizzes are copied from other quizzes of the course, without AI.
-export const quizKind = pgEnum("quiz_kind", ["generated", "review"]);
+// "review" and "exam" quizzes are copied from other quizzes of the course, without AI. Exams show no
+// correct answers until they are submitted.
+export const quizKind = pgEnum("quiz_kind", ["generated", "review", "exam"]);
 
 export const quizzes = pgTable(
   "quizzes",
