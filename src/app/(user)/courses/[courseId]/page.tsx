@@ -6,6 +6,7 @@ import { cache } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
+import { QuizKindLabel } from "@/components/quiz-kind-label";
 import { MAX_CHAPTERS_PER_COURSE } from "@/lib/plans";
 import { pluralize } from "@/lib/pluralize";
 import { courseIdSchema } from "@/lib/validations/course";
@@ -23,9 +24,6 @@ import { QuizGenerator } from "./quiz-generator";
 import { ReviewQuizForm } from "./review-quiz-form";
 
 type Props = { params: Promise<{ courseId: string }> };
-
-// Copied quizzes get a label in the quiz list; generated ones need none.
-const KIND_LABELS = { review: "Review", exam: "Exam" } as const;
 
 // Shared by generateMetadata and the page, so a request loads the course once.
 const loadCourse = cache(async (courseId: string) => {
@@ -130,11 +128,7 @@ export default async function CoursePage({ params }: Props) {
                         >
                           {quiz.name}
                         </Link>
-                        {quiz.kind === "generated" ? null : (
-                          <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 align-middle text-xs font-medium text-primary">
-                            {KIND_LABELS[quiz.kind]}
-                          </span>
-                        )}
+                        <QuizKindLabel kind={quiz.kind} />
                         {quiz.description ? (
                           <p className="mt-0.5 text-sm text-muted-foreground">{quiz.description}</p>
                         ) : null}
