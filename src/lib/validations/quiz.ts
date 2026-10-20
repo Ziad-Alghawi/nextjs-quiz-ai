@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  EXAM_QUESTION_COUNTS,
   MAX_CHAPTERS_PER_COURSE,
   MAX_PDF_BYTES,
   MAX_PDF_MB,
@@ -99,6 +100,17 @@ export const reviewQuizSchema = z.object({
       `Select at most ${MAX_REVIEW_QUIZZES} quizzes.`,
     ),
   questionCount: formQuestionCount,
+});
+
+/** A course exam as the form sends it; every plan offers every exam count. */
+export const examSchema = z.object({
+  courseId: courseIdSchema,
+  questionCount: z.coerce
+    .number()
+    .refine(
+      (count) => EXAM_QUESTION_COUNTS.includes(count),
+      "Choose one of the offered question counts.",
+    ),
 });
 
 export type GeneratedQuiz = z.infer<typeof generatedQuizSchema>;

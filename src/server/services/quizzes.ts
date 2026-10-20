@@ -1,8 +1,9 @@
 import "server-only";
 import { and, asc, count, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { questionAnswers, questions, quizChapters, quizzes } from "@/db/schema";
-import { isQuestionCountAllowed, REVIEW_BURST_LIMIT } from "@/lib/plans";
+import { courses, questionAnswers, questions, quizChapters, quizzes } from "@/db/schema";
+import { EXAM_BURST_LIMIT, isQuestionCountAllowed, REVIEW_BURST_LIMIT } from "@/lib/plans";
+import { pluralize } from "@/lib/pluralize";
 import { pickReviewQuestions, reviewName } from "@/lib/review";
 import { MINUTE_MS } from "@/lib/time";
 import type { GeneratedQuiz } from "@/lib/validations/quiz";
@@ -161,6 +162,38 @@ export async function createReviewQuiz(
   });
 }
 
+type ExamResult =
+  | { quizId: number }
+  | { error: "not-found" | "rate-limit" }
+  | { error: "too-few"; available: number };
+
+/**
+ * Makes a course exam from questions of all the course's generated quizzes, spread evenly over them.
+ * No AI, so it doesn't count toward the monthly quota, and every plan offers every exam count.
+ */
+export async function createExamQuiz(
+  userId: string,
+  input: { courseId: number; questionCount: number },
+): Promise<ExamResult> {
+  const { exams, windowMinutes } = EXAM_BURST_LIMIT;
+  if (!(await consumeRateLimit(`exam:${userId}`, exams, windowMinutes * MINUTE_MS))) {
+    return { error: "rate-limit" };
+  }
+
+  const [course] = await db
+    .select({ name: courses.name })
+    .from(courses)
+    .where(and(eq(courses.id, input.courseId), eq(courses.userId, userId)));
+  if (!course) return { error: "not-found" };
+
+  const sources = await findCopySources(userId, input.courseId);
+  return copyQuestions(userId, input.courseId, sources, input.questionCount, {
+    name: `Exam: ${course.name}`,
+    description: `${pluralize(input.questionCount, "question")} from ${pluralize(sources.length, "quiz", "quizzes")}.`,
+    kind: "exam",
+  });
+}
+
 /**
  * The user's generated quizzes of the course (only those in `quizIds`, if given) with what copying
  * their questions needs. Copies are not sources themselves, so a copy never copies a copy.
@@ -200,7 +233,7 @@ async function copyQuestions(
   courseId: number,
   sources: Awaited<ReturnType<typeof findCopySources>>,
   count: number,
-  quiz: { name: string; description: string; kind: "review" },
+  quiz: { name: string; description: string; kind: "review" | "exam" },
 ): Promise<{ quizId: number } | { error: "too-few"; available: number }> {
   const available = sources.reduce((total, source) => total + source.questions.length, 0);
   if (available < count) return { error: "too-few", available };
