@@ -8,6 +8,7 @@ import {
   QUESTION_COUNTS,
 } from "@/lib/plans";
 import { chapterIdSchema, courseIdSchema } from "./course";
+import { idSchema } from "./id";
 
 // The browser-reported MIME type is client-controlled and sometimes empty, so check the file header.
 const PDF_SIGNATURE = "%PDF-";
@@ -83,8 +84,6 @@ export const chapterQuizSchema = z.object({
   questionCount: questionCountSchema,
 });
 
-// Ids arrive as strings from forms and URLs.
-const idSchema = z.coerce.number().int().positive();
 export const quizIdSchema = idSchema;
 export const attemptIdSchema = idSchema;
 
