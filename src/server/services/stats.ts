@@ -24,12 +24,12 @@ export async function getUserMetrics(userId: string) {
       .where(eq(quizAttempts.userId, userId)),
   ]);
 
-  return [
-    { label: "Quizzes", value: quizCount.value },
-    { label: "Questions", value: questionCount.value },
-    { label: "Submissions", value: attemptStats.count },
-    { label: "Average Score", value: attemptStats.averagePercent, unit: "%" },
-  ];
+  return {
+    quizzes: quizCount.value,
+    questions: questionCount.value,
+    attempts: attemptStats.count,
+    averagePercent: attemptStats.averagePercent,
+  };
 }
 
 /** The user's attempts per day (UTC dates, YYYY-MM-DD) over the last year. */
