@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
+import { examPaper } from "@/lib/exam";
 import { quizIdSchema } from "@/lib/validations/quiz";
 import { getQuizWithQuestions } from "@/server/services/quizzes";
 import { requireUser } from "@/server/session";
+import { ExamPlayer } from "../exam-player";
 import { QuizPlayer } from "../quiz-player";
 
 type Props = { params: Promise<{ quizId: string }> };
@@ -31,14 +33,12 @@ export default async function QuizPage({
   searchParams,
 }: Props & { searchParams: Promise<{ notice?: string }> }) {
   const quiz = await loadQuiz((await params).quizId);
+  const exitHref = `/courses/${quiz.courseId}`;
+  // Everything passed to a client component is sent to the browser, so an exam gets only its paper.
+  if (quiz.kind === "exam") return <ExamPlayer exam={examPaper(quiz)} exitHref={exitHref} />;
+
   // Set by the upload form when the document was longer than the text limit.
   const { notice } = await searchParams;
 
-  return (
-    <QuizPlayer
-      quiz={quiz}
-      exitHref={`/courses/${quiz.courseId}`}
-      truncated={notice === "truncated"}
-    />
-  );
+  return <QuizPlayer quiz={quiz} exitHref={exitHref} truncated={notice === "truncated"} />;
 }

@@ -20,3 +20,5 @@ export function examPaper(quiz: ExamSource) {
     })),
   };
 }
+
+export type ExamPaper = ReturnType<typeof examPaper>;
