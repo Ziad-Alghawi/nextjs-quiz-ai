@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { FileText } from "lucide-react";
+import { FileText, Play } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
+import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
 import { MAX_CHAPTERS_PER_COURSE } from "@/lib/plans";
@@ -141,22 +142,31 @@ export default async function CoursePage({ params }: Props) {
               <ul className="divide-y">
                 {course.quizzes.map((quiz) => (
                   <li key={quiz.id}>
-                    <Link
-                      href={`/quizzes/${quiz.id}`}
-                      className="flex flex-col gap-0.5 rounded-md pt-3 pb-2 hover:bg-accent/50"
-                    >
-                      <span className="font-medium">
-                        {quiz.name}
+                    <div className="flex items-start gap-3 pt-3 pb-2">
+                      <div className="min-w-0 flex-1">
+                        <Link
+                          href={`/quizzes/${quiz.id}`}
+                          className="font-medium text-primary underline-offset-4 wrap-break-word hover:underline"
+                        >
+                          {quiz.name}
+                        </Link>
                         {quiz.kind === "review" ? (
                           <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 align-middle text-xs font-medium text-primary">
                             Review
                           </span>
                         ) : null}
-                      </span>
-                      {quiz.description ? (
-                        <span className="text-sm text-muted-foreground">{quiz.description}</span>
-                      ) : null}
-                    </Link>
+                        {quiz.description ? (
+                          <p className="mt-0.5 text-sm text-muted-foreground">{quiz.description}</p>
+                        ) : null}
+                      </div>
+                      {/* Touch screens have no hover, so a visible button says where the quiz starts. */}
+                      <Button variant="outline" size="sm" asChild className="shrink-0 gap-1.5">
+                        <Link href={`/quizzes/${quiz.id}`} aria-label={`Start ${quiz.name}`}>
+                          <Play className="size-3.5" aria-hidden />
+                          Start
+                        </Link>
+                      </Button>
+                    </div>
                     <QuizAttempts entry={attempts.get(quiz.id)} />
                   </li>
                 ))}
