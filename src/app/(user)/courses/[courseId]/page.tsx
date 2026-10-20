@@ -9,12 +9,14 @@ import { MAX_CHAPTERS_PER_COURSE } from "@/lib/plans";
 import { pluralize } from "@/lib/pluralize";
 import { courseIdSchema } from "@/lib/validations/course";
 import { getCourse } from "@/server/services/courses";
+import { listCourseAttempts } from "@/server/services/attempts";
 import { listReviewSources } from "@/server/services/quizzes";
 import { getMonthlyUsage } from "@/server/services/usage";
 import { requireUser } from "@/server/session";
 import { ChapterUpload } from "./chapter-upload";
 import { CourseActions } from "./course-actions";
 import { DeleteChapterButton } from "./delete-chapter-button";
+import { QuizAttempts } from "./quiz-attempts";
 import { QuizGenerator } from "./quiz-generator";
 import { ReviewQuizForm } from "./review-quiz-form";
 
@@ -41,9 +43,10 @@ const formatSize = (bytes: number) =>
 export default async function CoursePage({ params }: Props) {
   const course = await loadCourse((await params).courseId);
   const user = await requireUser(`/courses/${course.id}`);
-  const [{ plan, used, limit }, reviewSources] = await Promise.all([
+  const [{ plan, used, limit }, reviewSources, attempts] = await Promise.all([
     getMonthlyUsage(user.id),
     listReviewSources(user.id, course.id),
+    listCourseAttempts(user.id, course.id),
   ]);
 
   return (
@@ -140,7 +143,7 @@ export default async function CoursePage({ params }: Props) {
                   <li key={quiz.id}>
                     <Link
                       href={`/quizzes/${quiz.id}`}
-                      className="flex flex-col gap-0.5 rounded-md py-3 hover:bg-accent/50"
+                      className="flex flex-col gap-0.5 rounded-md pt-3 pb-2 hover:bg-accent/50"
                     >
                       <span className="font-medium">
                         {quiz.name}
@@ -154,6 +157,7 @@ export default async function CoursePage({ params }: Props) {
                         <span className="text-sm text-muted-foreground">{quiz.description}</span>
                       ) : null}
                     </Link>
+                    <QuizAttempts entry={attempts.get(quiz.id)} />
                   </li>
                 ))}
               </ul>
