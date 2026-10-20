@@ -27,3 +27,6 @@ export function scoreAttempt(questions: ScorableQuestion[], selected: SelectedAn
     answers: answered.map(({ questionId, answerId }) => ({ questionId, answerId })),
   };
 }
+
+/** The share of correct answers as a whole percentage. */
+export const scorePercent = (score: number, total: number) => Math.round((score / total) * 100);
