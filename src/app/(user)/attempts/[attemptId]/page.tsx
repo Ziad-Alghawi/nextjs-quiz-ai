@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, Shuffle } from "lucide-react";
 import Link from "next/link";
 import { loadAttempt } from "@/app/attempts/load-attempt";
 import { QuestionReview } from "@/components/question-review";
 import { Button } from "@/components/ui/button";
 import { PageHeading } from "@/components/ui/page-heading";
+import { missedQuestions } from "@/lib/practice";
 import { scorePercent } from "@/lib/scoring";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +23,9 @@ export default async function AttemptPage({ params }: Props) {
   const { attemptId } = await params;
   const { attempt, quiz } = await loadAttempt(attemptId, `/attempts/${attemptId}`);
   const percentage = scorePercent(attempt.score, attempt.totalQuestions);
+  // Attempts saved before the chosen answers were stored have nothing to practise.
+  const missedCount =
+    attempt.answers.length > 0 ? missedQuestions(quiz.questions, attempt.answers).length : 0;
 
   return (
     <div className="mx-auto flex w-full max-w-180 flex-col gap-6">
@@ -53,6 +57,14 @@ export default async function AttemptPage({ params }: Props) {
             Try again
           </Link>
         </Button>
+        {missedCount > 0 ? (
+          <Button variant="outline" asChild className="gap-2">
+            <Link href={`/attempts/${attempt.id}/practice`}>
+              <Shuffle className="size-4" aria-hidden />
+              Practice mistakes ({missedCount})
+            </Link>
+          </Button>
+        ) : null}
         <Button variant="outline" asChild>
           <Link href={`/courses/${quiz.courseId}`}>Back to course</Link>
         </Button>

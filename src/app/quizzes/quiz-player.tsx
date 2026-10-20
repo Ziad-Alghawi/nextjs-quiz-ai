@@ -17,8 +17,12 @@ type QuizPlayerProps = {
   quiz: PlayerQuiz;
   /** Where ✕ leads: the quiz's course, or the landing page for the sample quiz. */
   exitHref: string;
+  /** Defaults to "Back to course", or "Back to home" for the sample quiz. */
+  exitLabel?: string;
   /** The sample quiz has no database row, so its result is only shown, never saved. */
   isSample?: boolean;
+  /** Starts with a practice round (questions already shuffled): its result is never saved. */
+  practice?: boolean;
   /** Set when the quiz was made from only the first part of a long PDF. */
   truncated?: boolean;
 };
@@ -29,10 +33,17 @@ const LETTERS = "ABCDEF";
  * One question at a time: the user picks an answer, sees right away whether it was correct and why,
  * then moves on. The score is computed again on the server when the quiz is submitted.
  */
-export function QuizPlayer({ quiz, exitHref, isSample, truncated }: QuizPlayerProps) {
+export function QuizPlayer({
+  quiz,
+  exitHref,
+  exitLabel,
+  isSample,
+  practice = false,
+  truncated,
+}: QuizPlayerProps) {
   // The questions being played: the whole quiz, or a practice round of missed ones. `number`
   // counts the restarts, so focus can move to the first question of a new round.
-  const [round, setRound] = useState({ questions: quiz.questions, practice: false, number: 0 });
+  const [round, setRound] = useState({ questions: quiz.questions, practice, number: 0 });
   const { questions } = round;
   const [index, setIndex] = useState(0);
   const [chosen, setChosen] = useState<SelectedAnswer[]>([]);
@@ -131,7 +142,7 @@ export function QuizPlayer({ quiz, exitHref, isSample, truncated }: QuizPlayerPr
         onRetry={retry}
         onPracticeMistakes={practiceMistakes}
         exitHref={exitHref}
-        exitLabel={isSample ? "Back to home" : "Back to course"}
+        exitLabel={exitLabel ?? (isSample ? "Back to home" : "Back to course")}
       />
     );
   }
