@@ -2,6 +2,7 @@
   "name": "quiz-ai",
   "version": "0.1.0",
   "description": "Turns a PDF into a multiple-choice quiz with AI, scores the answers and tracks progress.",
+  "license": "MIT",
   "private": true,
   "repository": {
     "type": "git",
