@@ -102,7 +102,6 @@ export function ExamPlayer({ exam, exitHref }: ExamPlayerProps) {
     <div className="flex flex-col">
       <PlayerTopBar
         name={exam.name}
-        tag="Exam"
         exitHref={exitHref}
         exitLabel="Exit exam"
         index={index}
