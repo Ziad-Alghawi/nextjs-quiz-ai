@@ -104,7 +104,8 @@ export type QuizWithQuestions = NonNullable<Awaited<ReturnType<typeof getQuizWit
 /** The user's quizzes, newest first. */
 export function listQuizzes(userId: string) {
   return db.query.quizzes.findMany({
-    columns: { id: true, name: true, description: true },
+    columns: { id: true, name: true, description: true, kind: true },
+    with: { course: { columns: { id: true, name: true } } },
     where: eq(quizzes.userId, userId),
     orderBy: desc(quizzes.createdAt),
   });
