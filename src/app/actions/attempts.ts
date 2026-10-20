@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import type { FormState } from "@/lib/form-state";
-import { MAX_QUESTIONS } from "@/lib/plans";
+import { MAX_ATTEMPT_QUESTIONS } from "@/lib/plans";
 import { attemptIdSchema, quizIdSchema } from "@/lib/validations/quiz";
 import * as attempts from "@/server/services/attempts";
 import { getCurrentUser, requireUser } from "@/server/session";
@@ -14,7 +14,7 @@ const submitQuizSchema = z.object({
   quizId: quizIdSchema,
   answers: z
     .array(z.object({ questionId: z.number().int(), answerId: z.number().int() }))
-    .max(MAX_QUESTIONS),
+    .max(MAX_ATTEMPT_QUESTIONS),
 });
 
 type SubmitQuizResult =

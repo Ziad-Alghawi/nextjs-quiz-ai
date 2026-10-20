@@ -8,7 +8,10 @@ import { getQuizWithQuestions } from "./quizzes";
 type SaveAttemptResult =
   { attemptId: number; score: number; total: number } | { error: "not-found" | "incomplete" };
 
-/** Scores the chosen answers against the user's quiz and stores the attempt together with them. */
+/**
+ * Scores the chosen answers against the user's quiz and stores the attempt together with them.
+ * Exams may leave questions unanswered: they count as wrong and get no answer row.
+ */
 export async function saveAttempt(
   userId: string,
   quizId: number,
@@ -18,14 +21,20 @@ export async function saveAttempt(
   if (!quiz) return { error: "not-found" };
 
   const { score, total, complete, answers } = scoreAttempt(quiz.questions, selected);
-  if (!complete) return { error: "incomplete" };
+  // The kind comes from the database, so only a real exam can be submitted incomplete.
+  if (!complete && quiz.kind !== "exam") return { error: "incomplete" };
 
   const attemptId = await db.transaction(async (tx) => {
     const [{ id }] = await tx
       .insert(quizAttempts)
       .values({ quizId, userId, score, totalQuestions: total })
       .returning({ id: quizAttempts.id });
-    await tx.insert(attemptAnswers).values(answers.map((answer) => ({ ...answer, attemptId: id })));
+    // Drizzle rejects an insert without rows, which an exam with nothing answered would be.
+    if (answers.length > 0) {
+      await tx
+        .insert(attemptAnswers)
+        .values(answers.map((answer) => ({ ...answer, attemptId: id })));
+    }
     return id;
   });
   return { attemptId, score, total };
