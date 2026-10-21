@@ -14,6 +14,8 @@ import {
 import { relations } from "drizzle-orm";
 import type { PlanId } from "@/lib/plans";
 
+// Every table enables row-level security without policies: Supabase's API roles (anon, authenticated)
+// then see no rows, while the app connects as the table owner, which RLS doesn't restrict.
 export const users = pgTable("user", {
   id: text("id").notNull().primaryKey(),
   name: text("name").notNull(),
@@ -25,7 +27,7 @@ export const users = pgTable("user", {
   subscribed: boolean("subscribed").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}).enableRLS();
 
 export const userRelations = relations(users, ({ many }) => ({
   courses: many(courses),
@@ -56,7 +58,7 @@ export const authAccounts = pgTable(
     index("auth_account_user_id_idx").on(table.userId),
     uniqueIndex("auth_account_provider_account_idx").on(table.providerId, table.accountId),
   ],
-);
+).enableRLS();
 
 export const authSessions = pgTable(
   "auth_session",
@@ -73,7 +75,7 @@ export const authSessions = pgTable(
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
   (table) => [index("auth_session_user_id_idx").on(table.userId)],
-);
+).enableRLS();
 
 export const authVerifications = pgTable(
   "auth_verification",
@@ -86,7 +88,7 @@ export const authVerifications = pgTable(
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
   (table) => [index("auth_verification_identifier_idx").on(table.identifier)],
-);
+).enableRLS();
 
 // Request counters for Better Auth's rate limiter, shared by all server instances.
 export const rateLimits = pgTable("rate_limit", {
@@ -94,7 +96,7 @@ export const rateLimits = pgTable("rate_limit", {
   key: text("key").notNull().unique(),
   count: integer("count").notNull(),
   lastRequest: bigint("last_request", { mode: "number" }).notNull(),
-});
+}).enableRLS();
 
 export const courses = pgTable(
   "courses",
@@ -109,7 +111,7 @@ export const courses = pgTable(
   // Also keeps "My quizzes" unique: getOrCreateDefaultCourse's upsert and the backfill in migration
   // 0010 rely on it, so parallel requests or a re-run never create two of them.
   (table) => [uniqueIndex("courses_user_id_name_idx").on(table.userId, table.name)],
-);
+).enableRLS();
 
 export const coursesRelations = relations(courses, ({ many }) => ({
   chapters: many(chapters),
@@ -134,7 +136,7 @@ export const chapters = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [index("sources_course_id_idx").on(table.courseId)],
-);
+).enableRLS();
 
 export const chaptersRelations = relations(chapters, ({ one, many }) => ({
   course: one(courses, { fields: [chapters.courseId], references: [courses.id] }),
@@ -164,7 +166,7 @@ export const quizzes = pgTable(
     index("quizzes_user_id_idx").on(table.userId),
     index("quizzes_course_id_idx").on(table.courseId),
   ],
-);
+).enableRLS();
 
 export const quizzesRelations = relations(quizzes, ({ one, many }) => ({
   course: one(courses, { fields: [quizzes.courseId], references: [courses.id] }),
@@ -188,7 +190,7 @@ export const quizChapters = pgTable(
     primaryKey({ columns: [table.quizId, table.chapterId] }),
     index("quiz_sources_source_id_idx").on(table.chapterId),
   ],
-);
+).enableRLS();
 
 export const quizChaptersRelations = relations(quizChapters, ({ one }) => ({
   quiz: one(quizzes, { fields: [quizChapters.quizId], references: [quizzes.id] }),
@@ -207,7 +209,7 @@ export const questions = pgTable(
       .references(() => quizzes.id, { onDelete: "cascade" }),
   },
   (table) => [index("questions_quiz_id_idx").on(table.quizId)],
-);
+).enableRLS();
 
 export const questionsRelations = relations(questions, ({ one, many }) => ({
   quiz: one(quizzes, {
@@ -228,7 +230,7 @@ export const questionAnswers = pgTable(
     isCorrect: boolean("is_correct").default(false).notNull(),
   },
   (table) => [index("answers_question_id_idx").on(table.questionId)],
-);
+).enableRLS();
 
 export const questionAnswersRelations = relations(questionAnswers, ({ one }) => ({
   question: one(questions, {
@@ -256,7 +258,7 @@ export const quizAttempts = pgTable(
     index("quiz_attempts_quiz_id_idx").on(table.quizId),
     index("quiz_attempts_user_id_idx").on(table.userId),
   ],
-);
+).enableRLS();
 
 export const quizAttemptsRelations = relations(quizAttempts, ({ one, many }) => ({
   quiz: one(quizzes, {
@@ -287,7 +289,7 @@ export const attemptAnswers = pgTable(
     index("attempt_answers_question_id_idx").on(table.questionId),
     index("attempt_answers_answer_id_idx").on(table.answerId),
   ],
-);
+).enableRLS();
 
 export const attemptAnswersRelations = relations(attemptAnswers, ({ one }) => ({
   attempt: one(quizAttempts, { fields: [attemptAnswers.attemptId], references: [quizAttempts.id] }),
@@ -319,4 +321,4 @@ export const quizGenerations = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [index("quiz_generations_user_id_created_at_idx").on(table.userId, table.createdAt)],
-);
+).enableRLS();

@@ -127,6 +127,13 @@
       "when": 1792515540035,
       "tag": "0017_quiz_kind_exam",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1792610817977,
+      "tag": "0018_enable_rls",
+      "breakpoints": true
     }
   ]
 }
