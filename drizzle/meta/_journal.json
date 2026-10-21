@@ -64,6 +64,76 @@
       "when": 1791551492250,
       "tag": "0008_stripe_customer_id_unique",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791990665008,
+      "tag": "0009_courses_and_sources",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791990667129,
+      "tag": "0010_default_course",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792007296619,
+      "tag": "0011_source_text_truncated",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792016964667,
+      "tag": "0012_question_explanation",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792088495736,
+      "tag": "0013_generation_usage",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792350228614,
+      "tag": "0014_quiz_kind",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1792446660018,
+      "tag": "0015_rename_submissions_to_attempts",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1792446793195,
+      "tag": "0016_attempt_answers",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792515540035,
+      "tag": "0017_quiz_kind_exam",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1792610817977,
+      "tag": "0018_enable_rls",
+      "breakpoints": true
     }
   ]
 }

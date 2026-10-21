@@ -35,7 +35,3 @@ export async function requireUser(returnTo: string): Promise<CurrentUser> {
   if (!user) redirect(`/sign-in?callbackUrl=${encodeURIComponent(returnTo)}`);
   return user;
 }
-
-export async function signOut() {
-  await auth.api.signOut({ headers: await headers() });
-}

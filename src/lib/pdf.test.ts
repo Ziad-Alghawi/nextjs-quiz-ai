@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { MAX_DOCUMENT_CHARS } from "./plans";
-import { limitDocumentText } from "./pdf";
+import { makePdf } from "@/test/make-pdf";
+import { limitDocumentText, readPdfText, shareDocumentBudget } from "./pdf";
 
 describe("limitDocumentText", () => {
   it("keeps a document within the limit unchanged", () => {
@@ -22,5 +23,50 @@ describe("limitDocumentText", () => {
   it("cuts at the limit when there is no space to cut at", () => {
     const result = limitDocumentText("x".repeat(MAX_DOCUMENT_CHARS + 1));
     expect(result).toEqual({ text: "x".repeat(MAX_DOCUMENT_CHARS), truncated: true });
+  });
+});
+
+describe("shareDocumentBudget", () => {
+  it("keeps documents that fit together unchanged", () => {
+    const documents = [
+      { title: "a", text: "a".repeat(MAX_DOCUMENT_CHARS / 2) },
+      { title: "b", text: "b".repeat(MAX_DOCUMENT_CHARS / 2) },
+    ];
+    expect(shareDocumentBudget(documents)).toEqual({ documents, truncated: false });
+  });
+
+  it("gives what a short document doesn't use to the longer ones, keeping the order", () => {
+    const result = shareDocumentBudget([
+      { title: "short", text: "a".repeat(10_000) },
+      { title: "longest", text: "b".repeat(MAX_DOCUMENT_CHARS) },
+      { title: "long", text: "c".repeat(100_000) },
+    ]);
+
+    // Equal shares are 50,000 each; the short one leaves 40,000 for the two long ones.
+    expect(result.documents.map(({ title, text }) => [title, text.length])).toEqual([
+      ["short", 10_000],
+      ["longest", 70_000],
+      ["long", 70_000],
+    ]);
+    expect(result.truncated).toBe(true);
+  });
+});
+
+describe("readPdfText", () => {
+  it("returns the text of every page and the page count", async () => {
+    expect(await readPdfText(makePdf(["Cells divide.", "Genes mutate."]))).toEqual({
+      text: expect.stringMatching(/Cells divide\.\s+Genes mutate\./),
+      truncated: false,
+      pageCount: 2,
+    });
+  });
+
+  it("explains a damaged PDF and a PDF without text", async () => {
+    expect(await readPdfText(new Blob(["%PDF-1.4 broken"]))).toEqual({
+      error: expect.stringContaining("damaged or password-protected"),
+    });
+    expect(await readPdfText(makePdf([""]))).toEqual({
+      error: expect.stringContaining("Scanned documents"),
+    });
   });
 });

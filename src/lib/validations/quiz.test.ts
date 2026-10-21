@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-  generatedQuizSchema,
-  MAX_PDF_BYTES,
-  pdfUploadSchema,
-  quizIdSchema,
-  type GeneratedQuiz,
-} from "./quiz";
+import { MAX_PDF_BYTES, MAX_PDF_MB, MAX_QUESTIONS } from "@/lib/plans";
+import { generatedQuizSchema, pdfUploadSchema, type GeneratedQuiz } from "./quiz";
 
 const answers = (correctCount: number, total = 4) =>
   Array.from({ length: total }, (_, i) => ({
@@ -22,6 +17,7 @@ const quizWith = (questions: GeneratedQuiz["questions"]): GeneratedQuiz => ({
 const question = (answerList = answers(1)) => ({
   questionText: "What do plants produce?",
   answers: answerList,
+  explanation: "Plants produce oxygen during photosynthesis.",
 });
 
 describe("generatedQuizSchema", () => {
@@ -42,8 +38,9 @@ describe("generatedQuizSchema", () => {
     expect(generatedQuizSchema.safeParse(quizWith([])).success).toBe(false);
   });
 
-  it("rejects a quiz with more than 30 questions", () => {
-    const questions = Array.from({ length: 31 }, () => question());
+  // Questions beyond the requested count are cut after generation; this only stops absurd output.
+  it(`rejects a quiz with more than ${2 * MAX_QUESTIONS} questions`, () => {
+    const questions = Array.from({ length: 2 * MAX_QUESTIONS + 1 }, () => question());
     expect(generatedQuizSchema.safeParse(quizWith(questions)).success).toBe(false);
   });
 
@@ -72,22 +69,14 @@ describe("pdfUploadSchema", () => {
     expect(await firstError(new Blob([]))).toBe("The selected file is empty.");
   });
 
-  it("rejects a file larger than 4 MB", async () => {
-    expect(await firstError(pdf(new Uint8Array(MAX_PDF_BYTES)))).toMatch(/larger than 4 MB/);
+  it(`rejects a file larger than ${MAX_PDF_MB} MB`, async () => {
+    expect(await firstError(pdf(new Uint8Array(MAX_PDF_BYTES)))).toContain(
+      `larger than ${MAX_PDF_MB} MB`,
+    );
   });
 
   it("rejects a file without a PDF header, whatever its MIME type", async () => {
     const renamedText = new Blob(["just some notes"], { type: "application/pdf" });
     expect(await firstError(renamedText)).toBe("Only PDF files are supported.");
-  });
-});
-
-describe("quizIdSchema", () => {
-  it("accepts a positive integer from a URL segment", () => {
-    expect(quizIdSchema.parse("42")).toBe(42);
-  });
-
-  it.each(["abc", "12abc", "0", "-3", "1.5", ""])("rejects %j", (input) => {
-    expect(quizIdSchema.safeParse(input).success).toBe(false);
   });
 });

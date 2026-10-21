@@ -4,7 +4,8 @@ type ScorableQuestion = { id: number; answers: { id: number; isCorrect: boolean 
 
 /**
  * Scores an attempt. Only the first answer given per question counts, and answer ids that don't
- * belong to that question are ignored, so a crafted request can't earn extra points.
+ * belong to that question are ignored, so a crafted request can't earn extra points. `answers` are
+ * the answers that count, in question order.
  */
 export function scoreAttempt(questions: ScorableQuestion[], selected: SelectedAnswer[]) {
   const chosen = new Map<number, number>();
@@ -12,12 +13,20 @@ export function scoreAttempt(questions: ScorableQuestion[], selected: SelectedAn
     if (!chosen.has(questionId)) chosen.set(questionId, answerId);
   }
 
-  const answerFor = (question: ScorableQuestion) =>
-    question.answers.find((answer) => answer.id === chosen.get(question.id));
+  const answered = questions.flatMap((question) => {
+    const answer = question.answers.find((option) => option.id === chosen.get(question.id));
+    return answer
+      ? [{ questionId: question.id, answerId: answer.id, isCorrect: answer.isCorrect }]
+      : [];
+  });
 
   return {
-    score: questions.filter((question) => answerFor(question)?.isCorrect).length,
+    score: answered.filter((answer) => answer.isCorrect).length,
     total: questions.length,
-    complete: questions.every((question) => answerFor(question) !== undefined),
+    complete: answered.length === questions.length,
+    answers: answered.map(({ questionId, answerId }) => ({ questionId, answerId })),
   };
 }
+
+/** The share of correct answers as a whole percentage. */
+export const scorePercent = (score: number, total: number) => Math.round((score / total) * 100);

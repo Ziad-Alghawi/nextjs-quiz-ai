@@ -1,13 +1,17 @@
 import { eq, like } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
-
-// CI runs these tests with only DATABASE_URL set (SKIP_ENV_VALIDATION); Better Auth needs these.
-vi.hoisted(() => {
-  process.env.AUTH_SECRET ??= "auth-db-test-secret-with-enough-length";
-  process.env.APP_URL ??= "http://localhost:3000";
-  process.env.GOOGLE_CLIENT_ID ??= "test-client-id";
-  process.env.GOOGLE_CLIENT_SECRET ??= "test-client-secret";
-});
+import { db } from "@/db";
+import {
+  authAccounts,
+  authSessions,
+  authVerifications,
+  courses,
+  quizzes,
+  rateLimits,
+  users,
+} from "@/db/schema";
+import { getSignInMethods } from "@/server/services/account";
+import { auth } from "./auth";
 
 // Collects the emails instead of sending them, also when .env configures SMTP.
 const sent = vi.hoisted(() => [] as { to: string; subject: string; text: string }[]);
@@ -18,12 +22,6 @@ vi.mock("@/server/services/mail", () => ({
 }));
 // after() needs a Next.js request; the email promise has already started and simply runs.
 vi.mock("next/server", () => ({ after: () => {} }));
-
-const { db } = await import("@/db");
-const { authAccounts, authSessions, authVerifications, quizzes, rateLimits, users } =
-  await import("@/db/schema");
-const { auth } = await import("./auth");
-const { getSignInMethods } = await import("@/server/services/account");
 
 const PREFIX = "auth-db-test-";
 const email = (name: string) => `${PREFIX}${name}@example.com`;
@@ -109,8 +107,8 @@ describe("sign-up and sign-in", () => {
     expect((await signIn(address)).cookie).toBeDefined();
   });
 
-  // Production bug: accounts moved over from the old auth library sign in with Google only. Signing
-  // up with their email looked successful, but nothing was created and sign-in said "invalid".
+  // A Google-only account has no password: signing up with its email creates nothing and signing in
+  // says "invalid", so without this email the owner wouldn't know how to get in.
   it("emails the owner of a Google-only account how to sign in when someone signs up with it", async () => {
     const address = email("google-only");
     const [owner] = await db
@@ -264,11 +262,15 @@ describe("account settings", () => {
     expect((await request("GET", "/get-session", undefined, changed.cookie)).body).not.toBeNull();
   });
 
-  it("deletes the account with its quizzes after checking the password", async () => {
+  it("deletes the account with its courses and quizzes after checking the password", async () => {
     await signUp(email("delete"));
     const { cookie } = await signIn(email("delete"));
     const user = await userByEmail(email("delete"));
-    await db.insert(quizzes).values({ name: "Doomed quiz", userId: user!.id });
+    const [course] = await db
+      .insert(courses)
+      .values({ name: "Doomed course", userId: user!.id })
+      .returning({ id: courses.id });
+    await db.insert(quizzes).values({ name: "Doomed quiz", userId: user!.id, courseId: course.id });
 
     expect((await post("/delete-user", { password: "wrong" }, cookie)).status).toBe(400);
     expect(await userByEmail(email("delete"))).toBeDefined();
@@ -276,5 +278,6 @@ describe("account settings", () => {
     expect((await post("/delete-user", { password: PASSWORD }, cookie)).status).toBe(200);
     expect(await userByEmail(email("delete"))).toBeUndefined();
     expect(await db.select().from(quizzes).where(eq(quizzes.userId, user!.id))).toHaveLength(0);
+    expect(await db.select().from(courses).where(eq(courses.userId, user!.id))).toHaveLength(0);
   });
 });

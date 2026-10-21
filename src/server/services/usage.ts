@@ -2,8 +2,11 @@ import "server-only";
 import { and, count, eq, gte, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { quizGenerations } from "@/db/schema";
-import { GENERATION_BURST_LIMIT, PLANS, type PlanId } from "@/lib/plans";
+import { DAILY_GENERATION_LIMIT, GENERATION_BURST_LIMIT, PLANS, type PlanId } from "@/lib/plans";
+import { DAY_MS } from "@/lib/time";
 import { isSubscribed } from "./billing";
+import type { ModelUsage } from "./generation";
+import { consumeRateLimit } from "./rate-limit";
 
 /** A request that died after reserving (e.g. a timeout) stops holding its slot after this. */
 const PENDING_TIMEOUT = sql`interval '5 minutes'`;
@@ -17,7 +20,7 @@ export class GenerationLimitError extends Error {
   }
 }
 
-const getPlan = async (userId: string): Promise<PlanId> =>
+export const getPlan = async (userId: string): Promise<PlanId> =>
   (await isSubscribed(userId)) ? "pro" : "free";
 
 // Succeeded generations count; failed ones don't, and pending ones only while still in flight.
@@ -85,6 +88,15 @@ export async function reserveGeneration(userId: string) {
       );
     }
 
+    // Last, so a request the user's own limits reject doesn't take one of the shared slots. Throwing
+    // rolls the transaction back, so a request stopped here doesn't count toward the user's quota.
+    const today = new Date().toISOString().slice(0, 10);
+    const key = `generation-daily:${today}`;
+    // The key changes at midnight UTC, so its window never needs to end within the day.
+    if (!(await consumeRateLimit(key, DAILY_GENERATION_LIMIT, DAY_MS, tx))) {
+      throw new GenerationLimitError("Daily limit reached. Please try again tomorrow.", 429);
+    }
+
     const [{ id }] = await tx
       .insert(quizGenerations)
       .values({ userId, plan })
@@ -93,6 +105,40 @@ export async function reserveGeneration(userId: string) {
   });
 }
 
-export async function finishGeneration(id: number, status: "succeeded" | "failed") {
-  await db.update(quizGenerations).set({ status }).where(eq(quizGenerations.id, id));
+export async function finishGeneration(
+  id: number,
+  status: "succeeded" | "failed",
+  usage?: ModelUsage,
+) {
+  await db
+    .update(quizGenerations)
+    .set({ status, ...usage })
+    .where(eq(quizGenerations.id, id));
+}
+
+/**
+ * Reserves a generation (or throws GenerationLimitError), then runs `generate`. Only a run that
+ * returns counts toward the monthly quota; a failed one doesn't. The usage `generate` reports is
+ * saved either way, since a failed run's model calls cost money too.
+ */
+export async function runGeneration<T>(
+  userId: string,
+  generate: (onUsage: (usage: ModelUsage) => void) => Promise<T>,
+) {
+  const id = await reserveGeneration(userId);
+  let usage: ModelUsage | undefined;
+  let succeeded = false;
+  try {
+    const result = await generate((call) => {
+      usage = {
+        model: call.model,
+        inputTokens: (usage?.inputTokens ?? 0) + call.inputTokens,
+        outputTokens: (usage?.outputTokens ?? 0) + call.outputTokens,
+      };
+    });
+    succeeded = true;
+    return result;
+  } finally {
+    await finishGeneration(id, succeeded ? "succeeded" : "failed", usage);
+  }
 }

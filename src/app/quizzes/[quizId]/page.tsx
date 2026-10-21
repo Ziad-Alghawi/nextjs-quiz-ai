@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
+import { examPaper } from "@/lib/exam";
 import { quizIdSchema } from "@/lib/validations/quiz";
 import { getQuizWithQuestions } from "@/server/services/quizzes";
 import { requireUser } from "@/server/session";
-import QuizQuestions from "../QuizQuestions";
+import { ExamPlayer } from "../exam-player";
+import { QuizPlayer } from "../quiz-player";
 
 type Props = { params: Promise<{ quizId: string }> };
 
@@ -26,23 +28,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: quiz.name };
 }
 
-const page = async ({
+export default async function QuizPage({
   params,
   searchParams,
-}: Props & { searchParams: Promise<{ notice?: string }> }) => {
+}: Props & { searchParams: Promise<{ notice?: string }> }) {
   const quiz = await loadQuiz((await params).quizId);
+  const exitHref = `/courses/${quiz.courseId}`;
+  // Everything passed to a client component is sent to the browser, so an exam gets only its paper.
+  if (quiz.kind === "exam") return <ExamPlayer exam={examPaper(quiz)} exitHref={exitHref} />;
+
   // Set by the upload form when the document was longer than the text limit.
   const { notice } = await searchParams;
 
-  return (
-    <>
-      {notice === "truncated" && (
-        <p role="status" className="mt-4 text-center text-sm text-muted-foreground">
-          Only the first part of this long PDF was used.
-        </p>
-      )}
-      <QuizQuestions quiz={quiz} />
-    </>
-  );
-};
-export default page;
+  return <QuizPlayer quiz={quiz} exitHref={exitHref} truncated={notice === "truncated"} />;
+}

@@ -1,18 +1,17 @@
 import type { Metadata } from "next";
-import type { QuizWithQuestions } from "@/server/services/quizzes";
-import QuizQuestions from "../QuizQuestions";
+import { QuizPlayer, type PlayerQuiz } from "../quiz-player";
 
 export const metadata: Metadata = { title: "Sample quiz" };
 
 // A fixed quiz for trying the app without uploading a document. It is never saved.
-const sampleQuiz: QuizWithQuestions = {
+const sampleQuiz: PlayerQuiz = {
   id: 0,
   name: "React basics",
-  description: "A short sample quiz about React.",
   questions: [
     {
       id: 1,
       questionText: "What is your level of understanding React?",
+      explanation: null,
       answers: [
         { id: 1, answerText: "Beginner", isCorrect: true },
         { id: 2, answerText: "Intermediate", isCorrect: false },
@@ -23,6 +22,8 @@ const sampleQuiz: QuizWithQuestions = {
     {
       id: 2,
       questionText: "What is the virtual DOM in React?",
+      explanation:
+        "React keeps a copy of the page in memory, compares it after each change and updates only the parts of the real DOM that differ.",
       answers: [
         { id: 5, answerText: "A representation of the real DOM", isCorrect: true },
         { id: 6, answerText: "A new JavaScript framework", isCorrect: false },
@@ -33,6 +34,8 @@ const sampleQuiz: QuizWithQuestions = {
     {
       id: 3,
       questionText: "What is JSX in React?",
+      explanation:
+        "JSX lets you write HTML-like markup in JavaScript; a compiler turns it into calls that create React elements.",
       answers: [
         { id: 9, answerText: "A syntax extension for JavaScript", isCorrect: true },
         { id: 10, answerText: "A new programming language", isCorrect: false },
@@ -44,5 +47,5 @@ const sampleQuiz: QuizWithQuestions = {
 };
 
 export default function SampleQuizPage() {
-  return <QuizQuestions quiz={sampleQuiz} isSample />;
+  return <QuizPlayer quiz={sampleQuiz} exitHref="/" isSample />;
 }

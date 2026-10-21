@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Card, CardTitle } from "@/components/ui/card";
+import { PageColumn } from "@/components/ui/page-column";
 import { PageHeading } from "@/components/ui/page-heading";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { openBillingPortal, startCheckout } from "@/app/actions/billing";
@@ -18,7 +19,7 @@ export default async function BillingPage() {
   const cancelsOn = plan === "pro" ? await getCancellationDate(user.id) : null;
 
   return (
-    <div className="flex flex-col gap-6 p-4">
+    <PageColumn>
       <PageHeading>Billing</PageHeading>
       <Card>
         <CardTitle>
@@ -45,6 +46,6 @@ export default async function BillingPage() {
         Payments are in test mode, use card{" "}
         <span className="whitespace-nowrap">4242 4242 4242 4242</span>.
       </p>
-    </div>
+    </PageColumn>
   );
 }

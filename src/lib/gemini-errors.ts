@@ -1,14 +1,16 @@
 import { z } from "zod";
+import { pluralize } from "@/lib/pluralize";
 
 const QUOTA_FAILURE = "type.googleapis.com/google.rpc.QuotaFailure";
 const RETRY_INFO = "type.googleapis.com/google.rpc.RetryInfo";
 
-// The parts of Gemini's 429 response (google.rpc error details) that decide the message.
+// The parts of Gemini's error response (google.rpc error details) that decide the message.
 const quotaErrorSchema = z.object({
-  statusCode: z.literal(429),
+  statusCode: z.union([z.literal(402), z.literal(403), z.literal(429)]),
   data: z
     .object({
       error: z.object({
+        message: z.string().optional(),
         details: z
           .array(
             z.object({
@@ -23,12 +25,24 @@ const quotaErrorSchema = z.object({
     .optional(),
 });
 
-const plural = (count: number, unit: string) => `${count} ${unit}${count === 1 ? "" : "s"}`;
+// 402: prepaid credits used up (Google's billing docs). 429 with this text: the spend cap was reached.
+// 403: the project lost API access, e.g. billing stopped. Waiting a minute or another model won't help.
+const BILLING_STOP = /spending cap|prepayment credits/i;
 
-/** User-facing message for a Gemini quota error, or null if the error is not one. */
+/** Whether billing stopped the Gemini API (spend cap, used-up credits): every model is paused. */
+export function isBillingStop(error: unknown) {
+  const parsed = quotaErrorSchema.safeParse(error);
+  if (!parsed.success) return false;
+  const { statusCode, data } = parsed.data;
+  return statusCode !== 429 || BILLING_STOP.test(data?.error.message ?? "");
+}
+
+/** User-facing message for a Gemini quota or billing error, or null if the error is not one. */
 export function getQuotaErrorMessage(error: unknown): string | null {
   const parsed = quotaErrorSchema.safeParse(error);
   if (!parsed.success) return null;
+
+  if (isBillingStop(error)) return "Quiz generation is paused. Please try again later.";
 
   const details = parsed.data.data?.error.details ?? [];
   const quotaIds = details
@@ -46,7 +60,7 @@ export function getQuotaErrorMessage(error: unknown): string | null {
   const seconds = Math.ceil(Number.parseFloat(retryDelay ?? ""));
   if (Number.isFinite(seconds) && seconds > 0) {
     const wait =
-      seconds < 120 ? plural(seconds, "second") : plural(Math.ceil(seconds / 60), "minute");
+      seconds < 120 ? pluralize(seconds, "second") : pluralize(Math.ceil(seconds / 60), "minute");
     return `The AI service is busy right now. Please try again in ${wait}.`;
   }
 

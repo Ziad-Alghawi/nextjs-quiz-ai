@@ -3,6 +3,7 @@ import { getSignInMethods } from "@/server/services/account";
 import { googleErrorMessage } from "@/lib/oauth-errors";
 import { requireUser } from "@/server/session";
 import { Card, CardTitle } from "@/components/ui/card";
+import { PageColumn } from "@/components/ui/page-column";
 import { PageHeading } from "@/components/ui/page-heading";
 import { AddPasswordForm } from "./add-password-form";
 import { ChangeEmailForm } from "./change-email-form";
@@ -24,7 +25,7 @@ export default async function SettingsPage({
   const { error: googleError } = await searchParams;
 
   return (
-    <div className="flex flex-col gap-6 p-4">
+    <PageColumn>
       <PageHeading>Settings</PageHeading>
       <Card>
         <CardTitle>Profile</CardTitle>
@@ -54,6 +55,6 @@ export default async function SettingsPage({
         <CardTitle>Delete account</CardTitle>
         <DeleteAccountForm hasPassword={methods.password} />
       </Card>
-    </div>
+    </PageColumn>
   );
 }

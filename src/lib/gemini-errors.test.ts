@@ -1,9 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { getQuotaErrorMessage } from "./gemini-errors";
+import { getQuotaErrorMessage, isBillingStop } from "./gemini-errors";
 
 const quotaError = (details: unknown[]) => ({
   statusCode: 429,
-  data: { error: { code: 429, status: "RESOURCE_EXHAUSTED", details } },
+  data: {
+    error: {
+      code: 429,
+      message: "Resource has been exhausted.",
+      status: "RESOURCE_EXHAUSTED",
+      details,
+    },
+  },
 });
 
 const quotaFailure = (quotaId: string) => ({
@@ -55,10 +62,39 @@ describe("getQuotaErrorMessage", () => {
   });
 
   it.each([
+    [
+      "the spend cap (429)",
+      { message: "Your billing account has exceeded its monthly spending cap." },
+    ],
+    ["used-up prepaid credits (429)", { message: "Your prepayment credits are depleted." }],
+  ])("says generation is paused for %s", (_, error) => {
+    expect(getQuotaErrorMessage({ statusCode: 429, data: { error } })).toBe(
+      "Quiz generation is paused. Please try again later.",
+    );
+  });
+
+  it.each([402, 403])("says generation is paused for a %i", (statusCode) => {
+    expect(getQuotaErrorMessage({ statusCode, data: { error: { message: "billing" } } })).toBe(
+      "Quiz generation is paused. Please try again later.",
+    );
+  });
+
+  it.each([
     ["a server error", { statusCode: 500 }],
     ["a plain error", new Error("boom")],
     ["nothing", undefined],
   ])("returns null for %s", (_, error) => {
     expect(getQuotaErrorMessage(error)).toBeNull();
+  });
+});
+
+describe("isBillingStop", () => {
+  it("is true for a billing stop and false for a rate limit or another error", () => {
+    expect(isBillingStop({ statusCode: 402 })).toBe(true);
+    expect(isBillingStop({ statusCode: 429, data: { error: { message: "spending cap" } } })).toBe(
+      true,
+    );
+    expect(isBillingStop(quotaError([retryInfo("5s")]))).toBe(false);
+    expect(isBillingStop(new Error("fetch failed"))).toBe(false);
   });
 });

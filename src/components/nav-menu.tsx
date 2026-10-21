@@ -1,4 +1,4 @@
-import { CreditCard, Plus, BarChartBig, Settings } from "lucide-react";
+import { CreditCard, Zap, BarChartBig, Settings } from "lucide-react";
 
 import {
   DropdownMenuContent,
@@ -19,13 +19,13 @@ export function NavMenu() {
         <DropdownMenuItem asChild>
           <Link href="/dashboard">
             <BarChartBig />
-            Dashboard
+            Overview
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href="/quizzes/new">
-            <Plus />
-            New Quiz
+            <Zap />
+            Quick quiz
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>

@@ -1,7 +1,15 @@
 import { z } from "zod";
-
-// Below Vercel's 4.5 MB request body limit, which rejects larger uploads before our code runs.
-export const MAX_PDF_BYTES = 4 * 1024 * 1024;
+import {
+  EXAM_QUESTION_COUNTS,
+  MAX_CHAPTERS_PER_COURSE,
+  MAX_PDF_BYTES,
+  MAX_PDF_MB,
+  MAX_QUESTIONS,
+  MAX_REVIEW_QUIZZES,
+  QUESTION_COUNTS,
+} from "@/lib/plans";
+import { chapterIdSchema, courseIdSchema } from "./course";
+import { idSchema } from "./id";
 
 // The browser-reported MIME type is client-controlled and sometimes empty, so check the file header.
 const PDF_SIGNATURE = "%PDF-";
@@ -16,7 +24,7 @@ export const pdfUploadSchema = z
   .refine((file) => file.size > 0, "The selected file is empty.")
   .refine(
     (file) => file.size <= MAX_PDF_BYTES,
-    "This PDF is larger than 4 MB. Please upload a smaller file.",
+    `This PDF is larger than ${MAX_PDF_MB} MB. Please upload a smaller file.`,
   )
   .refine(hasPdfSignature, "Only PDF files are supported.");
 
@@ -43,15 +51,66 @@ export const generatedQuizSchema = z.object({
             (answers) => answers.filter((answer) => answer.isCorrect).length === 1,
             "Each question needs exactly one correct answer",
           ),
+        explanation: nonEmptyText().describe(
+          "At most 2 sentences on why the correct answer is right, based on the document",
+        ),
       }),
     )
+    // Generous on purpose: questions beyond the requested count are dropped after generation,
+    // instead of failing the whole quiz.
     .refine(
-      (questions) => questions.length >= 1 && questions.length <= 30,
-      "A quiz needs 1 to 30 questions",
+      (questions) => questions.length >= 1 && questions.length <= 2 * MAX_QUESTIONS,
+      `A quiz needs 1 to ${2 * MAX_QUESTIONS} questions`,
     ),
 });
 
-/** A quiz id from a URL or form: a positive whole number. */
-export const quizIdSchema = z.coerce.number().int().positive();
+// Some plan offers it; the caller checks the user's own plan on top.
+const questionCountSchema = z
+  .number()
+  .refine((count) => QUESTION_COUNTS.includes(count), "Choose one of the offered question counts.");
+
+/** A question count as a form sends it (a string). */
+const formQuestionCount = z.coerce.number().pipe(questionCountSchema);
+
+/** Generating a quiz from one uploaded PDF; the PDF itself is validated by `pdfUploadSchema`. */
+export const quickQuizSchema = z.object({ questionCount: formQuestionCount });
+
+/** Generating a quiz from chapters of one course. Repeated chapter ids count once. */
+export const chapterQuizSchema = z.object({
+  chapterIds: z
+    .array(chapterIdSchema)
+    .min(1, "Select at least one chapter.")
+    .max(MAX_CHAPTERS_PER_COURSE, `Select at most ${MAX_CHAPTERS_PER_COURSE} chapters.`)
+    .transform((ids) => [...new Set(ids)]),
+  questionCount: questionCountSchema,
+});
+
+export const quizIdSchema = idSchema;
+export const attemptIdSchema = idSchema;
+
+/** A review quiz from 2 or more quizzes of one course, as the form sends it. Repeated ids count once. */
+export const reviewQuizSchema = z.object({
+  courseId: courseIdSchema,
+  quizIds: z
+    .array(quizIdSchema)
+    .transform((ids) => [...new Set(ids)])
+    .refine((ids) => ids.length >= 2, "Select at least two quizzes.")
+    .refine(
+      (ids) => ids.length <= MAX_REVIEW_QUIZZES,
+      `Select at most ${MAX_REVIEW_QUIZZES} quizzes.`,
+    ),
+  questionCount: formQuestionCount,
+});
+
+/** A course exam as the form sends it; every plan offers every exam count. */
+export const examSchema = z.object({
+  courseId: courseIdSchema,
+  questionCount: z.coerce
+    .number()
+    .refine(
+      (count) => EXAM_QUESTION_COUNTS.includes(count),
+      "Choose one of the offered question counts.",
+    ),
+});
 
 export type GeneratedQuiz = z.infer<typeof generatedQuizSchema>;

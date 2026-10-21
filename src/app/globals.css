@@ -19,7 +19,6 @@
   --popover-foreground: oklch(0.129 0.042 264.695);
   --primary: oklch(0.546 0.245 262.881);
   --primary-foreground: oklch(0.985 0 0);
-  --primary-shadow: oklch(0.424 0.199 265.638);
   --secondary: oklch(0.968 0.007 247.896);
   --secondary-foreground: oklch(0.208 0.042 265.755);
   --muted: oklch(0.968 0.007 247.896);
@@ -45,7 +44,6 @@
     --popover-foreground: oklch(0.984 0.003 247.858);
     --primary: oklch(0.707 0.165 254.624);
     --primary-foreground: oklch(0.129 0.042 264.695);
-    --primary-shadow: oklch(0.546 0.245 262.881);
     --secondary: oklch(0.279 0.041 260.031);
     --secondary-foreground: oklch(0.984 0.003 247.858);
     --muted: oklch(0.279 0.041 260.031);
@@ -71,7 +69,6 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
-  --color-primary-shadow: var(--primary-shadow);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -92,6 +89,25 @@
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
+/*
+  Slightly larger text on wide screens (small text 14 -> 15px, headings a bit bigger); phones keep
+  Tailwind's defaults. The utilities read these variables, so one override covers every component.
+*/
+@media (min-width: 1024px) {
+  :root {
+    --text-sm: 0.9375rem;
+    --text-lg: 1.1875rem;
+    --text-3xl: 2rem;
+  }
+}
+
+@media (min-width: 1536px) {
+  :root {
+    --text-2xl: 1.625rem;
+    --text-3xl: 2.25rem;
+  }
+}
+
 @layer base {
   *,
   ::after,
@@ -99,6 +115,12 @@
   ::backdrop,
   ::file-selector-button {
     border-color: var(--border);
+  }
+
+  /* Keeps the scrollbar's space even when a page fits, so content doesn't shift sideways when a
+     page grows taller than the window (e.g. the explanation after answering a quiz question). */
+  html {
+    scrollbar-gutter: stable;
   }
 
   body {
