@@ -97,14 +97,13 @@ export default async function OpenGraphImage() {
         }}
       >
         {/* The Overview on a phone: the stats and the recent weeks of the heatmap stay readable at
-            thumbnail size. ImageResponse draws plain elements only, so next/image can't be used. */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={`data:image/png;base64,${overview.toString("base64")}`}
-          width={430}
-          height={612}
-          alt=""
+            thumbnail size. */}
+        <div
           style={{
+            width: 430,
+            height: 612,
+            backgroundImage: `url(data:image/png;base64,${overview.toString("base64")})`,
+            backgroundSize: "430px 612px",
             borderRadius: "20px 20px 0 0",
             boxShadow: "0 20px 60px -30px rgba(15,23,42,0.35)",
           }}
