@@ -50,7 +50,12 @@ export default function ForgotPasswordPage() {
         description={`We'll email you a ${OTP_LENGTH}-digit code to set a new password.`}
       />
       {email === null ? (
-        <form onSubmit={codeRequest.onSubmit} noValidate className="flex flex-col gap-4">
+        <form
+          method="post"
+          onSubmit={codeRequest.onSubmit}
+          noValidate
+          className="flex flex-col gap-4"
+        >
           <TextField
             label="Email"
             name="email"
@@ -63,7 +68,12 @@ export default function ForgotPasswordPage() {
           </Button>
         </form>
       ) : (
-        <form onSubmit={passwordReset.onSubmit} noValidate className="flex flex-col gap-4">
+        <form
+          method="post"
+          onSubmit={passwordReset.onSubmit}
+          noValidate
+          className="flex flex-col gap-4"
+        >
           <div className="flex flex-col gap-1 rounded-md bg-secondary px-3 py-2 text-sm">
             <p role="status">
               If an account exists for {email}, we sent it a code. It expires in{" "}

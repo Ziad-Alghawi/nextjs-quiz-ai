@@ -43,7 +43,7 @@ export function DeleteAccountForm({ hasPassword }: { hasPassword: boolean }) {
   }
 
   return (
-    <form onSubmit={deleteAccount} noValidate className="flex flex-col gap-3">
+    <form method="post" onSubmit={deleteAccount} noValidate className="flex flex-col gap-3">
       <p className="text-sm">
         This permanently deletes your account, your quizzes and your results, and ends your Pro
         subscription right away. It can&apos;t be undone.

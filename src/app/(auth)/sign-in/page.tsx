@@ -72,7 +72,7 @@ export default function SignInPage({
           {notice}
         </p>
       ) : null}
-      <form onSubmit={signInWithEmail} noValidate className="flex flex-col gap-4">
+      <form method="post" onSubmit={signInWithEmail} noValidate className="flex flex-col gap-4">
         <TextField
           label="Email"
           name="email"
