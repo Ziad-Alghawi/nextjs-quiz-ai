@@ -208,7 +208,9 @@ export function QuizPlayer({
                 disabled={submitting}
                 className="w-full sm:w-auto sm:self-end"
               >
-                {submitting ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
+                {submitting ? (
+                  <Loader2 className="size-4 motion-safe:animate-spin" aria-hidden />
+                ) : null}
                 {isLast ? (submitting ? "Saving…" : "See results") : "Next question"}
               </Button>
             </div>
