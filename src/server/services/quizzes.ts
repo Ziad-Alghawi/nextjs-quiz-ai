@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, count, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, count, desc, eq, exists, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { courses, questionAnswers, questions, quizChapters, quizzes } from "@/db/schema";
 import { examName } from "@/lib/exam";
@@ -22,7 +22,7 @@ type NewQuiz = Omit<GeneratedQuiz, "questions"> & { questions: QuizQuestion[] };
 /**
  * Stores a generated quiz with its questions and answers in one transaction. `origin` puts it in a
  * course, linked to the chapters it was made from (the caller checked they are the user's);
- * without it, the quiz goes into the user's "My quizzes" course.
+ * without it, the quiz goes into the user's "My quizzes" folder.
  */
 export async function createQuiz(
   quiz: NewQuiz,
@@ -130,6 +130,35 @@ export function listReviewSources(userId: string, courseId: number) {
     .orderBy(asc(quizzes.id));
 }
 
+/**
+ * Moves a quick quiz from the user's "My quizzes" folder into one of their courses; its attempts
+ * follow. Quizzes already in a course stay: they can be linked to that course's chapters.
+ */
+export async function moveQuizToCourse(userId: string, quizId: number, courseId: number) {
+  const folder = db
+    .select({ id: courses.id })
+    .from(courses)
+    .where(and(eq(courses.userId, userId), eq(courses.isDefault, true)));
+  const target = db
+    .select({ id: courses.id })
+    .from(courses)
+    .where(and(eq(courses.id, courseId), eq(courses.userId, userId), eq(courses.isDefault, false)));
+
+  const moved = await db
+    .update(quizzes)
+    .set({ courseId })
+    .where(
+      and(
+        eq(quizzes.id, quizId),
+        eq(quizzes.userId, userId),
+        inArray(quizzes.courseId, folder),
+        exists(target),
+      ),
+    )
+    .returning({ id: quizzes.id });
+  return moved.length > 0;
+}
+
 type ReviewResult =
   | { quizId: number }
   | { error: "not-found" | "plan" | "rate-limit" }
@@ -153,6 +182,7 @@ export async function createReviewQuiz(
     return { error: "plan" };
   }
 
+  if (!(await findCourse(userId, input.courseId))) return { error: "not-found" };
   const chosen = await findCopySources(userId, input.courseId, input.quizIds);
   if (chosen.length !== input.quizIds.length) return { error: "not-found" };
 
@@ -180,10 +210,7 @@ export async function createExamQuiz(
     return { error: "rate-limit" };
   }
 
-  const [course] = await db
-    .select({ name: courses.name })
-    .from(courses)
-    .where(and(eq(courses.id, input.courseId), eq(courses.userId, userId)));
+  const course = await findCourse(userId, input.courseId);
   if (!course) return { error: "not-found" };
 
   const sources = await findCopySources(userId, input.courseId);
@@ -191,6 +218,15 @@ export async function createExamQuiz(
     name: examName(course.name, new Date()),
     kind: "exam",
   });
+}
+
+/** The user's course, but not the "My quizzes" folder: reviews and exams belong to courses. */
+async function findCourse(userId: string, courseId: number) {
+  const [course] = await db
+    .select({ name: courses.name })
+    .from(courses)
+    .where(and(eq(courses.id, courseId), eq(courses.userId, userId), eq(courses.isDefault, false)));
+  return course;
 }
 
 /**

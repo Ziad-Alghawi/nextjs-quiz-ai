@@ -4,10 +4,10 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
-import { SidebarNav } from "./sidebar-nav";
+import { SidebarNav, type SidebarCourse } from "./sidebar-nav";
 
 /** Below the md breakpoint the sidebar opens as a drawer from the ☰ button in the header. */
-export function MobileSidebar({ courses }: { courses: { id: number; name: string }[] }) {
+export function MobileSidebar({ courses }: { courses: SidebarCourse[] }) {
   const pathname = usePathname();
   // Closes when a link inside is followed (the path changes).
   const [openedAt, setOpenedAt] = useState<string | null>(null);

@@ -4,7 +4,11 @@ import Stripe from "stripe";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { env } from "@/lib/env";
+import type { BillingInterval } from "@/lib/plans";
 import { getStripe } from "@/lib/stripe";
+
+/** Subscriptions in these states are over: they can't bill again. */
+const ENDED_STATUSES = new Set<Stripe.Subscription.Status>(["canceled", "incomplete_expired"]);
 
 /** Sets the subscription flag of the user who owns this Stripe customer. */
 export async function setSubscribed(stripeCustomerId: string, subscribed: boolean) {
@@ -42,29 +46,43 @@ async function getOrCreateStripeCustomer(userId: string) {
   return customer.id;
 }
 
-/** A Stripe Checkout session for the Pro plan; the price comes from server config only. */
-export async function createCheckoutSession(userId: string) {
-  return getStripe().checkout.sessions.create({
-    mode: "subscription",
-    customer: await getOrCreateStripeCustomer(userId),
-    line_items: [{ price: env.STRIPE_PRICE_ID, quantity: 1 }],
-    allowed_payment_method_types: ["card"],
-    success_url: `${env.APP_URL}/billing/payment/success`,
-  });
-}
+const createPortalSession = (customer: string) =>
+  getStripe().billingPortal.sessions.create({ customer, return_url: `${env.APP_URL}/billing` });
 
 export async function createBillingPortalSession(userId: string) {
-  return getStripe().billingPortal.sessions.create({
-    customer: await getOrCreateStripeCustomer(userId),
-    return_url: `${env.APP_URL}/billing`,
-  });
+  return createPortalSession(await getOrCreateStripeCustomer(userId));
 }
 
 /**
- * The date the user's Pro plan ends, or null while it renews. Read from Stripe when the page is
+ * Where Upgrade sends the user: Stripe Checkout for Pro billed per `interval` (the price comes from
+ * server config only), or the billing portal when a subscription that can bill already exists. The
+ * plan flag waits for the webhook, so without this check a second Upgrade would start a second
+ * subscription.
+ */
+export async function getUpgradeUrl(userId: string, interval: BillingInterval) {
+  const customer = await getOrCreateStripeCustomer(userId);
+  for await (const subscription of getStripe().subscriptions.list({ customer, status: "all" })) {
+    if (!ENDED_STATUSES.has(subscription.status)) return (await createPortalSession(customer)).url;
+  }
+
+  const prices = { month: env.STRIPE_PRICE_ID, year: env.STRIPE_YEARLY_PRICE_ID };
+  const session = await getStripe().checkout.sessions.create({
+    mode: "subscription",
+    customer,
+    line_items: [{ price: prices[interval], quantity: 1 }],
+    allowed_payment_method_types: ["card"],
+    success_url: `${env.APP_URL}/billing/payment/success`,
+  });
+  if (!session.url) throw new Error("Stripe did not return a checkout URL.");
+  return session.url;
+}
+
+/**
+ * The user's active subscription as the billing page shows it: billed monthly or yearly, and the
+ * date it renews or, when set to cancel, ends. Null without one. Read from Stripe when the page is
  * shown, so nothing extra is stored or kept in sync by the webhook.
  */
-export async function getCancellationDate(userId: string) {
+export async function getSubscriptionSummary(userId: string) {
   const customerId = await getSavedCustomerId(userId);
   if (!customerId) return null;
 
@@ -74,9 +92,15 @@ export async function getCancellationDate(userId: string) {
     limit: 1,
   });
   const [subscription] = data;
-  if (!subscription?.cancel_at_period_end) return null;
+  if (!subscription) return null;
   // Since API version 2025-03-31 the period belongs to the subscription items, not the subscription.
-  return new Date(subscription.items.data[0].current_period_end * 1000);
+  const [item] = subscription.items.data;
+  const interval: BillingInterval = item.price.recurring?.interval === "year" ? "year" : "month";
+  return {
+    interval,
+    periodEnd: new Date(item.current_period_end * 1000),
+    cancels: subscription.cancel_at_period_end,
+  };
 }
 
 /**
@@ -93,7 +117,7 @@ export async function cancelSubscriptions(userId: string) {
   });
   try {
     for await (const subscription of subscriptions) {
-      if (subscription.status !== "canceled" && subscription.status !== "incomplete_expired") {
+      if (!ENDED_STATUSES.has(subscription.status)) {
         await getStripe().subscriptions.cancel(subscription.id);
       }
     }

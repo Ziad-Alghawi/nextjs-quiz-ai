@@ -2,6 +2,7 @@ import "server-only";
 import { getSessionCookie } from "better-auth/cookies";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { cache } from "react";
 import { pingDatabase } from "@/db/health";
 import { auth } from "@/lib/auth";
 
@@ -12,8 +13,11 @@ export type CurrentUser = {
   image: string | null;
 };
 
-/** The signed-in user, or null. The only place the app reads the auth session. */
-export async function getCurrentUser(): Promise<CurrentUser | null> {
+/**
+ * The signed-in user, or null. The only place the app reads the auth session. Cached per request:
+ * the header, the layout and the page all ask, and each lookup costs two queries.
+ */
+export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   const requestHeaders = await headers();
   const session = await auth.api.getSession({ headers: requestHeaders });
   if (!session) {
@@ -27,7 +31,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
 
   const { id, name, email, image } = session.user;
   return { id, name, email, image: image ?? null };
-}
+});
 
 /** The signed-in user; otherwise redirects to sign-in, which returns to `returnTo` afterwards. */
 export async function requireUser(returnTo: string): Promise<CurrentUser> {

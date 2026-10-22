@@ -26,6 +26,7 @@ export default defineConfig({
       STRIPE_SECRET_KEY: "sk_test_123",
       STRIPE_WEBHOOK_SECRET: "whsec_test_secret",
       STRIPE_PRICE_ID: "price_123",
+      STRIPE_YEARLY_PRICE_ID: "price_456",
       APP_URL: "http://localhost:3000",
     },
   },

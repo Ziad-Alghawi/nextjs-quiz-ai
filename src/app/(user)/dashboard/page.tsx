@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { Zap } from "lucide-react";
 import Link from "next/link";
+import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
+import { Skeleton } from "@/components/ui/skeleton";
 import { listQuizzes } from "@/server/services/quizzes";
 import { getAttemptActivity, getUserMetrics, summarizeActivity } from "@/server/services/stats";
 import { requireUser } from "@/server/session";
@@ -16,14 +18,6 @@ export const metadata: Metadata = { title: "Overview" };
 
 export default async function DashboardPage() {
   const { id: userId } = await requireUser("/dashboard");
-
-  const [quizzes, stats, activity] = await Promise.all([
-    listQuizzes(userId),
-    getUserMetrics(userId),
-    getAttemptActivity(userId),
-  ]);
-
-  const today = new Date().toISOString().slice(0, 10);
 
   return (
     <div className="flex flex-col gap-6">
@@ -39,6 +33,24 @@ export default async function DashboardPage() {
       >
         Overview
       </PageHeading>
+      {/* The heading shows right after the sign-in check; the stats stream in when they're loaded. */}
+      <Suspense fallback={<OverviewSkeleton />}>
+        <OverviewContent userId={userId} />
+      </Suspense>
+    </div>
+  );
+}
+
+async function OverviewContent({ userId }: { userId: string }) {
+  const [quizzes, stats, activity] = await Promise.all([
+    listQuizzes(userId),
+    getUserMetrics(userId),
+    getAttemptActivity(userId),
+  ]);
+  const today = new Date().toISOString().slice(0, 10);
+
+  return (
+    <>
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <MetricCard label="Quizzes" value={stats.quizzes} />
         <MetricCard label="Questions" value={stats.questions} />
@@ -53,6 +65,33 @@ export default async function DashboardPage() {
         </div>
       </Card>
       <QuizzesTable quizzes={quizzes} />
-    </div>
+    </>
+  );
+}
+
+/** The shape of the stats, the activity card and the quiz table while they load. */
+function OverviewSkeleton() {
+  return (
+    <>
+      <p className="sr-only" role="status">
+        Loading your overview…
+      </p>
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        {["Quizzes", "Questions", "Attempts", "Average Score"].map((label) => (
+          <Card key={label} className="gap-2 p-4">
+            <p className="text-sm text-muted-foreground">{label}</p>
+            <Skeleton className="h-9 w-16" />
+          </Card>
+        ))}
+      </div>
+      <Card>
+        <CardTitle>Activity</CardTitle>
+        <Skeleton className="h-32 w-full" />
+      </Card>
+      <Card>
+        <CardTitle>Your quizzes</CardTitle>
+        <Skeleton className="h-48 w-full" />
+      </Card>
+    </>
   );
 }

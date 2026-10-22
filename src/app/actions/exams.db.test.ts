@@ -3,6 +3,7 @@ import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
 import { quizGenerations, quizzes, rateLimits } from "@/db/schema";
 import { EXAM_BURST_LIMIT } from "@/lib/plans";
+import { getOrCreateDefaultCourse } from "@/server/services/courses";
 import { createQuiz } from "@/server/services/quizzes";
 import { addChapter, addCourse, createUsers, deleteUsers } from "@/test/db-fixtures";
 import { formData, IDLE } from "@/test/form-data";
@@ -148,6 +149,11 @@ describe("createExam", () => {
     };
     expect(await createExam(IDLE, form(otherCourseId, 10))).toEqual(notFound);
     expect(await createExam(IDLE, form(2147483000, 10))).toEqual(notFound);
+    // Quick quizzes land in the "My quizzes" folder, which isn't a course.
+    await createQuiz(generatedQuiz(30), USER);
+    expect(await createExam(IDLE, form(await getOrCreateDefaultCourse(db, USER), 10))).toEqual(
+      notFound,
+    );
     for (const count of [15, 25]) {
       expect(await createExam(IDLE, form(courseId, count))).toEqual({
         status: "error",

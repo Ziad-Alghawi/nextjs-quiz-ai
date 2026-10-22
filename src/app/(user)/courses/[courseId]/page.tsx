@@ -1,25 +1,24 @@
 import type { Metadata } from "next";
-import { FileText, Play } from "lucide-react";
-import Link from "next/link";
+import { FileText } from "lucide-react";
 import { notFound } from "next/navigation";
-import { cache } from "react";
-import { Button } from "@/components/ui/button";
+import { cache, Suspense } from "react";
 import { Card, CardTitle } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
-import { QuizKindLabel } from "@/components/quiz-kind-label";
+import { Skeleton } from "@/components/ui/skeleton";
 import { MAX_CHAPTERS_PER_COURSE } from "@/lib/plans";
 import { pluralize } from "@/lib/pluralize";
 import { courseIdSchema } from "@/lib/validations/course";
-import { getCourse } from "@/server/services/courses";
+import { getCourse, listCourses } from "@/server/services/courses";
 import { listCourseAttempts } from "@/server/services/attempts";
 import { listReviewSources } from "@/server/services/quizzes";
 import { getMonthlyUsage } from "@/server/services/usage";
 import { requireUser } from "@/server/session";
 import { ChapterUpload } from "./chapter-upload";
+import { CourseQuizzes } from "./course-quizzes";
 import { CourseActions } from "./course-actions";
 import { DeleteChapterButton } from "./delete-chapter-button";
 import { ExamForm } from "./exam-form";
-import { QuizAttempts } from "./quiz-attempts";
+import { MoveQuizButton } from "./move-quiz-button";
 import { QuizGenerator } from "./quiz-generator";
 import { ReviewQuizForm } from "./review-quiz-form";
 
@@ -46,11 +45,29 @@ const formatSize = (bytes: number) =>
 export default async function CoursePage({ params }: Props) {
   const course = await loadCourse((await params).courseId);
   const user = await requireUser(`/courses/${course.id}`);
-  const [{ plan, used, limit }, reviewSources, attempts] = await Promise.all([
-    getMonthlyUsage(user.id),
-    listReviewSources(user.id, course.id),
-    listCourseAttempts(user.id, course.id),
-  ]);
+
+  // The "My quizzes" folder only lists the quick quizzes: no chapters, generating, reviews or exams.
+  // Each one can move into a course.
+  if (course.isDefault) {
+    const [attempts, allCourses] = await Promise.all([
+      listCourseAttempts(user.id, course.id),
+      listCourses(user.id),
+    ]);
+    const targets = allCourses.filter((target) => !target.isDefault);
+    return (
+      <div className="flex flex-col gap-6">
+        <PageHeading>{course.name}</PageHeading>
+        <CourseQuizzes
+          quizzes={course.quizzes}
+          attempts={attempts}
+          emptyText="Quick quizzes you create land here."
+          quizAction={(quiz) => (
+            <MoveQuizButton quiz={{ id: quiz.id, name: quiz.name }} courses={targets} />
+          )}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -65,7 +82,25 @@ export default async function CoursePage({ params }: Props) {
       >
         {course.name}
       </PageHeading>
+      {/* The course itself is loaded first (it decides the 404); the rest streams in. */}
+      <Suspense fallback={<CourseSkeleton />}>
+        <CourseContent course={course} userId={user.id} />
+      </Suspense>
+    </div>
+  );
+}
 
+type Course = Awaited<ReturnType<typeof loadCourse>>;
+
+async function CourseContent({ course, userId }: { course: Course; userId: string }) {
+  const [{ plan, used, limit }, reviewSources, attempts] = await Promise.all([
+    getMonthlyUsage(userId),
+    listReviewSources(userId, course.id),
+    listCourseAttempts(userId, course.id),
+  ]);
+
+  return (
+    <>
       {/* Content on the left, actions on the right on wide screens; stacked below, the content
           comes first. */}
       <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-2">
@@ -112,41 +147,11 @@ export default async function CoursePage({ params }: Props) {
             )}
           </Card>
 
-          <Card className="gap-2">
-            <CardTitle>Quizzes</CardTitle>
-            {course.quizzes.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No quizzes in this course yet.</p>
-            ) : (
-              <ul className="divide-y">
-                {course.quizzes.map((quiz) => (
-                  <li key={quiz.id}>
-                    <div className="flex items-start gap-3 pt-3 pb-2">
-                      <div className="min-w-0 flex-1">
-                        <Link
-                          href={`/quizzes/${quiz.id}`}
-                          className="font-medium text-primary underline-offset-4 wrap-break-word hover:underline"
-                        >
-                          {quiz.name}
-                        </Link>
-                        <QuizKindLabel kind={quiz.kind} />
-                        {quiz.description ? (
-                          <p className="mt-0.5 text-sm text-muted-foreground">{quiz.description}</p>
-                        ) : null}
-                      </div>
-                      {/* Touch screens have no hover, so a visible button says where the quiz starts. */}
-                      <Button variant="outline" size="sm" asChild className="shrink-0 gap-1.5">
-                        <Link href={`/quizzes/${quiz.id}`} aria-label={`Start ${quiz.name}`}>
-                          <Play className="size-3.5" aria-hidden />
-                          Start
-                        </Link>
-                      </Button>
-                    </div>
-                    <QuizAttempts entry={attempts.get(quiz.id)} />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
+          <CourseQuizzes
+            quizzes={course.quizzes}
+            attempts={attempts}
+            emptyText="No quizzes in this course yet."
+          />
         </div>
 
         <div className="flex flex-col gap-6">
@@ -188,6 +193,27 @@ export default async function CoursePage({ params }: Props) {
           </Card>
         </div>
       </div>
+    </>
+  );
+}
+
+/** Two columns of placeholder cards in the shape of the course page while it loads. */
+function CourseSkeleton() {
+  return (
+    <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-2">
+      <p className="sr-only" role="status">
+        Loading the course…
+      </p>
+      {[0, 1].map((column) => (
+        <div key={column} className="flex flex-col gap-6">
+          {[0, 1].map((card) => (
+            <Card key={card} className="gap-3">
+              <Skeleton className="h-6 w-32" />
+              <Skeleton className="h-24 w-full" />
+            </Card>
+          ))}
+        </div>
+      ))}
     </div>
   );
 }

@@ -28,6 +28,15 @@
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.985 0 0);
   --success: oklch(0.527 0.154 150.069);
+  /* Secondary accents, only for the landing page's feature boxes. */
+  --violet: oklch(0.541 0.281 293.009);
+  --amber: oklch(0.769 0.188 70.08);
+  /* Solid fills with white content (the logo mark, the landing page's feature boxes). Unlike
+     --primary they stay the same in dark mode, so these elements look alike in both modes. */
+  --fill-blue: oklch(0.546 0.245 262.881);
+  --fill-violet: oklch(0.541 0.281 293.009);
+  --fill-green: oklch(0.527 0.154 150.069);
+  --on-fill: oklch(1 0 0);
   --border: oklch(0.929 0.013 255.508);
   --input: oklch(0.929 0.013 255.508);
   --ring: oklch(0.623 0.214 259.815);
@@ -53,6 +62,8 @@
     --destructive: oklch(0.704 0.191 22.216);
     --destructive-foreground: oklch(0.129 0.042 264.695);
     --success: oklch(0.792 0.209 151.711);
+    --violet: oklch(0.702 0.183 293.541);
+    --amber: oklch(0.828 0.189 84.429);
     --border: oklch(1 0 0 / 10%);
     --input: oklch(1 0 0 / 15%);
     --ring: oklch(0.707 0.165 254.624);
@@ -78,6 +89,12 @@
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-success: var(--success);
+  --color-violet: var(--violet);
+  --color-amber: var(--amber);
+  --color-fill-blue: var(--fill-blue);
+  --color-fill-violet: var(--fill-violet);
+  --color-fill-green: var(--fill-green);
+  --color-on-fill: var(--on-fill);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);

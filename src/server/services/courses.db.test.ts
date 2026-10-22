@@ -97,8 +97,32 @@ describe("getOrCreateDefaultCourse", () => {
     );
 
     const rows = await db.select().from(courses).where(eq(courses.userId, USER));
-    expect(rows).toEqual([expect.objectContaining({ id: ids[0], name: "My quizzes" })]);
+    expect(rows).toEqual([
+      expect.objectContaining({ id: ids[0], name: "My quizzes", isDefault: true }),
+    ]);
     expect(new Set(ids)).toEqual(new Set([ids[0]]));
+  });
+
+  it("finds the folder by its flag, not by its name", async () => {
+    const [folder] = await db
+      .insert(courses)
+      .values({ userId: USER, name: "Renamed long ago", isDefault: true })
+      .returning({ id: courses.id });
+
+    expect(await getOrCreateDefaultCourse(db, USER)).toBe(folder.id);
+    expect(await db.select().from(courses).where(eq(courses.userId, USER))).toHaveLength(1);
+  });
+});
+
+describe('the "My quizzes" folder', () => {
+  it("can't be renamed or deleted", async () => {
+    const folderId = await getOrCreateDefaultCourse(db, USER);
+
+    expect(await renameCourse(USER, folderId, "Biology")).toBe("not-found");
+    expect(await deleteCourse(USER, folderId)).toBe(false);
+    expect(await getCourse(USER, folderId)).toEqual(
+      expect.objectContaining({ name: "My quizzes", isDefault: true }),
+    );
   });
 });
 
@@ -114,15 +138,13 @@ describe("listCourses and getCourse", () => {
     ]);
   });
 
-  it('list "My quizzes" first even when it was created after the others', async () => {
+  it('flag the "My quizzes" folder', async () => {
     await newCourse(USER, "Biology");
     await getOrCreateDefaultCourse(db, USER);
-    await newCourse(USER, "Chemistry");
 
-    expect((await listCourses(USER)).map((course) => course.name)).toEqual([
-      "My quizzes",
-      "Biology",
-      "Chemistry",
+    expect(await listCourses(USER)).toEqual([
+      expect.objectContaining({ name: "Biology", isDefault: false }),
+      expect.objectContaining({ name: "My quizzes", isDefault: true }),
     ]);
   });
 

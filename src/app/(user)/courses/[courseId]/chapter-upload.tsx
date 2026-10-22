@@ -145,7 +145,7 @@ export function ChapterUpload({ courseId, full }: { courseId: number; full: bool
                   </button>
                 ) : (
                   <Loader2
-                    className="size-4 shrink-0 animate-spin text-primary"
+                    className="size-4 shrink-0 motion-safe:animate-spin text-primary"
                     aria-label="Uploading"
                   />
                 )}
