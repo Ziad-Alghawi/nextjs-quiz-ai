@@ -91,23 +91,20 @@ export function FeatureBoxes() {
               </span>
             ))}
           </div>
-          <span className="rounded-lg bg-violet py-2.5 text-center font-semibold text-primary-foreground">
+          <span className="rounded-lg bg-fill-violet py-2.5 text-center font-semibold text-on-fill">
             Generate quiz
           </span>
         </div>
       </Box>
 
-      <li className="flex flex-col justify-between gap-5 rounded-3xl bg-primary p-6 text-primary-foreground md:col-span-2 lg:col-span-2">
+      <li className="flex flex-col justify-between gap-5 rounded-3xl bg-fill-blue p-6 text-on-fill md:col-span-2 lg:col-span-2">
         <h3 className="text-sm font-semibold tracking-wider uppercase opacity-75">Average score</h3>
         <p className="text-7xl leading-none font-bold tracking-tighter">75%</p>
         <div aria-hidden className="flex h-12 items-end gap-1.5">
           {scoreBars.map((height, i) => (
             <span
               key={height}
-              className={cn(
-                "flex-1 rounded bg-primary-foreground",
-                i < scoreBars.length - 1 && "opacity-35",
-              )}
+              className={cn("flex-1 rounded bg-on-fill", i < scoreBars.length - 1 && "opacity-35")}
               style={{ height: `${height}%` }}
             />
           ))}
@@ -123,7 +120,7 @@ export function FeatureBoxes() {
         <div aria-hidden className="flex flex-col gap-2.5 rounded-2xl bg-card p-4 text-sm">
           <p className="text-base font-semibold">What does the Calvin cycle produce?</p>
           <div className="flex items-center gap-2.5 rounded-lg border-2 border-success bg-success/10 px-3 py-2.5">
-            <span className="flex size-5.5 shrink-0 items-center justify-center rounded-md bg-success text-primary-foreground">
+            <span className="flex size-5.5 shrink-0 items-center justify-center rounded-md bg-fill-green text-on-fill">
               <Check className="size-3" strokeWidth={3} />
             </span>
             Sugars made by fixing carbon dioxide
