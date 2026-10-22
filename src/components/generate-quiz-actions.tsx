@@ -27,7 +27,7 @@ export function GenerateQuizActions({
         <Button type="submit" disabled={generating || disabled}>
           {generating ? (
             <>
-              <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
+              <Loader2 className="mr-2 size-4 motion-safe:animate-spin" aria-hidden />
               Generating…
             </>
           ) : (

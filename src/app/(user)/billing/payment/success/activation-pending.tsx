@@ -33,7 +33,7 @@ export function ActivationPending() {
   }
   return (
     <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground">
-      <Loader2 className="size-4 animate-spin" aria-hidden />
+      <Loader2 className="size-4 motion-safe:animate-spin" aria-hidden />
       Payment received, activating Pro…
     </p>
   );

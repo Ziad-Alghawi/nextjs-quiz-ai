@@ -205,7 +205,9 @@ export function ExamPlayer({ exam, exitHref }: ExamPlayerProps) {
               Keep going
             </Button>
             <Button onClick={finish} disabled={submitting} className="gap-2">
-              {submitting ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
+              {submitting ? (
+                <Loader2 className="size-4 motion-safe:animate-spin" aria-hidden />
+              ) : null}
               {submitting ? "Saving…" : "Finish exam"}
             </Button>
           </div>
