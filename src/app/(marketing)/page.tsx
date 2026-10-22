@@ -39,19 +39,41 @@ const plans = [
 
 const overviewAlt = "Overview with quiz stats, the activity heatmap and study streaks";
 
-/** The overview screenshot in the visitor's color scheme; the browser downloads only one of them. */
+// Below sm the whole overview would be too small to read, so phones get a screenshot of the phone
+// layout, cut after the heatmap.
+const PHONE = "(max-width: 639px)";
+const DARK = "(prefers-color-scheme: dark)";
+
+/** The overview screenshot for the screen size and color scheme; the browser downloads only one. */
 function OverviewScreenshot() {
-  const common = {
+  const wide = {
     alt: overviewAlt,
     width: 2560,
     height: 1280,
     sizes: "(min-width: 1152px) 1024px, 100vw",
   };
-  const { props: dark } = getImageProps({ ...common, src: "/images/overview-dark.png" });
-  const { props: light } = getImageProps({ ...common, src: "/images/overview-light.png" });
+  const phone = { alt: overviewAlt, width: 780, height: 1110, sizes: "100vw" };
+  const sources = [
+    {
+      media: `${PHONE} and ${DARK}`,
+      ...getImageProps({ ...phone, src: "/images/overview-phone-dark.png" }).props,
+    },
+    { media: PHONE, ...getImageProps({ ...phone, src: "/images/overview-phone-light.png" }).props },
+    { media: DARK, ...getImageProps({ ...wide, src: "/images/overview-dark.png" }).props },
+  ];
+  const { props: light } = getImageProps({ ...wide, src: "/images/overview-light.png" });
   return (
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcSet={dark.srcSet} sizes={dark.sizes} />
+      {sources.map((source) => (
+        <source
+          key={source.media}
+          media={source.media}
+          srcSet={source.srcSet}
+          sizes={source.sizes}
+          width={source.width}
+          height={source.height}
+        />
+      ))}
       <img
         {...light}
         alt={overviewAlt}
