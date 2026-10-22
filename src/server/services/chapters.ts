@@ -34,9 +34,14 @@ export async function addChapter(
   return db.transaction(async (tx) => {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`chapters:${userId}`}))`);
 
+    // The "My quizzes" folder holds quick quizzes only, no chapters.
     const course = await tx.query.courses.findFirst({
       columns: { id: true },
-      where: and(eq(courses.id, courseId), eq(courses.userId, userId)),
+      where: and(
+        eq(courses.id, courseId),
+        eq(courses.userId, userId),
+        eq(courses.isDefault, false),
+      ),
     });
     if (!course) return { error: "course-not-found" };
 

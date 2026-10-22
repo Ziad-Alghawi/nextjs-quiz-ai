@@ -114,6 +114,18 @@ describe("getOrCreateDefaultCourse", () => {
   });
 });
 
+describe('the "My quizzes" folder', () => {
+  it("can't be renamed or deleted", async () => {
+    const folderId = await getOrCreateDefaultCourse(db, USER);
+
+    expect(await renameCourse(USER, folderId, "Biology")).toBe("not-found");
+    expect(await deleteCourse(USER, folderId)).toBe(false);
+    expect(await getCourse(USER, folderId)).toEqual(
+      expect.objectContaining({ name: "My quizzes", isDefault: true }),
+    );
+  });
+});
+
 describe("listCourses and getCourse", () => {
   it("list only the user's courses, oldest first", async () => {
     await newCourse(USER, "Biology");

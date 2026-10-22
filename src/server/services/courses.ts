@@ -86,7 +86,7 @@ export async function createCourse(userId: string, name: string): Promise<Create
   }
 }
 
-/** Renames the course if it belongs to the user. */
+/** Renames the course if it belongs to the user. The "My quizzes" folder keeps its name. */
 export async function renameCourse(
   userId: string,
   courseId: number,
@@ -96,7 +96,9 @@ export async function renameCourse(
     const renamed = await db
       .update(courses)
       .set({ name })
-      .where(and(eq(courses.id, courseId), eq(courses.userId, userId)))
+      .where(
+        and(eq(courses.id, courseId), eq(courses.userId, userId), eq(courses.isDefault, false)),
+      )
       .returning({ id: courses.id });
     return renamed.length > 0 ? "renamed" : "not-found";
   } catch (error) {
@@ -107,12 +109,12 @@ export async function renameCourse(
 
 /**
  * Deletes the course with its chapters and quizzes (foreign key cascades) if it belongs to the user.
- * Generations already used still count toward the monthly quota.
+ * The "My quizzes" folder stays. Generations already used still count toward the monthly quota.
  */
 export async function deleteCourse(userId: string, courseId: number) {
   const deleted = await db
     .delete(courses)
-    .where(and(eq(courses.id, courseId), eq(courses.userId, userId)))
+    .where(and(eq(courses.id, courseId), eq(courses.userId, userId), eq(courses.isDefault, false)))
     .returning({ id: courses.id });
   return deleted.length > 0;
 }
