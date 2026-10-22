@@ -1,5 +1,5 @@
-import { Check } from "lucide-react";
 import Link from "next/link";
+import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { getCurrentUser } from "@/server/session";
 
@@ -22,12 +22,7 @@ export default async function MarketingLayout({ children }: { children: React.Re
   return (
     <>
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
-        <Link href="/" className="flex items-center gap-2.5 text-xl font-bold">
-          <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Check className="size-4.5" strokeWidth={2.5} aria-hidden />
-          </span>
-          Quiz AI
-        </Link>
+        <Logo />
         <nav aria-label="Sections" className="hidden gap-7 text-muted-foreground md:flex">
           {sections.map((section) => (
             <Link key={section.href} href={section.href} className="hover:text-primary">

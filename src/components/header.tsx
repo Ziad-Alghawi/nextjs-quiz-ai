@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
 import { DropdownMenu, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Logo } from "./logo";
 import { MobileSidebar } from "./mobile-sidebar";
 import { NavMenu } from "./nav-menu";
 
@@ -34,11 +35,7 @@ export async function Header() {
         >
           <div className="flex items-center gap-1">
             {user ? <MobileSidebar courses={await listCourses(user.id)} /> : null}
-            {/* leading-9 keeps the header 3.75rem tall when the logo grows on wide screens; the
-                sidebar relies on it. */}
-            <Link href="/" className="text-3xl font-bold leading-9">
-              Quiz AI
-            </Link>
+            <Logo />
           </div>
 
           <div>
