@@ -7,7 +7,7 @@ import { PageHeading } from "@/components/ui/page-heading";
 import { MAX_CHAPTERS_PER_COURSE } from "@/lib/plans";
 import { pluralize } from "@/lib/pluralize";
 import { courseIdSchema } from "@/lib/validations/course";
-import { getCourse } from "@/server/services/courses";
+import { getCourse, listCourses } from "@/server/services/courses";
 import { listCourseAttempts } from "@/server/services/attempts";
 import { listReviewSources } from "@/server/services/quizzes";
 import { getMonthlyUsage } from "@/server/services/usage";
@@ -17,6 +17,7 @@ import { CourseQuizzes } from "./course-quizzes";
 import { CourseActions } from "./course-actions";
 import { DeleteChapterButton } from "./delete-chapter-button";
 import { ExamForm } from "./exam-form";
+import { MoveQuizButton } from "./move-quiz-button";
 import { QuizGenerator } from "./quiz-generator";
 import { ReviewQuizForm } from "./review-quiz-form";
 
@@ -45,14 +46,23 @@ export default async function CoursePage({ params }: Props) {
   const user = await requireUser(`/courses/${course.id}`);
 
   // The "My quizzes" folder only lists the quick quizzes: no chapters, generating, reviews or exams.
+  // Each one can move into a course.
   if (course.isDefault) {
+    const [attempts, allCourses] = await Promise.all([
+      listCourseAttempts(user.id, course.id),
+      listCourses(user.id),
+    ]);
+    const targets = allCourses.filter((target) => !target.isDefault);
     return (
       <div className="flex flex-col gap-6">
         <PageHeading>{course.name}</PageHeading>
         <CourseQuizzes
           quizzes={course.quizzes}
-          attempts={await listCourseAttempts(user.id, course.id)}
+          attempts={attempts}
           emptyText="Quick quizzes you create land here."
+          quizAction={(quiz) => (
+            <MoveQuizButton quiz={{ id: quiz.id, name: quiz.name }} courses={targets} />
+          )}
         />
       </div>
     );

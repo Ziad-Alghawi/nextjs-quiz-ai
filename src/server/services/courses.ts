@@ -34,15 +34,15 @@ export async function getOrCreateDefaultCourse(
 }
 
 /**
- * The user's courses for the sidebar: "My quizzes" first (it is created on first use, so it can be
- * the newest), then the rest oldest first so the list doesn't reorder itself.
+ * The user's courses with the "My quizzes" folder flagged, oldest first so the sidebar doesn't
+ * reorder itself.
  */
 export function listCourses(userId: string) {
   return db
-    .select({ id: courses.id, name: courses.name })
+    .select({ id: courses.id, name: courses.name, isDefault: courses.isDefault })
     .from(courses)
     .where(eq(courses.userId, userId))
-    .orderBy(desc(courses.isDefault), asc(courses.id));
+    .orderBy(asc(courses.id));
 }
 
 /** The course with its chapters and quizzes, only if it belongs to the user. Chapter text isn't loaded. */

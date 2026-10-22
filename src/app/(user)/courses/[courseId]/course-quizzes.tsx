@@ -1,4 +1,5 @@
 import { Play } from "lucide-react";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { QuizKindLabel } from "@/components/quiz-kind-label";
 import { Button } from "@/components/ui/button";
@@ -14,10 +15,13 @@ export function CourseQuizzes({
   quizzes,
   attempts,
   emptyText,
+  quizAction,
 }: {
   quizzes: Course["quizzes"];
   attempts: Awaited<ReturnType<typeof listCourseAttempts>>;
   emptyText: string;
+  /** Another button beside Start, e.g. Move in the "My quizzes" folder. */
+  quizAction?: (quiz: Course["quizzes"][number]) => ReactNode;
 }) {
   return (
     <Card className="gap-2">
@@ -41,6 +45,7 @@ export function CourseQuizzes({
                     <p className="mt-0.5 text-sm text-muted-foreground">{quiz.description}</p>
                   ) : null}
                 </div>
+                {quizAction?.(quiz)}
                 {/* Touch screens have no hover, so a visible button says where the quiz starts. */}
                 <Button variant="outline" size="sm" asChild className="shrink-0 gap-1.5">
                   <Link href={`/quizzes/${quiz.id}`} aria-label={`Start ${quiz.name}`}>

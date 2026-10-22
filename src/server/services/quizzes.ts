@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, count, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, count, desc, eq, exists, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { courses, questionAnswers, questions, quizChapters, quizzes } from "@/db/schema";
 import { examName } from "@/lib/exam";
@@ -128,6 +128,35 @@ export function listReviewSources(userId: string, courseId: number) {
     )
     .groupBy(quizzes.id)
     .orderBy(asc(quizzes.id));
+}
+
+/**
+ * Moves a quick quiz from the user's "My quizzes" folder into one of their courses; its attempts
+ * follow. Quizzes already in a course stay: they can be linked to that course's chapters.
+ */
+export async function moveQuizToCourse(userId: string, quizId: number, courseId: number) {
+  const folder = db
+    .select({ id: courses.id })
+    .from(courses)
+    .where(and(eq(courses.userId, userId), eq(courses.isDefault, true)));
+  const target = db
+    .select({ id: courses.id })
+    .from(courses)
+    .where(and(eq(courses.id, courseId), eq(courses.userId, userId), eq(courses.isDefault, false)));
+
+  const moved = await db
+    .update(quizzes)
+    .set({ courseId })
+    .where(
+      and(
+        eq(quizzes.id, quizId),
+        eq(quizzes.userId, userId),
+        inArray(quizzes.courseId, folder),
+        exists(target),
+      ),
+    )
+    .returning({ id: quizzes.id });
+  return moved.length > 0;
 }
 
 type ReviewResult =

@@ -24,8 +24,8 @@ export async function Header() {
   const user = await getCurrentUser();
   return (
     <header>
-      {/* Signed in, the header spans the screen: the logo sits above the sidebar, the menu at the
-          far right. */}
+      {/* Signed in, the header spans the screen: the logo sits above the sidebar, the avatar menu at
+          the far right. */}
       <nav className={cn("px-4 py-2.5", user && "md:px-6")}>
         <div
           className={cn(
@@ -41,9 +41,15 @@ export async function Header() {
           <div>
             {user ? (
               <div className="flex items-center gap-4">
+                <SignOut />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" aria-label="Account menu">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="rounded-full"
+                      aria-label="Account menu"
+                    >
                       {/* Email sign-ups have no profile picture; show the name's first letter. */}
                       {user.image ? (
                         <Image
@@ -62,7 +68,6 @@ export async function Header() {
                   </DropdownMenuTrigger>
                   <NavMenu />
                 </DropdownMenu>
-                <SignOut />
               </div>
             ) : (
               <Button variant="link" className="rounded-xl border" asChild>
