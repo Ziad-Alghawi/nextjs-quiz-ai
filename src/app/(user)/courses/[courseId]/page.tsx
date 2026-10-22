@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { FileText } from "lucide-react";
 import { notFound } from "next/navigation";
-import { cache } from "react";
+import { cache, Suspense } from "react";
 import { Card, CardTitle } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
+import { Skeleton } from "@/components/ui/skeleton";
 import { MAX_CHAPTERS_PER_COURSE } from "@/lib/plans";
 import { pluralize } from "@/lib/pluralize";
 import { courseIdSchema } from "@/lib/validations/course";
@@ -68,12 +69,6 @@ export default async function CoursePage({ params }: Props) {
     );
   }
 
-  const [{ plan, used, limit }, reviewSources, attempts] = await Promise.all([
-    getMonthlyUsage(user.id),
-    listReviewSources(user.id, course.id),
-    listCourseAttempts(user.id, course.id),
-  ]);
-
   return (
     <div className="flex flex-col gap-6">
       <PageHeading
@@ -87,7 +82,25 @@ export default async function CoursePage({ params }: Props) {
       >
         {course.name}
       </PageHeading>
+      {/* The course itself is loaded first (it decides the 404); the rest streams in. */}
+      <Suspense fallback={<CourseSkeleton />}>
+        <CourseContent course={course} userId={user.id} />
+      </Suspense>
+    </div>
+  );
+}
 
+type Course = Awaited<ReturnType<typeof loadCourse>>;
+
+async function CourseContent({ course, userId }: { course: Course; userId: string }) {
+  const [{ plan, used, limit }, reviewSources, attempts] = await Promise.all([
+    getMonthlyUsage(userId),
+    listReviewSources(userId, course.id),
+    listCourseAttempts(userId, course.id),
+  ]);
+
+  return (
+    <>
       {/* Content on the left, actions on the right on wide screens; stacked below, the content
           comes first. */}
       <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-2">
@@ -180,6 +193,27 @@ export default async function CoursePage({ params }: Props) {
           </Card>
         </div>
       </div>
+    </>
+  );
+}
+
+/** Two columns of placeholder cards in the shape of the course page while it loads. */
+function CourseSkeleton() {
+  return (
+    <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-2">
+      <p className="sr-only" role="status">
+        Loading the course…
+      </p>
+      {[0, 1].map((column) => (
+        <div key={column} className="flex flex-col gap-6">
+          {[0, 1].map((card) => (
+            <Card key={card} className="gap-3">
+              <Skeleton className="h-6 w-32" />
+              <Skeleton className="h-24 w-full" />
+            </Card>
+          ))}
+        </div>
+      ))}
     </div>
   );
 }

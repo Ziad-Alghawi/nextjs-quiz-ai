@@ -1,6 +1,14 @@
 "use client";
-import { BookOpen, CreditCard, Folder, LayoutDashboard, Settings, Zap } from "lucide-react";
-import Link from "next/link";
+import {
+  BookOpen,
+  CreditCard,
+  Folder,
+  LayoutDashboard,
+  Loader2,
+  Settings,
+  Zap,
+} from "lucide-react";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import type { ComponentType } from "react";
 
@@ -15,7 +23,20 @@ type NavLinkProps = {
   title?: string;
 };
 
-function NavLink({ href, icon: Icon, label, title }: NavLinkProps) {
+/**
+ * The link's icon, or a spinner while the page it opens is loading: pages render on the server, so
+ * without it nothing would change until the new page arrives.
+ */
+function NavIcon({ icon: Icon }: { icon: NavLinkProps["icon"] }) {
+  const { pending } = useLinkStatus();
+  return pending ? (
+    <Loader2 className="size-4 shrink-0 motion-safe:animate-spin" aria-hidden />
+  ) : (
+    <Icon className="size-4 shrink-0" />
+  );
+}
+
+function NavLink({ href, icon, label, title }: NavLinkProps) {
   const pathname = usePathname();
   const active = pathname === href || pathname.startsWith(`${href}/`);
 
@@ -29,7 +50,7 @@ function NavLink({ href, icon: Icon, label, title }: NavLinkProps) {
         active && "bg-primary/10 text-primary hover:bg-primary/10 hover:text-primary",
       )}
     >
-      <Icon className="size-4 shrink-0" />
+      <NavIcon icon={icon} />
       <span className="truncate">{label}</span>
     </Link>
   );
