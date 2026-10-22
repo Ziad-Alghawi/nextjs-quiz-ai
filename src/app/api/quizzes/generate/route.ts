@@ -12,7 +12,7 @@ import { getCurrentUser } from "@/server/session";
 // Set explicitly so a lower platform default can't cut a generation off.
 export const maxDuration = 60;
 
-/** Generates a quiz from one uploaded PDF and saves it in the user's "My quizzes" course. */
+/** Generates a quiz from one uploaded PDF and saves it in the user's "My quizzes" folder. */
 export async function POST(request: Request) {
   const user = await getCurrentUser();
   if (!user) return errorResponse("Please sign in to generate a quiz.", 401);

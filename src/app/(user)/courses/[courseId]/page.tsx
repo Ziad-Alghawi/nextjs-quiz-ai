@@ -1,12 +1,9 @@
 import type { Metadata } from "next";
-import { FileText, Play } from "lucide-react";
-import Link from "next/link";
+import { FileText } from "lucide-react";
 import { notFound } from "next/navigation";
 import { cache } from "react";
-import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
-import { QuizKindLabel } from "@/components/quiz-kind-label";
 import { MAX_CHAPTERS_PER_COURSE } from "@/lib/plans";
 import { pluralize } from "@/lib/pluralize";
 import { courseIdSchema } from "@/lib/validations/course";
@@ -16,10 +13,10 @@ import { listReviewSources } from "@/server/services/quizzes";
 import { getMonthlyUsage } from "@/server/services/usage";
 import { requireUser } from "@/server/session";
 import { ChapterUpload } from "./chapter-upload";
+import { CourseQuizzes } from "./course-quizzes";
 import { CourseActions } from "./course-actions";
 import { DeleteChapterButton } from "./delete-chapter-button";
 import { ExamForm } from "./exam-form";
-import { QuizAttempts } from "./quiz-attempts";
 import { QuizGenerator } from "./quiz-generator";
 import { ReviewQuizForm } from "./review-quiz-form";
 
@@ -46,6 +43,21 @@ const formatSize = (bytes: number) =>
 export default async function CoursePage({ params }: Props) {
   const course = await loadCourse((await params).courseId);
   const user = await requireUser(`/courses/${course.id}`);
+
+  // The "My quizzes" folder only lists the quick quizzes: no chapters, generating, reviews or exams.
+  if (course.isDefault) {
+    return (
+      <div className="flex flex-col gap-6">
+        <PageHeading>{course.name}</PageHeading>
+        <CourseQuizzes
+          quizzes={course.quizzes}
+          attempts={await listCourseAttempts(user.id, course.id)}
+          emptyText="Quick quizzes you create land here."
+        />
+      </div>
+    );
+  }
+
   const [{ plan, used, limit }, reviewSources, attempts] = await Promise.all([
     getMonthlyUsage(user.id),
     listReviewSources(user.id, course.id),
@@ -112,41 +124,11 @@ export default async function CoursePage({ params }: Props) {
             )}
           </Card>
 
-          <Card className="gap-2">
-            <CardTitle>Quizzes</CardTitle>
-            {course.quizzes.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No quizzes in this course yet.</p>
-            ) : (
-              <ul className="divide-y">
-                {course.quizzes.map((quiz) => (
-                  <li key={quiz.id}>
-                    <div className="flex items-start gap-3 pt-3 pb-2">
-                      <div className="min-w-0 flex-1">
-                        <Link
-                          href={`/quizzes/${quiz.id}`}
-                          className="font-medium text-primary underline-offset-4 wrap-break-word hover:underline"
-                        >
-                          {quiz.name}
-                        </Link>
-                        <QuizKindLabel kind={quiz.kind} />
-                        {quiz.description ? (
-                          <p className="mt-0.5 text-sm text-muted-foreground">{quiz.description}</p>
-                        ) : null}
-                      </div>
-                      {/* Touch screens have no hover, so a visible button says where the quiz starts. */}
-                      <Button variant="outline" size="sm" asChild className="shrink-0 gap-1.5">
-                        <Link href={`/quizzes/${quiz.id}`} aria-label={`Start ${quiz.name}`}>
-                          <Play className="size-3.5" aria-hidden />
-                          Start
-                        </Link>
-                      </Button>
-                    </div>
-                    <QuizAttempts entry={attempts.get(quiz.id)} />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
+          <CourseQuizzes
+            quizzes={course.quizzes}
+            attempts={attempts}
+            emptyText="No quizzes in this course yet."
+          />
         </div>
 
         <div className="flex flex-col gap-6">
