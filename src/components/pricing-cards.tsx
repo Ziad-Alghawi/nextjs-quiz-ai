@@ -38,7 +38,7 @@ const cards = [
     features: PLAN_FEATURES.free,
     cta: "Get started",
     style: {
-      card: "bg-muted/60",
+      card: "border-transparent bg-muted/60",
       muted: "text-muted-foreground",
       check: "text-primary",
       button: "border border-input bg-background text-foreground hover:bg-accent",
@@ -54,7 +54,7 @@ const cards = [
     features: PLAN_FEATURES.pro,
     cta: "Choose monthly",
     style: {
-      card: "border-2 border-primary bg-card",
+      card: "border-primary bg-card",
       muted: "text-muted-foreground",
       check: "text-primary",
       button: "bg-primary text-primary-foreground hover:bg-primary/90",
@@ -70,7 +70,7 @@ const cards = [
     features: PLAN_FEATURES.pro,
     cta: "Choose yearly",
     style: {
-      card: "bg-fill-blue text-on-fill",
+      card: "border-transparent bg-fill-blue text-on-fill",
       muted: "text-on-fill/80",
       check: "text-on-fill",
       button: "bg-on-fill text-fill-blue hover:bg-on-fill/90",
@@ -122,7 +122,7 @@ export function PricingCards({ actions }: { actions: PricingActions }) {
       {cards.map((card) => (
         <div
           key={card.id}
-          className={cn("relative flex flex-col gap-5 rounded-3xl p-8", card.style.card)}
+          className={cn("relative flex flex-col gap-5 rounded-3xl border-2 p-8", card.style.card)}
         >
           {card.id === "year" ? (
             <span className="absolute top-5 right-5 rounded-full bg-on-fill px-2.5 py-1 text-sm font-semibold text-fill-green">
@@ -146,9 +146,9 @@ export function PricingCards({ actions }: { actions: PricingActions }) {
             {card.intro ? <p className="text-sm font-semibold">{card.intro}</p> : null}
             <ul className="flex flex-col gap-3">
               {card.features.map((feature) => (
-                <li key={feature} className="flex items-center gap-2.5">
+                <li key={feature} className="flex items-start gap-2.5">
                   <Check
-                    className={cn("size-4.5 shrink-0", card.style.check)}
+                    className={cn("mt-0.75 size-4.5 shrink-0", card.style.check)}
                     strokeWidth={2.5}
                     aria-hidden
                   />
