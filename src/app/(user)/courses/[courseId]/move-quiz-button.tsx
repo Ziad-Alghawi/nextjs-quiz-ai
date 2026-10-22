@@ -20,6 +20,7 @@ function MoveQuizForm({
 }) {
   const [state, formAction, pending] = useDialogForm(moveQuiz, onClose);
   const selectId = useId();
+  const [courseId, setCourseId] = useState("");
 
   return (
     <form action={formAction} className="flex flex-col gap-4 p-6">
@@ -38,7 +39,8 @@ function MoveQuizForm({
             id={selectId}
             name="courseId"
             required
-            defaultValue=""
+            value={courseId}
+            onChange={(event) => setCourseId(event.target.value)}
             className="h-10 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
           >
             <option value="" disabled>
@@ -59,7 +61,7 @@ function MoveQuizForm({
           Cancel
         </Button>
         {courses.length > 0 ? (
-          <Button type="submit" disabled={pending}>
+          <Button type="submit" disabled={pending || !courseId}>
             {pending ? "Moving…" : "Move quiz"}
           </Button>
         ) : null}
