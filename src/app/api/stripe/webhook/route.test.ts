@@ -50,6 +50,19 @@ describe("POST /api/stripe/webhook", () => {
     expect(setSubscribed).toHaveBeenCalledWith("cus_1", expected);
   });
 
+  // Pro doesn't depend on the price: monthly and yearly subscriptions are handled alike.
+  it.each(["month", "year"])("activates Pro for a %sly subscription", async (interval) => {
+    const response = await POST(
+      signedRequest("customer.subscription.created", {
+        ...subscription("active"),
+        items: { data: [{ price: { id: `price_${interval}`, recurring: { interval } } }] },
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(setSubscribed).toHaveBeenCalledWith("cus_1", true);
+  });
+
   it("ignores other events", async () => {
     const response = await POST(signedRequest("invoice.paid", { id: "in_1", object: "invoice" }));
 

@@ -127,23 +127,24 @@ secret it prints into `STRIPE_WEBHOOK_SECRET`.
 They are validated with Zod when the server starts (`src/lib/env.ts`); the SMTP variables are
 required only with `EMAIL_TRANSPORT=smtp`.
 
-| Name                    | Purpose                                           |
-| ----------------------- | ------------------------------------------------- |
-| `DATABASE_URL`          | PostgreSQL connection                             |
-| `AUTH_SECRET`           | Signs session cookies                             |
-| `GOOGLE_CLIENT_ID`      | Google sign-in                                    |
-| `GOOGLE_CLIENT_SECRET`  | Google sign-in                                    |
-| `GEMINI_API_KEY`        | Quiz generation                                   |
-| `STRIPE_SECRET_KEY`     | Checkout and billing portal                       |
-| `STRIPE_WEBHOOK_SECRET` | Verifies Stripe webhook signatures                |
-| `STRIPE_PRICE_ID`       | The Pro subscription price (`price_…`)            |
-| `APP_URL`               | Public base URL (auth and Stripe return links)    |
-| `EMAIL_TRANSPORT`       | `console` (default) or `smtp`                     |
-| `SMTP_HOST`             | SMTP server (only with `EMAIL_TRANSPORT=smtp`)    |
-| `SMTP_PORT`             | SMTP port (only with `EMAIL_TRANSPORT=smtp`)      |
-| `SMTP_USER`             | SMTP account (only with `EMAIL_TRANSPORT=smtp`)   |
-| `SMTP_PASSWORD`         | SMTP password (only with `EMAIL_TRANSPORT=smtp`)  |
-| `EMAIL_FROM`            | Sender address (only with `EMAIL_TRANSPORT=smtp`) |
+| Name                     | Purpose                                           |
+| ------------------------ | ------------------------------------------------- |
+| `DATABASE_URL`           | PostgreSQL connection                             |
+| `AUTH_SECRET`            | Signs session cookies                             |
+| `GOOGLE_CLIENT_ID`       | Google sign-in                                    |
+| `GOOGLE_CLIENT_SECRET`   | Google sign-in                                    |
+| `GEMINI_API_KEY`         | Quiz generation                                   |
+| `STRIPE_SECRET_KEY`      | Checkout and billing portal                       |
+| `STRIPE_WEBHOOK_SECRET`  | Verifies Stripe webhook signatures                |
+| `STRIPE_PRICE_ID`        | The Pro monthly price (`price_…`)                 |
+| `STRIPE_YEARLY_PRICE_ID` | The Pro yearly price (`price_…`)                  |
+| `APP_URL`                | Public base URL (auth and Stripe return links)    |
+| `EMAIL_TRANSPORT`        | `console` (default) or `smtp`                     |
+| `SMTP_HOST`              | SMTP server (only with `EMAIL_TRANSPORT=smtp`)    |
+| `SMTP_PORT`              | SMTP port (only with `EMAIL_TRANSPORT=smtp`)      |
+| `SMTP_USER`              | SMTP account (only with `EMAIL_TRANSPORT=smtp`)   |
+| `SMTP_PASSWORD`          | SMTP password (only with `EMAIL_TRANSPORT=smtp`)  |
+| `EMAIL_FROM`             | Sender address (only with `EMAIL_TRANSPORT=smtp`) |
 
 ## Security and cost control
 

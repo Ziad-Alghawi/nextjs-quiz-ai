@@ -3,19 +3,26 @@ import Stripe from "stripe";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
 import { users } from "@/db/schema";
-import { cancelSubscriptions, createBillingPortalSession, getCancellationDate } from "./billing";
+import {
+  cancelSubscriptions,
+  createBillingPortalSession,
+  getSubscriptionSummary,
+  getUpgradeUrl,
+} from "./billing";
 
 const stripeMock = vi.hoisted(() => ({
   list: vi.fn(),
   cancel: vi.fn(),
   createCustomer: vi.fn(),
   createPortalSession: vi.fn(),
+  createCheckoutSession: vi.fn(),
 }));
 vi.mock("@/lib/stripe", () => ({
   getStripe: () => ({
     subscriptions: { list: stripeMock.list, cancel: stripeMock.cancel },
     customers: { create: stripeMock.createCustomer },
     billingPortal: { sessions: { create: stripeMock.createPortalSession } },
+    checkout: { sessions: { create: stripeMock.createCheckoutSession } },
   }),
 }));
 
@@ -68,18 +75,77 @@ describe("Stripe customer", () => {
   });
 });
 
-describe("getCancellationDate", () => {
-  const PERIOD_END = 1_793_000_000;
-  const subscription = (cancelAtPeriodEnd: boolean) => ({
-    cancel_at_period_end: cancelAtPeriodEnd,
-    items: { data: [{ current_period_end: PERIOD_END }] },
+describe("getUpgradeUrl", () => {
+  beforeEach(async () => {
+    await addUser("cus_test");
+    stripeMock.createCheckoutSession.mockResolvedValue({ url: "https://checkout.example" });
+    stripeMock.createPortalSession.mockResolvedValue({ url: "https://billing.example" });
   });
 
-  it("is the end of the period when the subscription is set to cancel", async () => {
-    await addUser("cus_test");
-    stripeMock.list.mockResolvedValue({ data: [subscription(true)] });
+  // The test env sets STRIPE_PRICE_ID=price_123 and STRIPE_YEARLY_PRICE_ID=price_456.
+  it.each([
+    ["month", "price_123"],
+    ["year", "price_456"],
+  ] as const)("opens checkout with the %sly price", async (interval, price) => {
+    stripeMock.list.mockReturnValue(listOf());
 
-    await expect(getCancellationDate(USER)).resolves.toEqual(new Date(PERIOD_END * 1000));
+    await expect(getUpgradeUrl(USER, interval)).resolves.toBe("https://checkout.example");
+    expect(stripeMock.createCheckoutSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mode: "subscription",
+        customer: "cus_test",
+        line_items: [{ price, quantity: 1 }],
+      }),
+    );
+  });
+
+  it("opens checkout when the earlier subscriptions have ended", async () => {
+    stripeMock.list.mockReturnValue(listOf("canceled", "incomplete_expired"));
+
+    await expect(getUpgradeUrl(USER, "month")).resolves.toBe("https://checkout.example");
+  });
+
+  // A late webhook leaves the user on Free for a moment; another Upgrade must not pay twice.
+  it.each(["active", "trialing", "past_due"] as const)(
+    "opens the billing portal instead while a subscription is %s",
+    async (status) => {
+      stripeMock.list.mockReturnValue(listOf("canceled", status));
+
+      await expect(getUpgradeUrl(USER, "year")).resolves.toBe("https://billing.example");
+      expect(stripeMock.createCheckoutSession).not.toHaveBeenCalled();
+      expect(stripeMock.createPortalSession).toHaveBeenCalledWith(
+        expect.objectContaining({ customer: "cus_test" }),
+      );
+    },
+  );
+
+  it("throws when Stripe returns no checkout URL", async () => {
+    stripeMock.list.mockReturnValue(listOf());
+    stripeMock.createCheckoutSession.mockResolvedValue({ url: null });
+
+    await expect(getUpgradeUrl(USER, "month")).rejects.toThrow("did not return a checkout URL");
+  });
+});
+
+describe("getSubscriptionSummary", () => {
+  const PERIOD_END = 1_793_000_000;
+  const subscription = (interval: "month" | "year", cancelAtPeriodEnd: boolean) => ({
+    cancel_at_period_end: cancelAtPeriodEnd,
+    items: { data: [{ current_period_end: PERIOD_END, price: { recurring: { interval } } }] },
+  });
+
+  it.each([
+    ["year", false],
+    ["month", true],
+  ] as const)("reads a %sly subscription (cancels: %s)", async (interval, cancels) => {
+    await addUser("cus_test");
+    stripeMock.list.mockResolvedValue({ data: [subscription(interval, cancels)] });
+
+    await expect(getSubscriptionSummary(USER)).resolves.toEqual({
+      interval,
+      periodEnd: new Date(PERIOD_END * 1000),
+      cancels,
+    });
     expect(stripeMock.list).toHaveBeenCalledWith({
       customer: "cus_test",
       status: "active",
@@ -87,21 +153,14 @@ describe("getCancellationDate", () => {
     });
   });
 
-  it("is null while the subscription renews", async () => {
-    await addUser("cus_test");
-    stripeMock.list.mockResolvedValue({ data: [subscription(false)] });
-
-    await expect(getCancellationDate(USER)).resolves.toBeNull();
-  });
-
   it("is null without an active subscription or a Stripe customer", async () => {
     await addUser("cus_test");
     stripeMock.list.mockResolvedValue({ data: [] });
-    await expect(getCancellationDate(USER)).resolves.toBeNull();
+    await expect(getSubscriptionSummary(USER)).resolves.toBeNull();
 
     await db.update(users).set({ stripeCustomerId: null }).where(eq(users.id, USER));
     stripeMock.list.mockClear();
-    await expect(getCancellationDate(USER)).resolves.toBeNull();
+    await expect(getSubscriptionSummary(USER)).resolves.toBeNull();
     expect(stripeMock.list).not.toHaveBeenCalled();
   });
 });

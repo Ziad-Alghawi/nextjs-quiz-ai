@@ -1,3 +1,5 @@
+import { formatOrList } from "./utils";
+
 /** Plan limits. The server enforces them; the UI only displays them. */
 export const PLANS = {
   free: { label: "Free", monthlyQuizzes: 10, maxChapters: 30, questionCounts: [5, 10, 15] },
@@ -10,6 +12,20 @@ export const PLANS = {
 } as const;
 
 export type PlanId = keyof typeof PLANS;
+
+export const BILLING_INTERVALS = ["month", "year"] as const;
+export type BillingInterval = (typeof BILLING_INTERVALS)[number];
+
+/**
+ * Pro's prices in USD, for display only: Stripe charges the price behind STRIPE_PRICE_ID (month)
+ * and STRIPE_YEARLY_PRICE_ID (year), so a change here needs new prices in Stripe too.
+ */
+export const PRO_PRICES: Record<BillingInterval, number> = { month: 3.99, year: 35.88 };
+
+export const PRO_LABELS: Record<BillingInterval, string> = {
+  month: "Pro Monthly",
+  year: "Pro Yearly",
+};
 
 /** The question count the pickers start on. Allowed on every plan. */
 export const DEFAULT_QUESTION_COUNT = 10;
@@ -74,3 +90,21 @@ export const DAILY_GENERATION_LIMIT = 50;
  * fewer in other languages). Bounds the cost of one generation; longer documents use the first part.
  */
 export const MAX_DOCUMENT_CHARS = 150_000;
+
+/** What each plan includes, for the pricing cards. Pro lists only what it adds to Free. */
+export const PLAN_FEATURES: Record<PlanId, readonly string[]> = {
+  free: [
+    `${PLANS.free.monthlyQuizzes} AI quizzes a month`,
+    `${formatOrList(PLANS.free.questionCounts)} questions per quiz`,
+    `${PLANS.free.maxChapters} chapters (PDFs up to ${MAX_PDF_MB} MB)`,
+    "Explanation for every answer",
+    "Review quizzes and course exams (don't use your quota)",
+    "Practise your mistakes",
+    "Saved attempts, stats and streaks",
+  ],
+  pro: [
+    `${PLANS.pro.monthlyQuizzes} AI quizzes a month (${PLANS.pro.monthlyQuizzes / PLANS.free.monthlyQuizzes}× more)`,
+    `Up to ${Math.max(...PLANS.pro.questionCounts)} questions per quiz`,
+    `${PLANS.pro.maxChapters} chapters`,
+  ],
+};
