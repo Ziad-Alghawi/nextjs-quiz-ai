@@ -30,7 +30,7 @@ type NavLinkProps = {
 function NavIcon({ icon: Icon }: { icon: NavLinkProps["icon"] }) {
   const { pending } = useLinkStatus();
   return pending ? (
-    <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden />
+    <Loader2 className="size-4 shrink-0 motion-safe:animate-spin" aria-hidden />
   ) : (
     <Icon className="size-4 shrink-0" />
   );
