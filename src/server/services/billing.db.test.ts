@@ -3,19 +3,26 @@ import Stripe from "stripe";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
 import { users } from "@/db/schema";
-import { cancelSubscriptions, createBillingPortalSession, getCancellationDate } from "./billing";
+import {
+  cancelSubscriptions,
+  createBillingPortalSession,
+  createCheckoutSession,
+  getCancellationDate,
+} from "./billing";
 
 const stripeMock = vi.hoisted(() => ({
   list: vi.fn(),
   cancel: vi.fn(),
   createCustomer: vi.fn(),
   createPortalSession: vi.fn(),
+  createCheckoutSession: vi.fn(),
 }));
 vi.mock("@/lib/stripe", () => ({
   getStripe: () => ({
     subscriptions: { list: stripeMock.list, cancel: stripeMock.cancel },
     customers: { create: stripeMock.createCustomer },
     billingPortal: { sessions: { create: stripeMock.createPortalSession } },
+    checkout: { sessions: { create: stripeMock.createCheckoutSession } },
   }),
 }));
 
@@ -64,6 +71,27 @@ describe("Stripe customer", () => {
     ]);
     expect(stripeMock.createPortalSession).toHaveBeenLastCalledWith(
       expect.objectContaining({ customer: "cus_new" }),
+    );
+  });
+});
+
+describe("createCheckoutSession", () => {
+  // The test env sets STRIPE_PRICE_ID=price_123 and STRIPE_YEARLY_PRICE_ID=price_456.
+  it.each([
+    ["month", "price_123"],
+    ["year", "price_456"],
+  ] as const)("uses the %sly price", async (interval, price) => {
+    await addUser("cus_test");
+    stripeMock.createCheckoutSession.mockResolvedValue({ url: "https://checkout.example" });
+
+    await createCheckoutSession(USER, interval);
+
+    expect(stripeMock.createCheckoutSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mode: "subscription",
+        customer: "cus_test",
+        line_items: [{ price, quantity: 1 }],
+      }),
     );
   });
 });

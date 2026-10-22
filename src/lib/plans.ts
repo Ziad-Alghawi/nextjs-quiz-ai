@@ -11,6 +11,9 @@ export const PLANS = {
 
 export type PlanId = keyof typeof PLANS;
 
+export const BILLING_INTERVALS = ["month", "year"] as const;
+export type BillingInterval = (typeof BILLING_INTERVALS)[number];
+
 /** The question count the pickers start on. Allowed on every plan. */
 export const DEFAULT_QUESTION_COUNT = 10;
 

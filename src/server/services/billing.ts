@@ -4,6 +4,7 @@ import Stripe from "stripe";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { env } from "@/lib/env";
+import type { BillingInterval } from "@/lib/plans";
 import { getStripe } from "@/lib/stripe";
 
 /** Subscriptions in these states are over: they can't bill again. */
@@ -45,12 +46,13 @@ async function getOrCreateStripeCustomer(userId: string) {
   return customer.id;
 }
 
-/** A Stripe Checkout session for the Pro plan; the price comes from server config only. */
-export async function createCheckoutSession(userId: string) {
+/** A Stripe Checkout session for Pro billed per `interval`; the price comes from server config only. */
+export async function createCheckoutSession(userId: string, interval: BillingInterval) {
+  const prices = { month: env.STRIPE_PRICE_ID, year: env.STRIPE_YEARLY_PRICE_ID };
   return getStripe().checkout.sessions.create({
     mode: "subscription",
     customer: await getOrCreateStripeCustomer(userId),
-    line_items: [{ price: env.STRIPE_PRICE_ID, quantity: 1 }],
+    line_items: [{ price: prices[interval], quantity: 1 }],
     allowed_payment_method_types: ["card"],
     success_url: `${env.APP_URL}/billing/payment/success`,
   });

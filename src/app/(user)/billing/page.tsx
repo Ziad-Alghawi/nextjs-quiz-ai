@@ -31,6 +31,7 @@ export default async function BillingPage() {
         </p>
         {plan === "free" ? (
           <form action={startCheckout}>
+            <input type="hidden" name="interval" value="month" />
             <SubmitButton pendingText="Opening checkout…">
               Upgrade to Pro for {PLANS.pro.monthlyQuizzes} quizzes a month
             </SubmitButton>
