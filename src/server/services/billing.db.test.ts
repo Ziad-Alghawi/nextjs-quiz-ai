@@ -6,8 +6,8 @@ import { users } from "@/db/schema";
 import {
   cancelSubscriptions,
   createBillingPortalSession,
-  createCheckoutSession,
   getCancellationDate,
+  getUpgradeUrl,
 } from "./billing";
 
 const stripeMock = vi.hoisted(() => ({
@@ -75,17 +75,21 @@ describe("Stripe customer", () => {
   });
 });
 
-describe("createCheckoutSession", () => {
+describe("getUpgradeUrl", () => {
+  beforeEach(async () => {
+    await addUser("cus_test");
+    stripeMock.createCheckoutSession.mockResolvedValue({ url: "https://checkout.example" });
+    stripeMock.createPortalSession.mockResolvedValue({ url: "https://billing.example" });
+  });
+
   // The test env sets STRIPE_PRICE_ID=price_123 and STRIPE_YEARLY_PRICE_ID=price_456.
   it.each([
     ["month", "price_123"],
     ["year", "price_456"],
-  ] as const)("uses the %sly price", async (interval, price) => {
-    await addUser("cus_test");
-    stripeMock.createCheckoutSession.mockResolvedValue({ url: "https://checkout.example" });
+  ] as const)("opens checkout with the %sly price", async (interval, price) => {
+    stripeMock.list.mockReturnValue(listOf());
 
-    await createCheckoutSession(USER, interval);
-
+    await expect(getUpgradeUrl(USER, interval)).resolves.toBe("https://checkout.example");
     expect(stripeMock.createCheckoutSession).toHaveBeenCalledWith(
       expect.objectContaining({
         mode: "subscription",
@@ -93,6 +97,33 @@ describe("createCheckoutSession", () => {
         line_items: [{ price, quantity: 1 }],
       }),
     );
+  });
+
+  it("opens checkout when the earlier subscriptions have ended", async () => {
+    stripeMock.list.mockReturnValue(listOf("canceled", "incomplete_expired"));
+
+    await expect(getUpgradeUrl(USER, "month")).resolves.toBe("https://checkout.example");
+  });
+
+  // A late webhook leaves the user on Free for a moment; another Upgrade must not pay twice.
+  it.each(["active", "trialing", "past_due"] as const)(
+    "opens the billing portal instead while a subscription is %s",
+    async (status) => {
+      stripeMock.list.mockReturnValue(listOf("canceled", status));
+
+      await expect(getUpgradeUrl(USER, "year")).resolves.toBe("https://billing.example");
+      expect(stripeMock.createCheckoutSession).not.toHaveBeenCalled();
+      expect(stripeMock.createPortalSession).toHaveBeenCalledWith(
+        expect.objectContaining({ customer: "cus_test" }),
+      );
+    },
+  );
+
+  it("throws when Stripe returns no checkout URL", async () => {
+    stripeMock.list.mockReturnValue(listOf());
+    stripeMock.createCheckoutSession.mockResolvedValue({ url: null });
+
+    await expect(getUpgradeUrl(USER, "month")).rejects.toThrow("did not return a checkout URL");
   });
 });
 

@@ -46,23 +46,35 @@ async function getOrCreateStripeCustomer(userId: string) {
   return customer.id;
 }
 
-/** A Stripe Checkout session for Pro billed per `interval`; the price comes from server config only. */
-export async function createCheckoutSession(userId: string, interval: BillingInterval) {
+const createPortalSession = (customer: string) =>
+  getStripe().billingPortal.sessions.create({ customer, return_url: `${env.APP_URL}/billing` });
+
+export async function createBillingPortalSession(userId: string) {
+  return createPortalSession(await getOrCreateStripeCustomer(userId));
+}
+
+/**
+ * Where Upgrade sends the user: Stripe Checkout for Pro billed per `interval` (the price comes from
+ * server config only), or the billing portal when a subscription that can bill already exists. The
+ * plan flag waits for the webhook, so without this check a second Upgrade would start a second
+ * subscription.
+ */
+export async function getUpgradeUrl(userId: string, interval: BillingInterval) {
+  const customer = await getOrCreateStripeCustomer(userId);
+  for await (const subscription of getStripe().subscriptions.list({ customer, status: "all" })) {
+    if (!ENDED_STATUSES.has(subscription.status)) return (await createPortalSession(customer)).url;
+  }
+
   const prices = { month: env.STRIPE_PRICE_ID, year: env.STRIPE_YEARLY_PRICE_ID };
-  return getStripe().checkout.sessions.create({
+  const session = await getStripe().checkout.sessions.create({
     mode: "subscription",
-    customer: await getOrCreateStripeCustomer(userId),
+    customer,
     line_items: [{ price: prices[interval], quantity: 1 }],
     allowed_payment_method_types: ["card"],
     success_url: `${env.APP_URL}/billing/payment/success`,
   });
-}
-
-export async function createBillingPortalSession(userId: string) {
-  return getStripe().billingPortal.sessions.create({
-    customer: await getOrCreateStripeCustomer(userId),
-    return_url: `${env.APP_URL}/billing`,
-  });
+  if (!session.url) throw new Error("Stripe did not return a checkout URL.");
+  return session.url;
 }
 
 /**
