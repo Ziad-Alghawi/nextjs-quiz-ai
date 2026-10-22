@@ -32,6 +32,7 @@ export function ChangePasswordForm({ email }: { email: string }) {
 
   return (
     <form
+      method="post"
       onSubmit={(event) => {
         setSaved(false);
         return onSubmit(event);

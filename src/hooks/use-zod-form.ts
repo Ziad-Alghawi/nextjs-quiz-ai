@@ -10,6 +10,9 @@ type SubmitOutcome<Values> = { error: string } | { fieldErrors: FieldErrors<Valu
  * State for a client form validated with a Zod schema: parses the form data, shows the first error
  * per field, and calls onValid with the parsed data while `pending` is true. onValid can return a
  * form-level error or field errors from the server.
+ *
+ * Forms using it set `method="post"`: a submit before hydration is a native one, and as a GET it
+ * would put the fields, passwords included, into the URL.
  */
 export function useZodForm<Schema extends z.ZodTypeAny>(
   schema: Schema,

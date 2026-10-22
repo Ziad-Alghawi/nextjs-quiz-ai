@@ -134,6 +134,13 @@
       "when": 1792610817977,
       "tag": "0018_enable_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1792627710504,
+      "tag": "0019_revoke_api_role_grants",
+      "breakpoints": true
     }
   ]
 }

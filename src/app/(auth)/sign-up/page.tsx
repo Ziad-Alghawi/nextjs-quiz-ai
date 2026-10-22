@@ -39,7 +39,7 @@ export default function SignUpPage({
         title="Create an account"
         description="Sign up for free and turn your PDFs into quizzes."
       />
-      <form onSubmit={signUp} noValidate className="flex flex-col gap-4">
+      <form method="post" onSubmit={signUp} noValidate className="flex flex-col gap-4">
         <TextField label="Name" name="name" autoComplete="name" error={errors.name} />
         <TextField
           label="Email"

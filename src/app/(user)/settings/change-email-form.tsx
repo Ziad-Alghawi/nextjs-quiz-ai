@@ -73,7 +73,12 @@ export function ChangeEmailForm({ currentEmail }: { currentEmail: string }) {
   return (
     <div className="flex flex-col gap-3">
       {newEmail === null ? (
-        <form onSubmit={codeRequest.onSubmit} noValidate className="flex flex-col gap-3">
+        <form
+          method="post"
+          onSubmit={codeRequest.onSubmit}
+          noValidate
+          className="flex flex-col gap-3"
+        >
           <p className="text-sm">
             We&apos;ll send a {OTP_LENGTH}-digit code to the new address. After the change you sign
             in with it.
@@ -95,7 +100,12 @@ export function ChangeEmailForm({ currentEmail }: { currentEmail: string }) {
           </div>
         </form>
       ) : (
-        <form onSubmit={confirmation.onSubmit} noValidate className="flex flex-col gap-3">
+        <form
+          method="post"
+          onSubmit={confirmation.onSubmit}
+          noValidate
+          className="flex flex-col gap-3"
+        >
           {/* Addresses that already belong to an account get no code, without saying so here. */}
           <p role="status" className="text-sm">
             If {newEmail} isn&apos;t used by another account, we sent it a code. It expires in{" "}
