@@ -97,8 +97,20 @@ describe("getOrCreateDefaultCourse", () => {
     );
 
     const rows = await db.select().from(courses).where(eq(courses.userId, USER));
-    expect(rows).toEqual([expect.objectContaining({ id: ids[0], name: "My quizzes" })]);
+    expect(rows).toEqual([
+      expect.objectContaining({ id: ids[0], name: "My quizzes", isDefault: true }),
+    ]);
     expect(new Set(ids)).toEqual(new Set([ids[0]]));
+  });
+
+  it("finds the folder by its flag, not by its name", async () => {
+    const [folder] = await db
+      .insert(courses)
+      .values({ userId: USER, name: "Renamed long ago", isDefault: true })
+      .returning({ id: courses.id });
+
+    expect(await getOrCreateDefaultCourse(db, USER)).toBe(folder.id);
+    expect(await db.select().from(courses).where(eq(courses.userId, USER))).toHaveLength(1);
   });
 });
 

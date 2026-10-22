@@ -11,7 +11,7 @@ import {
   boolean,
   primaryKey,
 } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import type { PlanId } from "@/lib/plans";
 
 // Every table enables row-level security without policies: Supabase's API roles (anon, authenticated)
@@ -106,11 +106,18 @@ export const courses = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
+    /** The user's "My quizzes" folder for quick quizzes: no chapters, reviews or exams. */
+    isDefault: boolean("is_default").default(false).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  // Also keeps "My quizzes" unique: getOrCreateDefaultCourse's upsert and the backfill in migration
-  // 0010 rely on it, so parallel requests or a re-run never create two of them.
-  (table) => [uniqueIndex("courses_user_id_name_idx").on(table.userId, table.name)],
+  (table) => [
+    uniqueIndex("courses_user_id_name_idx").on(table.userId, table.name),
+    // At most one folder per user; getOrCreateDefaultCourse's upsert relies on it, so parallel
+    // requests never create two.
+    uniqueIndex("courses_user_id_default_idx")
+      .on(table.userId)
+      .where(sql`${table.isDefault}`),
+  ],
 ).enableRLS();
 
 export const coursesRelations = relations(courses, ({ many }) => ({

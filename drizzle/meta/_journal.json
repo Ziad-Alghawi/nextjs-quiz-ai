@@ -141,6 +141,13 @@
       "when": 1792627710504,
       "tag": "0019_revoke_api_role_grants",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1792689889161,
+      "tag": "0020_my_quizzes_flag",
+      "breakpoints": true
     }
   ]
 }

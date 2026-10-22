@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { idSchema } from "./id";
 
+/** The name of each user's folder for quick quizzes. */
+export const DEFAULT_COURSE_NAME = "My quizzes";
+
 export const courseNameSchema = z
   .string()
   .trim()

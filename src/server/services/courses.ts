@@ -1,13 +1,11 @@
 import "server-only";
-import { and, asc, count, desc, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq, sql } from "drizzle-orm";
 import { DrizzleQueryError } from "drizzle-orm/errors";
 import postgres from "postgres";
 import { db } from "@/db";
 import { chapters, courses, quizzes } from "@/db/schema";
 import { MAX_COURSES_PER_USER } from "@/lib/plans";
-
-// Migration 0010 uses the same name for the course it moves existing quizzes into.
-const DEFAULT_COURSE_NAME = "My quizzes";
+import { DEFAULT_COURSE_NAME } from "@/lib/validations/course";
 
 /** The unique (user_id, name) index rejected the name: the user already has a course called that. */
 const isDuplicateName = (error: unknown) =>
@@ -16,7 +14,7 @@ const isDuplicateName = (error: unknown) =>
   error.cause.code === "23505";
 
 /**
- * The id of the user's "My quizzes" course, created on first use. One statement: the no-op update
+ * The id of the user's "My quizzes" folder, created on first use. One statement: the no-op update
  * on conflict makes RETURNING give the existing id, also when two requests create it at once.
  */
 export async function getOrCreateDefaultCourse(
@@ -25,10 +23,11 @@ export async function getOrCreateDefaultCourse(
 ) {
   const [{ id }] = await executor
     .insert(courses)
-    .values({ userId, name: DEFAULT_COURSE_NAME })
+    .values({ userId, name: DEFAULT_COURSE_NAME, isDefault: true })
     .onConflictDoUpdate({
-      target: [courses.userId, courses.name],
-      set: { name: DEFAULT_COURSE_NAME },
+      target: courses.userId,
+      targetWhere: sql`${courses.isDefault}`,
+      set: { isDefault: true },
     })
     .returning({ id: courses.id });
   return id;
@@ -43,13 +42,13 @@ export function listCourses(userId: string) {
     .select({ id: courses.id, name: courses.name })
     .from(courses)
     .where(eq(courses.userId, userId))
-    .orderBy(desc(eq(courses.name, DEFAULT_COURSE_NAME)), asc(courses.id));
+    .orderBy(desc(courses.isDefault), asc(courses.id));
 }
 
 /** The course with its chapters and quizzes, only if it belongs to the user. Chapter text isn't loaded. */
 export function getCourse(userId: string, courseId: number) {
   return db.query.courses.findFirst({
-    columns: { id: true, name: true },
+    columns: { id: true, name: true, isDefault: true },
     where: and(eq(courses.id, courseId), eq(courses.userId, userId)),
     with: {
       chapters: {
