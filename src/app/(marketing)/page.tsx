@@ -101,7 +101,7 @@ export default async function HomePage() {
         <FeatureBoxes />
       </section>
 
-      <section id="features" className="flex flex-col gap-10">
+      <section id="progress" className="flex scroll-mt-8 flex-col gap-10">
         <div className="flex flex-col items-center gap-3 text-center">
           <h2 className="text-3xl leading-tight font-bold tracking-tight sm:text-4xl lg:text-[2.75rem]">
             See your progress at a glance
@@ -115,7 +115,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section id="pricing" className="flex flex-col items-center gap-10">
+      <section id="pricing" className="flex scroll-mt-8 flex-col items-center gap-10">
         <div className="flex flex-col items-center gap-3 text-center">
           <h2 className="text-3xl leading-tight font-bold tracking-tight sm:text-4xl lg:text-[2.75rem]">
             Simple pricing

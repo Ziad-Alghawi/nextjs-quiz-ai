@@ -41,7 +41,7 @@ const EXAM_ANSWERED = 6;
  */
 export function FeatureBoxes() {
   return (
-    <ul id="how" className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
+    <ul id="how" className="grid scroll-mt-8 gap-4 md:grid-cols-2 lg:grid-cols-6">
       <Box
         className="bg-primary/8 lg:col-span-2"
         title="1 · Upload chapters"

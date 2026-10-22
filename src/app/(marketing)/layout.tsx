@@ -5,7 +5,7 @@ import { getCurrentUser } from "@/server/session";
 
 const sections = [
   { href: "/#how", label: "How it works" },
-  { href: "/#features", label: "Features" },
+  { href: "/#progress", label: "Progress" },
   { href: "/#pricing", label: "Pricing" },
 ];
 
