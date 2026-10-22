@@ -1,6 +1,7 @@
 import "server-only";
 import { and, asc, count, desc, eq, sql } from "drizzle-orm";
 import { DrizzleQueryError } from "drizzle-orm/errors";
+import { cache } from "react";
 import postgres from "postgres";
 import { db } from "@/db";
 import { chapters, courses, quizzes } from "@/db/schema";
@@ -35,15 +36,16 @@ export async function getOrCreateDefaultCourse(
 
 /**
  * The user's courses with the "My quizzes" folder flagged, oldest first so the sidebar doesn't
- * reorder itself.
+ * reorder itself. Cached per request, since the header and the sidebar both show them; async, so
+ * the cache holds the result and not a query that would run again on every await.
  */
-export function listCourses(userId: string) {
-  return db
+export const listCourses = cache(async (userId: string) =>
+  db
     .select({ id: courses.id, name: courses.name, isDefault: courses.isDefault })
     .from(courses)
     .where(eq(courses.userId, userId))
-    .orderBy(asc(courses.id));
-}
+    .orderBy(asc(courses.id)),
+);
 
 /** The course with its chapters and quizzes, only if it belongs to the user. Chapter text isn't loaded. */
 export function getCourse(userId: string, courseId: number) {
