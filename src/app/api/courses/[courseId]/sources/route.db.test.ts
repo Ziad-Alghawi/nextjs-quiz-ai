@@ -8,6 +8,7 @@ import {
   MAX_DOCUMENT_CHARS,
   PLANS,
 } from "@/lib/plans";
+import { getOrCreateDefaultCourse } from "@/server/services/courses";
 import { addCourse, createUsers, deleteUsers } from "@/test/db-fixtures";
 import { makePdf } from "@/test/make-pdf";
 import { POST } from "./route";
@@ -105,6 +106,13 @@ describe("POST /api/courses/[courseId]/sources", () => {
     session.userId = null;
     expect((await upload(othersCourse, pdf)).status).toBe(401);
     expect(await db.select().from(chapters).where(eq(chapters.courseId, othersCourse))).toEqual([]);
+  });
+
+  it('refuses the "My quizzes" folder: it holds quick quizzes only', async () => {
+    const folderId = await getOrCreateDefaultCourse(db, USER);
+
+    expect((await upload(folderId, makePdf(["Text."]))).status).toBe(404);
+    expect(await db.select().from(chapters).where(eq(chapters.courseId, folderId))).toEqual([]);
   });
 
   it("explains files that aren't PDFs, have no text or can't be read", async () => {

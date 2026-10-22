@@ -125,6 +125,21 @@ describe("createReview", () => {
     expect(redirect).not.toHaveBeenCalled();
   });
 
+  it('refuses quick quizzes in the "My quizzes" folder', async () => {
+    const cells = await createQuiz(generatedQuiz(5, "Cells"), USER);
+    const genes = await createQuiz(generatedQuiz(5, "Genes"), USER);
+    const [{ courseId: folderId }] = await db
+      .select({ courseId: quizzes.courseId })
+      .from(quizzes)
+      .where(eq(quizzes.id, cells));
+
+    expect(await createReview(IDLE, form(folderId, [cells, genes], 5))).toEqual({
+      status: "error",
+      error: expect.stringContaining("don't exist anymore"),
+    });
+    expect(redirect).not.toHaveBeenCalled();
+  });
+
   it("checks the quiz and question counts", async () => {
     const courseId = await addCourse(USER);
     const cells = await addQuiz(courseId, "Cells", 5);

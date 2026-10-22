@@ -34,7 +34,7 @@ export default async function QuickQuizPage() {
         <div className="flex flex-col gap-1">
           <CardTitle>Quiz from one PDF</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Saved in your &ldquo;My quizzes&rdquo; course. To use several PDFs, add them as chapters
+            Saved in your &ldquo;My quizzes&rdquo; folder. To use several PDFs, add them as chapters
             of a course instead.
           </p>
         </div>
