@@ -3,7 +3,7 @@ import Link from "next/link";
 import { startCheckout } from "@/app/actions/billing";
 import { Button } from "@/components/ui/button";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { PLAN_FEATURES, PLANS, PRO_PRICES } from "@/lib/plans";
+import { PLAN_FEATURES, PLANS, PRO_LABELS, PRO_PRICES } from "@/lib/plans";
 import { cn } from "@/lib/utils";
 
 type LinkAction = { href: string };
@@ -46,7 +46,7 @@ const cards = [
   },
   {
     id: "month",
-    name: "Pro Monthly",
+    name: PRO_LABELS.month,
     summary: "For regular studying",
     perMonth: PRO_PRICES.month,
     billed: "Billed monthly, cancel anytime",
@@ -62,11 +62,11 @@ const cards = [
   },
   {
     id: "year",
-    name: "Pro Yearly",
+    name: PRO_LABELS.year,
     summary: "Best value for the whole year",
     perMonth: cents(PRO_PRICES.year / 12),
     billed: `${usd(PRO_PRICES.year)} billed once a year · save ${usd(yearlySaving)}`,
-    intro: "Everything in Pro Monthly:",
+    intro: `Everything in ${PRO_LABELS.month}:`,
     features: PLAN_FEATURES.pro,
     cta: "Choose yearly",
     style: {

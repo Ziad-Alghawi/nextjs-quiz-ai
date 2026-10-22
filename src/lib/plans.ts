@@ -22,6 +22,11 @@ export type BillingInterval = (typeof BILLING_INTERVALS)[number];
  */
 export const PRO_PRICES: Record<BillingInterval, number> = { month: 3.99, year: 35.88 };
 
+export const PRO_LABELS: Record<BillingInterval, string> = {
+  month: "Pro Monthly",
+  year: "Pro Yearly",
+};
+
 /** The question count the pickers start on. Allowed on every plan. */
 export const DEFAULT_QUESTION_COUNT = 10;
 

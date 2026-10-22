@@ -6,7 +6,7 @@ import { users } from "@/db/schema";
 import {
   cancelSubscriptions,
   createBillingPortalSession,
-  getCancellationDate,
+  getSubscriptionSummary,
   getUpgradeUrl,
 } from "./billing";
 
@@ -127,18 +127,25 @@ describe("getUpgradeUrl", () => {
   });
 });
 
-describe("getCancellationDate", () => {
+describe("getSubscriptionSummary", () => {
   const PERIOD_END = 1_793_000_000;
-  const subscription = (cancelAtPeriodEnd: boolean) => ({
+  const subscription = (interval: "month" | "year", cancelAtPeriodEnd: boolean) => ({
     cancel_at_period_end: cancelAtPeriodEnd,
-    items: { data: [{ current_period_end: PERIOD_END }] },
+    items: { data: [{ current_period_end: PERIOD_END, price: { recurring: { interval } } }] },
   });
 
-  it("is the end of the period when the subscription is set to cancel", async () => {
+  it.each([
+    ["year", false],
+    ["month", true],
+  ] as const)("reads a %sly subscription (cancels: %s)", async (interval, cancels) => {
     await addUser("cus_test");
-    stripeMock.list.mockResolvedValue({ data: [subscription(true)] });
+    stripeMock.list.mockResolvedValue({ data: [subscription(interval, cancels)] });
 
-    await expect(getCancellationDate(USER)).resolves.toEqual(new Date(PERIOD_END * 1000));
+    await expect(getSubscriptionSummary(USER)).resolves.toEqual({
+      interval,
+      periodEnd: new Date(PERIOD_END * 1000),
+      cancels,
+    });
     expect(stripeMock.list).toHaveBeenCalledWith({
       customer: "cus_test",
       status: "active",
@@ -146,21 +153,14 @@ describe("getCancellationDate", () => {
     });
   });
 
-  it("is null while the subscription renews", async () => {
-    await addUser("cus_test");
-    stripeMock.list.mockResolvedValue({ data: [subscription(false)] });
-
-    await expect(getCancellationDate(USER)).resolves.toBeNull();
-  });
-
   it("is null without an active subscription or a Stripe customer", async () => {
     await addUser("cus_test");
     stripeMock.list.mockResolvedValue({ data: [] });
-    await expect(getCancellationDate(USER)).resolves.toBeNull();
+    await expect(getSubscriptionSummary(USER)).resolves.toBeNull();
 
     await db.update(users).set({ stripeCustomerId: null }).where(eq(users.id, USER));
     stripeMock.list.mockClear();
-    await expect(getCancellationDate(USER)).resolves.toBeNull();
+    await expect(getSubscriptionSummary(USER)).resolves.toBeNull();
     expect(stripeMock.list).not.toHaveBeenCalled();
   });
 });

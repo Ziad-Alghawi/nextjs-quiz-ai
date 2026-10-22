@@ -5,8 +5,8 @@ import { PageColumn } from "@/components/ui/page-column";
 import { PageHeading } from "@/components/ui/page-heading";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { openBillingPortal } from "@/app/actions/billing";
-import { PLANS } from "@/lib/plans";
-import { getCancellationDate } from "@/server/services/billing";
+import { PLANS, PRO_LABELS } from "@/lib/plans";
+import { getSubscriptionSummary } from "@/server/services/billing";
 import { getMonthlyUsage } from "@/server/services/usage";
 import { requireUser } from "@/server/session";
 
@@ -17,15 +17,16 @@ const dateFormat = new Intl.DateTimeFormat("en", { dateStyle: "long", timeZone: 
 export default async function BillingPage() {
   const user = await requireUser("/billing");
   const { plan, used, limit } = await getMonthlyUsage(user.id);
-  const cancelsOn = plan === "pro" ? await getCancellationDate(user.id) : null;
+  const subscription = plan === "pro" ? await getSubscriptionSummary(user.id) : null;
 
   return (
     <PageColumn>
       <PageHeading>Billing</PageHeading>
       <Card>
         <CardTitle>
-          {PLANS[plan].label}
-          {cancelsOn ? `, cancels on ${dateFormat.format(cancelsOn)}` : " plan"}
+          {subscription
+            ? `${PRO_LABELS[subscription.interval]} · ${subscription.cancels ? "cancels" : "renews"} on ${dateFormat.format(subscription.periodEnd)}`
+            : `${PLANS[plan].label} plan`}
         </CardTitle>
         <p className="text-sm text-muted-foreground">
           {used} of {limit} quizzes used this month.

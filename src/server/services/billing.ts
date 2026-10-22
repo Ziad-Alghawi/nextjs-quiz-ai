@@ -78,10 +78,11 @@ export async function getUpgradeUrl(userId: string, interval: BillingInterval) {
 }
 
 /**
- * The date the user's Pro plan ends, or null while it renews. Read from Stripe when the page is
+ * The user's active subscription as the billing page shows it: billed monthly or yearly, and the
+ * date it renews or, when set to cancel, ends. Null without one. Read from Stripe when the page is
  * shown, so nothing extra is stored or kept in sync by the webhook.
  */
-export async function getCancellationDate(userId: string) {
+export async function getSubscriptionSummary(userId: string) {
   const customerId = await getSavedCustomerId(userId);
   if (!customerId) return null;
 
@@ -91,9 +92,15 @@ export async function getCancellationDate(userId: string) {
     limit: 1,
   });
   const [subscription] = data;
-  if (!subscription?.cancel_at_period_end) return null;
+  if (!subscription) return null;
   // Since API version 2025-03-31 the period belongs to the subscription items, not the subscription.
-  return new Date(subscription.items.data[0].current_period_end * 1000);
+  const [item] = subscription.items.data;
+  const interval: BillingInterval = item.price.recurring?.interval === "year" ? "year" : "month";
+  return {
+    interval,
+    periodEnd: new Date(item.current_period_end * 1000),
+    cancels: subscription.cancel_at_period_end,
+  };
 }
 
 /**
