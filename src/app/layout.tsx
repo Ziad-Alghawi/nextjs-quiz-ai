@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
+import { AppHeaderSlot } from "@/components/app-header-slot";
 import { Header } from "@/components/header";
 
 // Self-hosted by Next at build time: no request to Google from the visitor's browser.
@@ -15,7 +16,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={geistSans.variable}>
       <body>
-        <Header />
+        <AppHeaderSlot>
+          <Header />
+        </AppHeaderSlot>
         {children}
       </body>
     </html>
