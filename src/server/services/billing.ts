@@ -6,6 +6,9 @@ import { users } from "@/db/schema";
 import { env } from "@/lib/env";
 import { getStripe } from "@/lib/stripe";
 
+/** Subscriptions in these states are over: they can't bill again. */
+const ENDED_STATUSES = new Set<Stripe.Subscription.Status>(["canceled", "incomplete_expired"]);
+
 /** Sets the subscription flag of the user who owns this Stripe customer. */
 export async function setSubscribed(stripeCustomerId: string, subscribed: boolean) {
   await db.update(users).set({ subscribed }).where(eq(users.stripeCustomerId, stripeCustomerId));
@@ -93,7 +96,7 @@ export async function cancelSubscriptions(userId: string) {
   });
   try {
     for await (const subscription of subscriptions) {
-      if (subscription.status !== "canceled" && subscription.status !== "incomplete_expired") {
+      if (!ENDED_STATUSES.has(subscription.status)) {
         await getStripe().subscriptions.cancel(subscription.id);
       }
     }
