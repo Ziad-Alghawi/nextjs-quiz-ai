@@ -138,15 +138,13 @@ describe("listCourses and getCourse", () => {
     ]);
   });
 
-  it('list "My quizzes" first even when it was created after the others', async () => {
+  it('flag the "My quizzes" folder', async () => {
     await newCourse(USER, "Biology");
     await getOrCreateDefaultCourse(db, USER);
-    await newCourse(USER, "Chemistry");
 
-    expect((await listCourses(USER)).map((course) => course.name)).toEqual([
-      "My quizzes",
-      "Biology",
-      "Chemistry",
+    expect(await listCourses(USER)).toEqual([
+      expect.objectContaining({ name: "Biology", isDefault: false }),
+      expect.objectContaining({ name: "My quizzes", isDefault: true }),
     ]);
   });
 
