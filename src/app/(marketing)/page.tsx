@@ -1,41 +1,9 @@
-import { Check } from "lucide-react";
 import { getImageProps } from "next/image";
 import Link from "next/link";
+import { PricingCards } from "@/components/pricing-cards";
 import { Button } from "@/components/ui/button";
-import { MAX_PDF_MB, PLANS } from "@/lib/plans";
-import { cn, formatOrList } from "@/lib/utils";
 import { getCurrentUser } from "@/server/session";
 import { FeatureBoxes } from "./feature-boxes";
-
-// Limits come from PLANS, the same config the server enforces.
-const plans = [
-  {
-    id: "free",
-    name: PLANS.free.label,
-    summary: "To get started",
-    intro: null,
-    features: [
-      `${PLANS.free.monthlyQuizzes} AI quizzes a month`,
-      `${formatOrList(PLANS.free.questionCounts)} questions per quiz`,
-      `${PLANS.free.maxChapters} chapters (PDFs up to ${MAX_PDF_MB} MB)`,
-      "Explanation for every answer",
-      "Review quizzes and course exams (don't use your quota)",
-      "Practise your mistakes",
-      "Saved attempts, stats and streaks",
-    ],
-  },
-  {
-    id: "pro",
-    name: PLANS.pro.label,
-    summary: "For regular studying",
-    intro: "Everything in Free, plus:",
-    features: [
-      `${PLANS.pro.monthlyQuizzes} AI quizzes a month (${PLANS.pro.monthlyQuizzes / PLANS.free.monthlyQuizzes}× more)`,
-      `Up to ${Math.max(...PLANS.pro.questionCounts)} questions per quiz`,
-      `${PLANS.pro.maxChapters} chapters`,
-    ],
-  },
-] as const;
 
 const overviewAlt = "Overview with quiz stats, the activity heatmap and study streaks";
 
@@ -85,15 +53,10 @@ function OverviewScreenshot() {
 
 export default async function HomePage() {
   const user = await getCurrentUser();
-  // Signed-out visitors sign up first; Upgrade then continues to billing, where checkout starts.
-  const planActions = {
-    free: { label: "Get started", href: user ? "/dashboard" : "/sign-up" },
-    pro: {
-      label: "Upgrade",
-      href: user ? "/billing" : `/sign-up?callbackUrl=${encodeURIComponent("/billing")}`,
-    },
-  } as const;
-
+  // Signed-out visitors sign up first and choose monthly or yearly on the billing page.
+  const upgrade = user
+    ? "checkout"
+    : { href: `/sign-up?callbackUrl=${encodeURIComponent("/billing")}` };
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-col gap-24 px-4 pt-12 pb-24 sm:px-6 sm:pt-16">
       <section className="flex flex-col gap-14">
@@ -144,44 +107,13 @@ export default async function HomePage() {
           </h2>
           <p className="text-lg text-muted-foreground">Start free. Upgrade when you study more.</p>
         </div>
-        <div className="grid w-full max-w-3xl gap-4 md:grid-cols-2">
-          {plans.map((plan) => (
-            <div
-              key={plan.id}
-              className={cn(
-                "flex flex-col gap-5 rounded-3xl p-8",
-                plan.id === "pro" ? "border-2 border-primary bg-card" : "bg-muted/60",
-              )}
-            >
-              <div>
-                <h3 className="text-lg font-semibold">{plan.name}</h3>
-                <p className="text-muted-foreground">{plan.summary}</p>
-              </div>
-              <div className="flex flex-col gap-3">
-                {plan.intro ? <p className="text-sm font-semibold">{plan.intro}</p> : null}
-                <ul className="flex flex-col gap-3">
-                  {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-center gap-2.5">
-                      <Check
-                        className="size-4.5 shrink-0 text-primary"
-                        strokeWidth={2.5}
-                        aria-hidden
-                      />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <Button
-                variant={plan.id === "pro" ? "default" : "outline"}
-                className="mt-auto h-12 rounded-full font-semibold"
-                asChild
-              >
-                <Link href={planActions[plan.id].href}>{planActions[plan.id].label}</Link>
-              </Button>
-            </div>
-          ))}
-        </div>
+        <PricingCards
+          actions={{
+            free: { href: user ? "/dashboard" : "/sign-up" },
+            month: upgrade,
+            year: upgrade,
+          }}
+        />
         {/* Stripe stays in test mode on the live site: this is a portfolio project. */}
         <p className="text-center text-sm text-muted-foreground">
           Demo project: payments run in Stripe test mode (card{" "}
