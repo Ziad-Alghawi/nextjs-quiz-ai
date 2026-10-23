@@ -129,7 +129,12 @@ describe("getUpgradeUrl", () => {
 
 describe("getSubscriptionSummary", () => {
   const PERIOD_END = 1_793_000_000;
-  const subscription = (interval: "month" | "year", cancelAtPeriodEnd: boolean) => ({
+  const subscription = (
+    interval: "month" | "year",
+    cancelAtPeriodEnd: boolean,
+    cancelAt: number | null = null,
+  ) => ({
+    cancel_at: cancelAt,
     cancel_at_period_end: cancelAtPeriodEnd,
     items: { data: [{ current_period_end: PERIOD_END, price: { recurring: { interval } } }] },
   });
@@ -150,6 +155,18 @@ describe("getSubscriptionSummary", () => {
       customer: "cus_test",
       status: "active",
       limit: 1,
+    });
+  });
+
+  it("reads a cancellation the billing portal scheduled with cancel_at", async () => {
+    const cancelAt = PERIOD_END - 3600;
+    await addUser("cus_test");
+    stripeMock.list.mockResolvedValue({ data: [subscription("month", false, cancelAt)] });
+
+    await expect(getSubscriptionSummary(USER)).resolves.toEqual({
+      interval: "month",
+      periodEnd: new Date(cancelAt * 1000),
+      cancels: true,
     });
   });
 

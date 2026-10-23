@@ -6,7 +6,7 @@ A study app that turns course PDFs into multiple-choice quizzes. Students organi
 in courses, generate quizzes from chosen chapters with Google Gemini, practise with instant
 feedback and explanations, take course exams and follow their progress over time.
 
-**Live:** https://quiz-ai-gamma.vercel.app (the sample quiz works without an account; payments run
+**Live:** https://quiz.ziadalghawi.com (the sample quiz works without an account; payments run
 in Stripe test mode: card `4242 4242 4242 4242`)
 
 `main` is the live site; new work is developed on branches and released at planned checkpoints.

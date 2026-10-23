@@ -96,10 +96,12 @@ export async function getSubscriptionSummary(userId: string) {
   // Since API version 2025-03-31 the period belongs to the subscription items, not the subscription.
   const [item] = subscription.items.data;
   const interval: BillingInterval = item.price.recurring?.interval === "year" ? "year" : "month";
+  // The billing portal schedules a cancellation with cancel_at (flexible billing mode) and leaves
+  // cancel_at_period_end false, so either field means the subscription ends instead of renewing.
   return {
     interval,
-    periodEnd: new Date(item.current_period_end * 1000),
-    cancels: subscription.cancel_at_period_end,
+    periodEnd: new Date((subscription.cancel_at ?? item.current_period_end) * 1000),
+    cancels: subscription.cancel_at !== null || subscription.cancel_at_period_end,
   };
 }
 
