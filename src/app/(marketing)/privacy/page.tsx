@@ -1,20 +1,18 @@
 import type { Metadata } from "next";
-import { LegalPage } from "../legal-page";
+import { ContactLink, LegalPage } from "../legal-page";
 
 export const metadata: Metadata = { title: "Privacy policy" };
 
 export default function PrivacyPage() {
   return (
     <LegalPage title="Privacy policy">
-      <p>Last updated: [date]</p>
+      <p>Last updated: October 23, 2026</p>
 
       <h2>Who is responsible</h2>
       <p>
-        [Full name]
+        Ziad Alghawi, Germany
         <br />
-        [Street and house number, postcode and city, country]
-        <br />
-        Email: [email address]
+        <ContactLink />
       </p>
 
       <h2>What Quiz AI stores</h2>
@@ -43,7 +41,19 @@ export default function PrivacyPage() {
         </li>
         <li>Gmail: sends the codes for password reset and email change.</li>
       </ul>
-      <p>[Legal basis for each, e.g. Art. 6(1)(b) GDPR, and transfers outside the EU]</p>
+
+      <h2>Legal basis</h2>
+      <p>
+        Art. 6(1)(b) GDPR to provide your account and the quiz service; Art. 6(1)(f) GDPR for
+        security (sign-in sessions, rate limits) and keeping the service running. Google sign-in is
+        only used if you choose it.
+      </p>
+
+      <h2>Transfers outside the EU</h2>
+      <p>
+        Google, Stripe and Vercel are US companies. Transfers are based on the EU-US Data Privacy
+        Framework or the EU Standard Contractual Clauses.
+      </p>
 
       <h2>Cookies</h2>
       <p>
@@ -53,15 +63,16 @@ export default function PrivacyPage() {
 
       <h2>How long data is kept</h2>
       <p>
-        Deleting your account in Settings deletes your data and cancels your subscription.
-        [Retention of backups and server logs]
+        Deleting your account in Settings deletes your data and cancels your subscription. Copies in
+        the hosting providers&apos; backups and server logs are deleted automatically after a short
+        period.
       </p>
 
       <h2>Your rights</h2>
       <p>
         You can ask for access to, correction, deletion or export of your data, restrict or object
-        to its processing, and complain to a data protection authority. [Name of the responsible
-        authority]
+        to its processing, and complain to a data protection authority, for example the Bavarian
+        State Office for Data Protection Supervision (BayLDA).
       </p>
     </LegalPage>
   );
