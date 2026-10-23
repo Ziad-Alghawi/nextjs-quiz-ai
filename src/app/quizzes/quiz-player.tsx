@@ -1,8 +1,8 @@
 "use client";
-import { Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { QuizResults } from "@/components/quiz-results";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { missedQuestions, shuffleRound } from "@/lib/practice";
 import { scoreAttempt, type SelectedAnswer } from "@/lib/scoring";
 import { cn } from "@/lib/utils";
@@ -208,9 +208,7 @@ export function QuizPlayer({
                 disabled={submitting}
                 className="w-full sm:w-auto sm:self-end"
               >
-                {submitting ? (
-                  <Loader2 className="size-4 motion-safe:animate-spin" aria-hidden />
-                ) : null}
+                {submitting ? <Spinner /> : null}
                 {isLast ? (submitting ? "Saving…" : "See results") : "Next question"}
               </Button>
             </div>

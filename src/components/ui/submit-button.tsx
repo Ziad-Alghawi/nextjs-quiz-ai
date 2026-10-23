@@ -1,9 +1,9 @@
 "use client";
 import type { ComponentProps, ReactNode } from "react";
 import { useFormStatus } from "react-dom";
-import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 
 /** A form's submit button that disables itself and shows a spinner while the action runs. */
 export function SubmitButton({
@@ -26,7 +26,7 @@ export function SubmitButton({
     <Button type="submit" variant={variant} disabled={pending || disabled} className={className}>
       {pending ? (
         <>
-          <Loader2 className="mr-2 size-4 motion-safe:animate-spin" aria-hidden />
+          <Spinner className="mr-2" />
           {pendingText}
         </>
       ) : (

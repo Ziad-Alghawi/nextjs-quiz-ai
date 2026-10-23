@@ -1,10 +1,11 @@
 "use client";
-import { FileText, Loader2, UploadCloud, X } from "lucide-react";
+import { FileText, UploadCloud, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { z } from "zod";
 import { PdfDropZone } from "@/components/pdf-drop-zone";
 import { FormError } from "@/components/ui/form-error";
+import { Spinner } from "@/components/ui/spinner";
 import { NETWORK_ERROR, PDF_TOO_LARGE } from "@/lib/generation-response";
 import { MAX_PDF_MB } from "@/lib/plans";
 import { pdfUploadSchema } from "@/lib/validations/quiz";
@@ -110,10 +111,7 @@ export function ChapterUpload({ courseId, full }: { courseId: number; full: bool
                     <X className="size-4" aria-hidden />
                   </button>
                 ) : (
-                  <Loader2
-                    className="size-4 shrink-0 motion-safe:animate-spin text-primary"
-                    aria-label="Uploading"
-                  />
+                  <Spinner className="shrink-0 text-primary" aria-label="Uploading" />
                 )}
               </div>
               <FormError className="mt-1">{upload.error}</FormError>

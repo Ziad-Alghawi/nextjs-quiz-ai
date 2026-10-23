@@ -1,5 +1,5 @@
-import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { PLANS, type PlanId } from "@/lib/plans";
 
 type GenerateQuizActionsProps = {
@@ -27,7 +27,7 @@ export function GenerateQuizActions({
         <Button type="submit" disabled={generating || disabled}>
           {generating ? (
             <>
-              <Loader2 className="mr-2 size-4 motion-safe:animate-spin" aria-hidden />
+              <Spinner className="mr-2" />
               Generating…
             </>
           ) : (
