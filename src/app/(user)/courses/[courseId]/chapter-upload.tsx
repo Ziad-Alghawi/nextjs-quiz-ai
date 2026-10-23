@@ -1,12 +1,12 @@
 "use client";
 import { FileText, Loader2, UploadCloud, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useId, useState } from "react";
+import { useState } from "react";
 import { z } from "zod";
+import { PdfDropZone } from "@/components/pdf-drop-zone";
 import { FormError } from "@/components/ui/form-error";
 import { NETWORK_ERROR, PDF_TOO_LARGE } from "@/lib/generation-response";
 import { MAX_PDF_MB } from "@/lib/plans";
-import { cn } from "@/lib/utils";
 import { pdfUploadSchema } from "@/lib/validations/quiz";
 
 type Upload = { id: number; name: string; error?: string };
@@ -30,9 +30,7 @@ let nextUploadId = 0;
  */
 export function ChapterUpload({ courseId, full }: { courseId: number; full: boolean }) {
   const router = useRouter();
-  const inputId = useId();
   const [uploads, setUploads] = useState<Upload[]>([]);
-  const [dragging, setDragging] = useState(false);
 
   const update = (id: number, change: Partial<Upload>) =>
     setUploads((current) => current.map((u) => (u.id === id ? { ...u, ...change } : u)));
@@ -79,10 +77,6 @@ export function ChapterUpload({ courseId, full }: { courseId: number; full: bool
     }
   }
 
-  function choose(list: FileList | null) {
-    if (list && list.length > 0) void uploadFiles([...list]);
-  }
-
   if (full) {
     return (
       <p className="text-sm text-muted-foreground">
@@ -93,39 +87,11 @@ export function ChapterUpload({ courseId, full }: { courseId: number; full: bool
 
   return (
     <div className="flex flex-col gap-3">
-      <input
-        id={inputId}
-        type="file"
-        multiple
-        accept="application/pdf,.pdf"
-        className="peer sr-only"
-        onChange={(event) => {
-          choose(event.target.files);
-          // So choosing the same file again works.
-          event.target.value = "";
-        }}
-      />
-      <label
-        htmlFor={inputId}
-        onDragOver={(event) => {
-          event.preventDefault();
-          setDragging(true);
-        }}
-        onDragLeave={() => setDragging(false)}
-        onDrop={(event) => {
-          event.preventDefault();
-          setDragging(false);
-          choose(event.dataTransfer.files);
-        }}
-        className={cn(
-          "flex cursor-pointer flex-col items-center gap-1 rounded-lg border-2 border-dashed px-4 py-6 text-center text-sm text-muted-foreground transition-colors hover:bg-accent/50 peer-focus-visible:ring-2 peer-focus-visible:ring-ring",
-          dragging && "border-primary bg-primary/5 text-primary",
-        )}
-      >
+      <PdfDropZone multiple onFiles={(files) => void uploadFiles(files)} className="py-6">
         <UploadCloud className="size-6" aria-hidden />
         <span className="font-medium text-foreground">Drop PDFs here or click to choose</span>
         <span>Up to {MAX_PDF_MB} MB each. The text is saved; the file isn&apos;t.</span>
-      </label>
+      </PdfDropZone>
 
       {uploads.length > 0 ? (
         <ul className="flex flex-col gap-2" aria-live="polite">
