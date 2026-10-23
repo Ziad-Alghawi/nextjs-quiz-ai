@@ -4,7 +4,7 @@ import { createExam } from "@/app/actions/exams";
 import { QuestionCountPicker } from "@/components/question-count-picker";
 import { FormError } from "@/components/ui/form-error";
 import { SubmitButton } from "@/components/ui/submit-button";
-import type { FormState } from "@/lib/form-state";
+import { IDLE, type FormState } from "@/lib/form-state";
 import { DEFAULT_QUESTION_COUNT, EXAM_QUESTION_COUNTS } from "@/lib/plans";
 
 const SMALLEST_EXAM = Math.min(...EXAM_QUESTION_COUNTS);
@@ -17,9 +17,7 @@ type ExamFormProps = {
 
 /** Starts an exam with questions from all quizzes of the course, without AI. */
 export function ExamForm({ courseId, available }: ExamFormProps) {
-  const [state, action, pending] = useActionState<FormState, FormData>(createExam, {
-    status: "idle",
-  });
+  const [state, action, pending] = useActionState<FormState, FormData>(createExam, IDLE);
   const [questionCount, setQuestionCount] = useState<number>(DEFAULT_QUESTION_COUNT);
 
   const hint =

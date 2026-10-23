@@ -3,12 +3,10 @@ import { useActionState } from "react";
 import { saveName } from "@/app/actions/account";
 import { Button } from "@/components/ui/button";
 import { TextField } from "@/components/ui/text-field";
-import type { FormState } from "@/lib/form-state";
+import { IDLE, type FormState } from "@/lib/form-state";
 
 export function NameForm({ name }: { name: string }) {
-  const [state, action, pending] = useActionState<FormState, FormData>(saveName, {
-    status: "idle",
-  });
+  const [state, action, pending] = useActionState<FormState, FormData>(saveName, IDLE);
 
   return (
     <form action={action} className="flex flex-col gap-3">

@@ -3,7 +3,7 @@ import { useActionState, useState } from "react";
 import { createReview } from "@/app/actions/reviews";
 import { FormError } from "@/components/ui/form-error";
 import { SubmitButton } from "@/components/ui/submit-button";
-import type { FormState } from "@/lib/form-state";
+import { IDLE, type FormState } from "@/lib/form-state";
 import { DEFAULT_QUESTION_COUNT, MAX_REVIEW_QUIZZES, type PlanId } from "@/lib/plans";
 import { QuestionCountPicker } from "@/components/question-count-picker";
 
@@ -15,9 +15,7 @@ type ReviewQuizFormProps = {
 
 /** Mixes questions of the ticked quizzes into a new quiz, without AI. */
 export function ReviewQuizForm({ courseId, quizzes, plan }: ReviewQuizFormProps) {
-  const [state, action, pending] = useActionState<FormState, FormData>(createReview, {
-    status: "idle",
-  });
+  const [state, action, pending] = useActionState<FormState, FormData>(createReview, IDLE);
   const [ticked, setTicked] = useState<ReadonlySet<number>>(new Set());
   const [questionCount, setQuestionCount] = useState<number>(DEFAULT_QUESTION_COUNT);
 
