@@ -1,7 +1,7 @@
 "use client";
-import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Spinner } from "@/components/ui/spinner";
 
 const CHECK_EVERY_MS = 2000;
 const MAX_CHECKS = 15;
@@ -33,7 +33,7 @@ export function ActivationPending() {
   }
   return (
     <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground">
-      <Loader2 className="size-4 motion-safe:animate-spin" aria-hidden />
+      <Spinner />
       Payment received, activating Pro…
     </p>
   );
