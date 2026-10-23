@@ -9,3 +9,20 @@ export function LegalPage({ title, children }: { title: string; children: ReactN
     </main>
   );
 }
+
+/** The only public contact: an email address would be scraped from a public legal page. */
+export function ContactLink() {
+  return (
+    <>
+      Contact:{" "}
+      <a
+        href="https://www.linkedin.com/in/ziad-alghawi-179726289"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-foreground underline underline-offset-4"
+      >
+        LinkedIn
+      </a>
+    </>
+  );
+}
