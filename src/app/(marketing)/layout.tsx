@@ -16,7 +16,7 @@ const footerLinks = [
 ];
 
 /** The landing and legal pages: a header with the page sections instead of the app header, and a footer. */
-export default async function MarketingLayout({ children }: { children: React.ReactNode }) {
+export default async function MarketingLayout({ children }: LayoutProps<"/">) {
   const user = await getCurrentUser();
 
   return (
