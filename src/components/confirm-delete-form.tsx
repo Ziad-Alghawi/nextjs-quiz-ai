@@ -2,6 +2,7 @@
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/ui/form-error";
+import { Spinner } from "@/components/ui/spinner";
 import { useDialogForm } from "@/hooks/use-dialog-form";
 import type { FormState } from "@/lib/form-state";
 
@@ -34,11 +35,18 @@ export function ConfirmDeleteForm({
       <p className="text-sm">{children}</p>
       <FormError>{state.status === "error" ? state.error : undefined}</FormError>
       <div className="flex justify-end gap-3">
-        <Button type="button" variant="ghost" onClick={onClose}>
+        <Button type="button" variant="ghost" onClick={onClose} disabled={pending}>
           Cancel
         </Button>
         <Button type="submit" variant="destructive" disabled={pending}>
-          {pending ? "Deleting…" : submitLabel}
+          {pending ? (
+            <>
+              <Spinner className="mr-2" />
+              Deleting…
+            </>
+          ) : (
+            submitLabel
+          )}
         </Button>
       </div>
     </form>

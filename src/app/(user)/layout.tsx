@@ -2,7 +2,7 @@ import { listCourses } from "@/server/services/courses";
 import { getCurrentUser } from "@/server/session";
 import { SidebarNav } from "@/components/sidebar-nav";
 
-export default async function UserPagesLayout({ children }: { children: React.ReactNode }) {
+export default async function UserPagesLayout({ children }: LayoutProps<"/">) {
   // Signed-out visitors get no sidebar; each page sends them to sign-in itself. On phones the
   // sidebar is a drawer opened from the header.
   const user = await getCurrentUser();

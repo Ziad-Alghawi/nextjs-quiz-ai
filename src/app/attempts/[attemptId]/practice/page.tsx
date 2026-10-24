@@ -4,7 +4,7 @@ import { loadAttempt } from "@/app/attempts/load-attempt";
 import { QuizPlayer } from "@/app/quizzes/quiz-player";
 import { missedQuestions, shuffleRound } from "@/lib/practice";
 
-type Props = { params: Promise<{ attemptId: string }> };
+type Props = PageProps<"/attempts/[attemptId]/practice">;
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { attemptId } = await params;

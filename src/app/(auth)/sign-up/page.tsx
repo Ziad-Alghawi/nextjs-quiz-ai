@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { use } from "react";
 import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/ui/form-error";
+import { Spinner } from "@/components/ui/spinner";
 import { TextField } from "@/components/ui/text-field";
 import { useZodForm } from "@/hooks/use-zod-form";
 import { AuthHeading } from "../auth-heading";
@@ -57,7 +58,14 @@ export default function SignUpPage({
           error={errors.password}
         />
         <Button type="submit" disabled={pending}>
-          {pending ? "Creating account…" : "Sign up"}
+          {pending ? (
+            <>
+              <Spinner className="mr-2" />
+              Creating account…
+            </>
+          ) : (
+            "Sign up"
+          )}
         </Button>
       </form>
       <GoogleSignIn callbackURL={callbackURL} onError={setError} />

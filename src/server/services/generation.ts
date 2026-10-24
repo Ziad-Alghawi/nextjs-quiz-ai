@@ -5,6 +5,8 @@ import { env } from "@/lib/env";
 import { getQuotaErrorMessage, isBillingStop } from "@/lib/gemini-errors";
 import { shuffle } from "@/lib/shuffle";
 import { generatedQuizSchema, type GeneratedQuiz } from "@/lib/validations/quiz";
+import { createQuiz } from "./quizzes";
+import { GenerationLimitError, runGeneration } from "./usage";
 
 /** Generates every quiz first. */
 const PRIMARY_MODEL = "gemini-3.5-flash-lite";
@@ -156,4 +158,34 @@ export async function generateQuiz(input: GenerateQuizInput): Promise<GeneratedQ
   const second = await attempt(FALLBACK_MODEL, messages, input);
   if ("quiz" in second) return finish(second.quiz, questionCount);
   throw second.error;
+}
+
+type GenerateAndSaveResult = { quizId: number } | { error: string; status: number };
+
+/**
+ * Generates a quiz about the documents within the user's limits and saves it: in the course, linked
+ * to its chapters, with `origin`, otherwise in the "My quizzes" folder. Only a saved quiz counts
+ * toward the monthly quota. A limit or a failed generation returns the message and HTTP status to
+ * show the user.
+ */
+export async function generateAndSaveQuiz(
+  userId: string,
+  {
+    documents,
+    questionCount,
+    origin,
+  }: Omit<GenerateQuizInput, "onUsage"> & { origin?: { courseId: number; chapterIds: number[] } },
+): Promise<GenerateAndSaveResult> {
+  try {
+    const quizId = await runGeneration(userId, async (onUsage) => {
+      const quiz = await generateQuiz({ documents, questionCount, onUsage });
+      return createQuiz(quiz, userId, origin);
+    });
+    return { quizId };
+  } catch (error) {
+    if (error instanceof GenerationLimitError || error instanceof GenerationError) {
+      return { error: error.message, status: error.status };
+    }
+    throw error;
+  }
 }

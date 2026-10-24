@@ -5,9 +5,8 @@ import { isQuestionCountAllowed, questionCountUpgradeMessage } from "@/lib/plans
 import { courseIdSchema } from "@/lib/validations/course";
 import { chapterQuizSchema } from "@/lib/validations/quiz";
 import { getChapterTexts } from "@/server/services/chapters";
-import { GenerationError, generateQuiz } from "@/server/services/generation";
-import { createQuiz } from "@/server/services/quizzes";
-import { GenerationLimitError, getPlan, runGeneration } from "@/server/services/usage";
+import { generateAndSaveQuiz } from "@/server/services/generation";
+import { getPlan } from "@/server/services/usage";
 import { getCurrentUser } from "@/server/session";
 
 // The primary model and, when needed, the fallback must both fit (timings in generation.ts).
@@ -43,16 +42,11 @@ export async function POST(
     chapters.map(({ name, text }) => ({ title: name, text })),
   );
 
-  try {
-    const quizId = await runGeneration(user.id, async (onUsage) => {
-      const quiz = await generateQuiz({ documents, questionCount, onUsage });
-      return createQuiz(quiz, user.id, { courseId: courseId.data, chapterIds });
-    });
-    return NextResponse.json({ quizId, truncated }, { status: 201 });
-  } catch (error) {
-    if (error instanceof GenerationLimitError || error instanceof GenerationError) {
-      return errorResponse(error.message, error.status);
-    }
-    throw error;
-  }
+  const result = await generateAndSaveQuiz(user.id, {
+    documents,
+    questionCount,
+    origin: { courseId: courseId.data, chapterIds },
+  });
+  if ("error" in result) return errorResponse(result.error, result.status);
+  return NextResponse.json({ quizId: result.quizId, truncated }, { status: 201 });
 }

@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/ui/form-error";
+import { Spinner } from "@/components/ui/spinner";
 import { TextField } from "@/components/ui/text-field";
 import { useZodForm } from "@/hooks/use-zod-form";
 import { authClient, authErrorMessage } from "@/lib/auth-client";
@@ -92,9 +93,16 @@ export function ChangeEmailForm({ currentEmail }: { currentEmail: string }) {
           />
           <div className="flex gap-3">
             <Button type="submit" disabled={codeRequest.pending}>
-              {codeRequest.pending ? "Sending…" : "Send code"}
+              {codeRequest.pending ? (
+                <>
+                  <Spinner className="mr-2" />
+                  Sending…
+                </>
+              ) : (
+                "Send code"
+              )}
             </Button>
-            <Button type="button" variant="ghost" onClick={close}>
+            <Button type="button" variant="ghost" onClick={close} disabled={codeRequest.pending}>
               Cancel
             </Button>
           </div>
@@ -124,9 +132,16 @@ export function ChangeEmailForm({ currentEmail }: { currentEmail: string }) {
           />
           <div className="flex gap-3">
             <Button type="submit" disabled={confirmation.pending}>
-              {confirmation.pending ? "Confirming…" : "Confirm new email"}
+              {confirmation.pending ? (
+                <>
+                  <Spinner className="mr-2" />
+                  Confirming…
+                </>
+              ) : (
+                "Confirm new email"
+              )}
             </Button>
-            <Button type="button" variant="ghost" onClick={close}>
+            <Button type="button" variant="ghost" onClick={close} disabled={confirmation.pending}>
               Cancel
             </Button>
           </div>

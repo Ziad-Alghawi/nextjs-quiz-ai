@@ -1,9 +1,10 @@
 "use client";
-import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
+import { Spinner } from "@/components/ui/spinner";
 import type { ExamPaper } from "@/lib/exam";
 import { pluralize } from "@/lib/pluralize";
 import { cn } from "@/lib/utils";
@@ -205,9 +206,7 @@ export function ExamPlayer({ exam, exitHref }: ExamPlayerProps) {
               Keep going
             </Button>
             <Button onClick={finish} disabled={submitting} className="gap-2">
-              {submitting ? (
-                <Loader2 className="size-4 motion-safe:animate-spin" aria-hidden />
-              ) : null}
+              {submitting ? <Spinner /> : null}
               {submitting ? "Saving…" : "Finish exam"}
             </Button>
           </div>

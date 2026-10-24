@@ -2,13 +2,12 @@
 import { useActionState } from "react";
 import { saveName } from "@/app/actions/account";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { TextField } from "@/components/ui/text-field";
-import type { FormState } from "@/lib/form-state";
+import { IDLE, type FormState } from "@/lib/form-state";
 
 export function NameForm({ name }: { name: string }) {
-  const [state, action, pending] = useActionState<FormState, FormData>(saveName, {
-    status: "idle",
-  });
+  const [state, action, pending] = useActionState<FormState, FormData>(saveName, IDLE);
 
   return (
     <form action={action} className="flex flex-col gap-3">
@@ -21,7 +20,14 @@ export function NameForm({ name }: { name: string }) {
       />
       <div className="flex items-center gap-3">
         <Button type="submit" disabled={pending}>
-          {pending ? "Saving…" : "Save name"}
+          {pending ? (
+            <>
+              <Spinner className="mr-2" />
+              Saving…
+            </>
+          ) : (
+            "Save name"
+          )}
         </Button>
         {state.status === "saved" && !pending ? (
           <p role="status" className="text-sm text-success">

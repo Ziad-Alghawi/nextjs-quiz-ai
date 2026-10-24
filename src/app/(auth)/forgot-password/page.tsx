@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/ui/form-error";
+import { Spinner } from "@/components/ui/spinner";
 import { TextField } from "@/components/ui/text-field";
 import { useZodForm } from "@/hooks/use-zod-form";
 import { AuthHeading } from "../auth-heading";
@@ -64,7 +65,14 @@ export default function ForgotPasswordPage() {
             error={codeRequest.errors.email}
           />
           <Button type="submit" disabled={codeRequest.pending}>
-            {codeRequest.pending ? "Sending…" : "Send code"}
+            {codeRequest.pending ? (
+              <>
+                <Spinner className="mr-2" />
+                Sending…
+              </>
+            ) : (
+              "Send code"
+            )}
           </Button>
         </form>
       ) : (
@@ -104,7 +112,14 @@ export default function ForgotPasswordPage() {
             error={passwordReset.errors.password}
           />
           <Button type="submit" disabled={passwordReset.pending}>
-            {passwordReset.pending ? "Saving…" : "Set new password"}
+            {passwordReset.pending ? (
+              <>
+                <Spinner className="mr-2" />
+                Saving…
+              </>
+            ) : (
+              "Set new password"
+            )}
           </Button>
           <Button type="button" variant="link" onClick={() => setEmail(null)}>
             Use another email or get a new code

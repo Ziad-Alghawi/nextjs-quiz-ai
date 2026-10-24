@@ -2,9 +2,10 @@
 import { FolderInput } from "lucide-react";
 import { useId, useState } from "react";
 import { moveQuiz } from "@/app/actions/quizzes";
+import { DialogButton } from "@/components/dialog-button";
 import { Button } from "@/components/ui/button";
-import { Dialog } from "@/components/ui/dialog";
 import { FormError } from "@/components/ui/form-error";
+import { Spinner } from "@/components/ui/spinner";
 import { useDialogForm } from "@/hooks/use-dialog-form";
 
 type Item = { id: number; name: string };
@@ -57,12 +58,19 @@ function MoveQuizForm({
       )}
       <FormError>{state.status === "error" ? state.error : undefined}</FormError>
       <div className="flex justify-end gap-3">
-        <Button type="button" variant="ghost" onClick={onClose}>
+        <Button type="button" variant="ghost" onClick={onClose} disabled={pending}>
           Cancel
         </Button>
         {courses.length > 0 ? (
           <Button type="submit" disabled={pending || !courseId}>
-            {pending ? "Moving…" : "Move quiz"}
+            {pending ? (
+              <>
+                <Spinner className="mr-2" />
+                Moving…
+              </>
+            ) : (
+              "Move quiz"
+            )}
           </Button>
         ) : null}
       </div>
@@ -72,27 +80,18 @@ function MoveQuizForm({
 
 /** Opens a dialog that moves a quick quiz from the "My quizzes" folder into one of the courses. */
 export function MoveQuizButton({ quiz, courses }: { quiz: Item; courses: Item[] }) {
-  const [open, setOpen] = useState(false);
-
   return (
-    <>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="shrink-0 gap-1.5"
-        aria-label={`Move ${quiz.name} to a course`}
-        onClick={() => setOpen(true)}
-      >
-        <FolderInput className="size-3.5" aria-hidden />
-        {/* Icon only on phones, so the quiz name keeps its width. */}
-        <span className="hidden sm:inline">Move</span>
-      </Button>
-      <Dialog open={open} onClose={() => setOpen(false)} label="Move quiz">
-        {/* Mounted only while open, so each opening starts with fresh form state. */}
-        {open ? (
-          <MoveQuizForm quiz={quiz} courses={courses} onClose={() => setOpen(false)} />
-        ) : null}
-      </Dialog>
-    </>
+    <DialogButton
+      variant="ghost"
+      size="sm"
+      className="shrink-0 gap-1.5"
+      aria-label={`Move ${quiz.name} to a course`}
+      dialogLabel="Move quiz"
+      dialog={(close) => <MoveQuizForm quiz={quiz} courses={courses} onClose={close} />}
+    >
+      <FolderInput className="size-3.5" aria-hidden />
+      {/* Icon only on phones, so the quiz name keeps its width. */}
+      <span className="hidden sm:inline">Move</span>
+    </DialogButton>
   );
 }

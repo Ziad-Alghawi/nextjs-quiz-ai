@@ -1,17 +1,10 @@
 "use client";
-import {
-  BookOpen,
-  CreditCard,
-  Folder,
-  LayoutDashboard,
-  Loader2,
-  Settings,
-  Zap,
-} from "lucide-react";
+import { BookOpen, CreditCard, Folder, LayoutDashboard, Settings, Zap } from "lucide-react";
 import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import type { ComponentType } from "react";
 
+import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import { NewCourseButton } from "./new-course-button";
 
@@ -29,11 +22,7 @@ type NavLinkProps = {
  */
 function NavIcon({ icon: Icon }: { icon: NavLinkProps["icon"] }) {
   const { pending } = useLinkStatus();
-  return pending ? (
-    <Loader2 className="size-4 shrink-0 motion-safe:animate-spin" aria-hidden />
-  ) : (
-    <Icon className="size-4 shrink-0" />
-  );
+  return pending ? <Spinner className="shrink-0" /> : <Icon className="size-4 shrink-0" />;
 }
 
 function NavLink({ href, icon, label, title }: NavLinkProps) {

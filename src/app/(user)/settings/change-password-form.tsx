@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/ui/form-error";
+import { Spinner } from "@/components/ui/spinner";
 import { TextField } from "@/components/ui/text-field";
 import { useZodForm } from "@/hooks/use-zod-form";
 import { authClient, authErrorMessage } from "@/lib/auth-client";
@@ -59,7 +60,14 @@ export function ChangePasswordForm({ email }: { email: string }) {
       />
       <div className="flex items-center gap-3">
         <Button type="submit" disabled={pending}>
-          {pending ? "Changing…" : "Change password"}
+          {pending ? (
+            <>
+              <Spinner className="mr-2" />
+              Changing…
+            </>
+          ) : (
+            "Change password"
+          )}
         </Button>
         {saved ? (
           <p role="status" className="text-sm text-success">

@@ -8,7 +8,7 @@ import { requireUser } from "@/server/session";
 import { ExamPlayer } from "../exam-player";
 import { QuizPlayer } from "../quiz-player";
 
-type Props = { params: Promise<{ quizId: string }> };
+type Props = PageProps<"/quizzes/[quizId]">;
 
 // The title and the page both need the quiz; cache() runs the lookup once per request.
 const loadQuiz = cache(async (quizId: string) => {
@@ -28,10 +28,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: quiz.name };
 }
 
-export default async function QuizPage({
-  params,
-  searchParams,
-}: Props & { searchParams: Promise<{ notice?: string }> }) {
+export default async function QuizPage({ params, searchParams }: Props) {
   const quiz = await loadQuiz((await params).quizId);
   const exitHref = `/courses/${quiz.courseId}`;
   // Everything passed to a client component is sent to the browser, so an exam gets only its paper.

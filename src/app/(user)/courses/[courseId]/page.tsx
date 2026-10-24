@@ -22,7 +22,7 @@ import { MoveQuizButton } from "./move-quiz-button";
 import { QuizGenerator } from "./quiz-generator";
 import { ReviewQuizForm } from "./review-quiz-form";
 
-type Props = { params: Promise<{ courseId: string }> };
+type Props = PageProps<"/courses/[courseId]">;
 
 // Shared by generateMetadata and the page, so a request loads the course once.
 const loadCourse = cache(async (courseId: string) => {

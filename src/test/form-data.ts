@@ -1,5 +1,5 @@
-/** The state useActionState hands a form action on the first submit. */
-export const IDLE = { status: "idle" } as const;
+// The state useActionState hands a form action on the first submit.
+export { IDLE } from "@/lib/form-state";
 
 /** Form fields as the browser sends them; a list adds one entry per value, like checkboxes. */
 export function formData(fields: Record<string, string | number | number[]>) {
