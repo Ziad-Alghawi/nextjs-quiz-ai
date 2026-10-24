@@ -63,6 +63,18 @@ export const deleteAccountSchema = (hasPassword: boolean) =>
       ),
   });
 
-// Only same-site paths, so the link can't be used to send people to another website after sign-in.
+// Any fixed origin works: only a path that changes it points to another site.
+const RETURN_PATH_BASE = "http://return-path.invalid";
+
+/**
+ * Only same-site paths, so the link can't be used to send people to another website after sign-in.
+ * The path is parsed the way the browser will follow it: browsers read "/\evil.com" and
+ * "/<tab>/evil.com" as "//evil.com", which a prefix check misses.
+ */
 export const safeReturnPath = (path: string | string[] | null | undefined) =>
-  typeof path === "string" && path.startsWith("/") && !path.startsWith("//") ? path : "/dashboard";
+  typeof path === "string" &&
+  path.startsWith("/") &&
+  URL.canParse(path, RETURN_PATH_BASE) &&
+  new URL(path, RETURN_PATH_BASE).origin === RETURN_PATH_BASE
+    ? path
+    : "/dashboard";
