@@ -7,7 +7,6 @@ import { after } from "next/server";
 import { db } from "@/db";
 import { authAccounts, authSessions, authVerifications, rateLimits, users } from "@/db/schema";
 import { env } from "@/lib/env";
-import { MINUTE_MS } from "@/lib/time";
 import {
   OTP_EXPIRES_IN_MINUTES,
   OTP_LENGTH,
@@ -81,7 +80,8 @@ export const auth = betterAuth({
     // only the owner, so the page still reveals nothing. Sent in the background like the codes.
     onExistingUserSignUp: async ({ user }) => {
       // At most one per 15 minutes, so repeated sign-ups (from any number of IPs) can't flood the inbox.
-      if (!(await consumeRateLimit(`existing-account-email:${user.id}`, 1, 15 * MINUTE_MS))) return;
+      const limit = { max: 1, windowMinutes: 15 };
+      if (!(await consumeRateLimit(`existing-account-email:${user.id}`, limit))) return;
       await sendEmail({
         to: user.email,
         subject: "You already have a Quiz AI account",
