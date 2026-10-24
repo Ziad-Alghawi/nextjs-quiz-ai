@@ -172,8 +172,8 @@ export async function createReviewQuiz(
   userId: string,
   input: { courseId: number; quizIds: number[]; questionCount: number },
 ): Promise<ReviewResult> {
-  const { reviews, windowMinutes } = REVIEW_BURST_LIMIT;
-  if (!(await consumeRateLimit(`review:${userId}`, reviews, windowMinutes * MINUTE_MS))) {
+  const { max, windowMinutes } = REVIEW_BURST_LIMIT;
+  if (!(await consumeRateLimit(`review:${userId}`, max, windowMinutes * MINUTE_MS))) {
     return { error: "rate-limit" };
   }
 
@@ -205,8 +205,8 @@ export async function createExamQuiz(
   userId: string,
   input: { courseId: number; questionCount: number },
 ): Promise<ExamResult> {
-  const { exams, windowMinutes } = EXAM_BURST_LIMIT;
-  if (!(await consumeRateLimit(`exam:${userId}`, exams, windowMinutes * MINUTE_MS))) {
+  const { max, windowMinutes } = EXAM_BURST_LIMIT;
+  if (!(await consumeRateLimit(`exam:${userId}`, max, windowMinutes * MINUTE_MS))) {
     return { error: "rate-limit" };
   }
 

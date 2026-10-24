@@ -163,14 +163,14 @@ describe("createExam", () => {
     expect(redirect).not.toHaveBeenCalled();
   });
 
-  it(`stops after ${EXAM_BURST_LIMIT.exams} exams in the window`, async () => {
+  it(`stops after ${EXAM_BURST_LIMIT.max} exams in the window`, async () => {
     const courseId = await addCourse(USER);
     await addQuiz(courseId, "Cells", 10);
 
-    for (let i = 0; i < EXAM_BURST_LIMIT.exams; i++) {
+    for (let i = 0; i < EXAM_BURST_LIMIT.max; i++) {
       await createExam(IDLE, form(courseId, 10));
     }
-    expect(redirect).toHaveBeenCalledTimes(EXAM_BURST_LIMIT.exams);
+    expect(redirect).toHaveBeenCalledTimes(EXAM_BURST_LIMIT.max);
     expect(await createExam(IDLE, form(courseId, 10))).toEqual({
       status: "error",
       error: expect.stringContaining("Please try again in a few minutes."),

@@ -174,15 +174,15 @@ describe("createReview", () => {
     expect(redirect).toHaveBeenCalledOnce();
   });
 
-  it(`stops after ${REVIEW_BURST_LIMIT.reviews} reviews in the window`, async () => {
+  it(`stops after ${REVIEW_BURST_LIMIT.max} reviews in the window`, async () => {
     const courseId = await addCourse(USER);
     const cells = await addQuiz(courseId, "Cells", 5);
     const genes = await addQuiz(courseId, "Genes", 5);
 
-    for (let i = 0; i < REVIEW_BURST_LIMIT.reviews; i++) {
+    for (let i = 0; i < REVIEW_BURST_LIMIT.max; i++) {
       await createReview(IDLE, form(courseId, [cells, genes], 5));
     }
-    expect(redirect).toHaveBeenCalledTimes(REVIEW_BURST_LIMIT.reviews);
+    expect(redirect).toHaveBeenCalledTimes(REVIEW_BURST_LIMIT.max);
     expect(await createReview(IDLE, form(courseId, [cells, genes], 5))).toEqual({
       status: "error",
       error: expect.stringContaining("Please try again in a few minutes."),
