@@ -2,6 +2,7 @@
 import { useActionState } from "react";
 import { addPassword } from "@/app/actions/account";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { TextField } from "@/components/ui/text-field";
 import { IDLE, type FormState } from "@/lib/form-state";
 import { PASSWORD_MIN_LENGTH } from "@/lib/validations/auth";
@@ -25,7 +26,14 @@ export function AddPasswordForm({ email }: { email: string }) {
         error={state.status === "error" ? state.error : undefined}
       />
       <Button type="submit" disabled={pending} className="self-start">
-        {pending ? "Adding…" : "Add password"}
+        {pending ? (
+          <>
+            <Spinner className="mr-2" />
+            Adding…
+          </>
+        ) : (
+          "Add password"
+        )}
       </Button>
     </form>
   );
