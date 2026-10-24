@@ -5,6 +5,7 @@ import { moveQuiz } from "@/app/actions/quizzes";
 import { DialogButton } from "@/components/dialog-button";
 import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/ui/form-error";
+import { Spinner } from "@/components/ui/spinner";
 import { useDialogForm } from "@/hooks/use-dialog-form";
 
 type Item = { id: number; name: string };
@@ -57,12 +58,19 @@ function MoveQuizForm({
       )}
       <FormError>{state.status === "error" ? state.error : undefined}</FormError>
       <div className="flex justify-end gap-3">
-        <Button type="button" variant="ghost" onClick={onClose}>
+        <Button type="button" variant="ghost" onClick={onClose} disabled={pending}>
           Cancel
         </Button>
         {courses.length > 0 ? (
           <Button type="submit" disabled={pending || !courseId}>
-            {pending ? "Moving…" : "Move quiz"}
+            {pending ? (
+              <>
+                <Spinner className="mr-2" />
+                Moving…
+              </>
+            ) : (
+              "Move quiz"
+            )}
           </Button>
         ) : null}
       </div>
