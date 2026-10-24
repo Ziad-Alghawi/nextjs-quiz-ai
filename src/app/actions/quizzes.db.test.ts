@@ -39,7 +39,7 @@ afterAll(() => deleteUsers(USER, OTHER_USER));
 
 describe("moveQuiz", () => {
   it('moves a quick quiz from "My quizzes" into a course, with its attempts', async () => {
-    const quizId = await createQuiz(generatedQuiz(5), USER);
+    const quizId = await createQuiz(USER, generatedQuiz(5));
     const courseId = await addCourse(USER);
     await db.insert(quizAttempts).values({ quizId, userId: USER, score: 4, totalQuestions: 5 });
 
@@ -54,14 +54,14 @@ describe("moveQuiz", () => {
   it("leaves quizzes that are already in a course where they are", async () => {
     const biology = await addCourse(USER, "Biology");
     const chemistry = await addCourse(USER, "Chemistry");
-    const quizId = await createQuiz(generatedQuiz(5), USER, { courseId: biology, chapterIds: [] });
+    const quizId = await createQuiz(USER, generatedQuiz(5), { courseId: biology, chapterIds: [] });
 
     expect(await moveQuiz(IDLE, formData({ quizId, courseId: chemistry }))).toEqual(NOT_FOUND);
     expect(await courseOf(quizId)).toBe(biology);
   });
 
   it("only moves into the user's own courses, not into a folder", async () => {
-    const quizId = await createQuiz(generatedQuiz(5), USER);
+    const quizId = await createQuiz(USER, generatedQuiz(5));
     const folderId = await courseOf(quizId);
     const othersCourse = await addCourse(OTHER_USER);
     const othersFolder = await getOrCreateDefaultCourse(db, OTHER_USER);
@@ -74,7 +74,7 @@ describe("moveQuiz", () => {
   });
 
   it("refuses another user's quick quiz and invalid fields", async () => {
-    const othersQuiz = await createQuiz(generatedQuiz(5), OTHER_USER);
+    const othersQuiz = await createQuiz(OTHER_USER, generatedQuiz(5));
     const courseId = await addCourse(USER);
 
     expect(await moveQuiz(IDLE, formData({ quizId: othersQuiz, courseId }))).toEqual(NOT_FOUND);

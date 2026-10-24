@@ -28,7 +28,7 @@ const form = (courseId: number, quizIds: number[], questionCount: number) =>
 
 /** A generated quiz in the course with `size` questions named "<name> 1?", "<name> 2?", ... */
 const addQuiz = (courseId: number, name: string, size: number, chapterIds: number[] = []) =>
-  createQuiz(generatedQuiz(size, name), USER, { courseId, chapterIds });
+  createQuiz(USER, generatedQuiz(size, name), { courseId, chapterIds });
 
 const lastRedirectId = () => Number(String(redirect.mock.lastCall?.[0]).split("/").pop());
 
@@ -126,8 +126,8 @@ describe("createReview", () => {
   });
 
   it('refuses quick quizzes in the "My quizzes" folder', async () => {
-    const cells = await createQuiz(generatedQuiz(5, "Cells"), USER);
-    const genes = await createQuiz(generatedQuiz(5, "Genes"), USER);
+    const cells = await createQuiz(USER, generatedQuiz(5, "Cells"));
+    const genes = await createQuiz(USER, generatedQuiz(5, "Genes"));
     const [{ courseId: folderId }] = await db
       .select({ courseId: quizzes.courseId })
       .from(quizzes)
