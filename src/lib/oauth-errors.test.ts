@@ -6,7 +6,7 @@ describe("googleErrorMessage", () => {
     expect(googleErrorMessage("account_not_linked")).toMatch(/connect Google in Settings/);
   });
 
-  it.each(["access_denied", "constructor", "", undefined])(
+  it.each(["access_denied", "constructor", "", undefined, ["account_not_linked", "access_denied"]])(
     "falls back to a generic message for %j",
     (code) => {
       expect(googleErrorMessage(code)).toBe("Signing in with Google failed. Please try again.");

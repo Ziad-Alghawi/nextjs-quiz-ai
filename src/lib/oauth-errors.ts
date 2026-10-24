@@ -16,7 +16,13 @@ const messages = new Map([
   ],
 ]);
 
-/** A message for a Google sign-in or linking error code; other failures get a generic one. */
-export function googleErrorMessage(code?: string) {
-  return (code && messages.get(code)) || "Signing in with Google failed. Please try again.";
+/**
+ * A message for a Google sign-in or linking error code; other failures get a generic one, and so does a
+ * repeated ?error=, which arrives as an array.
+ */
+export function googleErrorMessage(code?: string | string[]) {
+  return (
+    (typeof code === "string" && messages.get(code)) ||
+    "Signing in with Google failed. Please try again."
+  );
 }
