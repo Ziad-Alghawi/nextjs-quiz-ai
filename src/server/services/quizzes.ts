@@ -25,8 +25,8 @@ type NewQuiz = Omit<GeneratedQuiz, "questions"> & { questions: QuizQuestion[] };
  * without it, the quiz goes into the user's "My quizzes" folder.
  */
 export async function createQuiz(
-  quiz: NewQuiz,
   userId: string,
+  quiz: NewQuiz,
   origin?: { courseId: number; chapterIds: number[]; kind?: "review" | "exam" },
 ) {
   return db.transaction(async (tx) => {
@@ -275,6 +275,7 @@ async function copyQuestions(
   if (available < count) return { error: "too-few", available };
 
   const quizId = await createQuiz(
+    userId,
     {
       name: quiz.name,
       description: `${pluralize(count, "question")} from ${pluralize(sources.length, "quiz", "quizzes")}.`,
@@ -283,7 +284,6 @@ async function copyQuestions(
         count,
       ),
     },
-    userId,
     {
       courseId,
       chapterIds: [

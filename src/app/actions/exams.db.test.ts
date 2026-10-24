@@ -32,7 +32,7 @@ const addQuiz = (
   name: string,
   size: number,
   { chapterIds = [] as number[], kind = undefined as "review" | "exam" | undefined } = {},
-) => createQuiz(generatedQuiz(size, name), USER, { courseId, chapterIds, kind });
+) => createQuiz(USER, generatedQuiz(size, name), { courseId, chapterIds, kind });
 
 const lastRedirectId = () => Number(String(redirect.mock.lastCall?.[0]).split("/").pop());
 
@@ -141,7 +141,7 @@ describe("createExam", () => {
     const courseId = await addCourse(USER);
     await addQuiz(courseId, "Cells", 30);
     const otherCourseId = await addCourse(OTHER_USER);
-    await createQuiz(generatedQuiz(30), OTHER_USER, { courseId: otherCourseId, chapterIds: [] });
+    await createQuiz(OTHER_USER, generatedQuiz(30), { courseId: otherCourseId, chapterIds: [] });
 
     const notFound = {
       status: "error",
@@ -150,7 +150,7 @@ describe("createExam", () => {
     expect(await createExam(IDLE, form(otherCourseId, 10))).toEqual(notFound);
     expect(await createExam(IDLE, form(2147483000, 10))).toEqual(notFound);
     // Quick quizzes land in the "My quizzes" folder, which isn't a course.
-    await createQuiz(generatedQuiz(30), USER);
+    await createQuiz(USER, generatedQuiz(30));
     expect(await createExam(IDLE, form(await getOrCreateDefaultCourse(db, USER), 10))).toEqual(
       notFound,
     );

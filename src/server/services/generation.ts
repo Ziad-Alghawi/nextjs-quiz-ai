@@ -179,7 +179,7 @@ export async function generateAndSaveQuiz(
   try {
     const quizId = await runGeneration(userId, async (onUsage) => {
       const quiz = await generateQuiz({ documents, questionCount, onUsage });
-      return createQuiz(quiz, userId, origin);
+      return createQuiz(userId, quiz, origin);
     });
     return { quizId };
   } catch (error) {

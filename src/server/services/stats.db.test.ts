@@ -24,10 +24,10 @@ describe("getUserMetrics", () => {
   });
 
   it("counts generated quizzes only, but the attempts of every kind", async () => {
-    const generated = await createQuiz(generatedQuiz(4), USER);
-    const review = await createQuiz(generatedQuiz(2), USER);
+    const generated = await createQuiz(USER, generatedQuiz(4));
+    const review = await createQuiz(USER, generatedQuiz(2));
     await db.update(quizzes).set({ kind: "review" }).where(eq(quizzes.id, review));
-    const other = await createQuiz(generatedQuiz(3), OTHER_USER);
+    const other = await createQuiz(OTHER_USER, generatedQuiz(3));
 
     await db.insert(quizAttempts).values([
       { quizId: generated, userId: USER, score: 3, totalQuestions: 4 },

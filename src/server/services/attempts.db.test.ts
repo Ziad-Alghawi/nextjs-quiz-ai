@@ -14,7 +14,7 @@ afterAll(() => deleteUsers(USER, OTHER_USER));
 
 /** A quiz with `size` questions in the course (or "My quizzes"); answers[0] is the correct one. */
 const addQuiz = (size: number, courseId?: number, userId = USER) =>
-  createQuiz(generatedQuiz(size), userId, courseId ? { courseId, chapterIds: [] } : undefined);
+  createQuiz(userId, generatedQuiz(size), courseId ? { courseId, chapterIds: [] } : undefined);
 
 /** Saves an attempt at the quiz with the first `correct` questions right and returns its id. */
 async function attempt(quizId: number, correct: number, userId = USER) {
