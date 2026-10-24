@@ -19,8 +19,8 @@ function errorMessage(result: ReviewError, questionCount: number) {
     case "too-few":
       return `These quizzes have only ${result.available} questions together. Choose fewer questions.`;
     case "rate-limit": {
-      const { reviews, windowMinutes } = REVIEW_BURST_LIMIT;
-      return `You can make ${reviews} reviews every ${windowMinutes} minutes. Please try again in a few minutes.`;
+      const { max, windowMinutes } = REVIEW_BURST_LIMIT;
+      return `You can make ${max} reviews every ${windowMinutes} minutes. Please try again in a few minutes.`;
     }
   }
 }

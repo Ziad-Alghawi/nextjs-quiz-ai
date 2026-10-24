@@ -20,10 +20,10 @@ export async function POST(
   if (!user) return errorResponse("Please sign in to upload a PDF.", 401);
 
   // Before anything else, so failed uploads count too: reading a PDF costs server time either way.
-  const { uploads, windowMinutes } = CHAPTER_UPLOAD_LIMIT;
-  if (!(await consumeRateLimit(`chapter-upload:${user.id}`, uploads, windowMinutes * MINUTE_MS))) {
+  const { max, windowMinutes } = CHAPTER_UPLOAD_LIMIT;
+  if (!(await consumeRateLimit(`chapter-upload:${user.id}`, max, windowMinutes * MINUTE_MS))) {
     return errorResponse(
-      `You can upload up to ${uploads} PDFs every ${windowMinutes} minutes. Please try again in a few minutes.`,
+      `You can upload up to ${max} PDFs every ${windowMinutes} minutes. Please try again in a few minutes.`,
       429,
     );
   }

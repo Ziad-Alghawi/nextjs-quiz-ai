@@ -151,9 +151,9 @@ describe("POST /api/courses/[courseId]/sources", () => {
     expect(response.body.error).toContain("Free plan");
   });
 
-  it(`allows ${CHAPTER_UPLOAD_LIMIT.uploads} uploads per ${CHAPTER_UPLOAD_LIMIT.windowMinutes} minutes, failed ones included`, async () => {
+  it(`allows ${CHAPTER_UPLOAD_LIMIT.max} uploads per ${CHAPTER_UPLOAD_LIMIT.windowMinutes} minutes, failed ones included`, async () => {
     const courseId = await addCourse(USER);
-    for (let i = 0; i < CHAPTER_UPLOAD_LIMIT.uploads; i++) {
+    for (let i = 0; i < CHAPTER_UPLOAD_LIMIT.max; i++) {
       expect((await upload(courseId, new Blob(["not a pdf"]))).status).toBe(400);
     }
 

@@ -19,8 +19,8 @@ function errorMessage(result: ExamError) {
         ? "Make a quiz in this course first."
         : `This course's quizzes have only ${result.available} questions together. Choose fewer questions.`;
     case "rate-limit": {
-      const { exams, windowMinutes } = EXAM_BURST_LIMIT;
-      return `You can start ${exams} exams every ${windowMinutes} minutes. Please try again in a few minutes.`;
+      const { max, windowMinutes } = EXAM_BURST_LIMIT;
+      return `You can start ${max} exams every ${windowMinutes} minutes. Please try again in a few minutes.`;
     }
   }
 }
