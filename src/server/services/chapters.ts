@@ -14,8 +14,8 @@ type NewChapter = {
 };
 
 type AddChapterResult =
-  | { id: number }
-  | { error: "course-not-found" }
+  | { chapterId: number }
+  | { error: "not-found" }
   | { error: "course-full"; limit: number }
   | { error: "user-full"; limit: number; plan: PlanId };
 
@@ -43,7 +43,7 @@ export async function addChapter(
         eq(courses.isDefault, false),
       ),
     });
-    if (!course) return { error: "course-not-found" };
+    if (!course) return { error: "not-found" };
 
     const [[{ inCourse }], [{ ofUser }]] = await Promise.all([
       tx.select({ inCourse: count() }).from(chapters).where(eq(chapters.courseId, courseId)),
@@ -58,11 +58,11 @@ export async function addChapter(
     }
     if (ofUser >= maxChapters) return { error: "user-full", limit: maxChapters, plan };
 
-    const [{ id }] = await tx
+    const [{ chapterId }] = await tx
       .insert(chapters)
       .values({ courseId, ...chapter })
-      .returning({ id: chapters.id });
-    return { id };
+      .returning({ chapterId: chapters.id });
+    return { chapterId };
   });
 }
 

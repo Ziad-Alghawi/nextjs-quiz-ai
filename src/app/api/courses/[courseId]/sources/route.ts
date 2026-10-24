@@ -45,10 +45,10 @@ export async function POST(
     pageCount: pdf.pageCount,
     sizeBytes: upload.data.size,
   });
-  if (!("error" in result)) return NextResponse.json({ id: result.id }, { status: 201 });
+  if (!("error" in result)) return NextResponse.json({ id: result.chapterId }, { status: 201 });
 
   switch (result.error) {
-    case "course-not-found":
+    case "not-found":
       return errorResponse(COURSE_NOT_FOUND, 404);
     case "course-full":
       return errorResponse(

@@ -18,8 +18,8 @@ const OTHER_USER = "courses-db-test-other-user";
 
 const newCourse = async (userId: string, name: string) => {
   const result = await createCourse(userId, name);
-  if (!("id" in result)) throw new Error(`Course not created: ${result.error}`);
-  return result.id;
+  if (!("courseId" in result)) throw new Error(`Course not created: ${result.error}`);
+  return result.courseId;
 };
 
 beforeEach(() => createUsers(USER, OTHER_USER));
@@ -30,7 +30,7 @@ describe("createCourse", () => {
     await newCourse(USER, "Biology");
 
     expect(await createCourse(USER, "Biology")).toEqual({ error: "duplicate" });
-    expect(await createCourse(OTHER_USER, "Biology")).toEqual({ id: expect.any(Number) });
+    expect(await createCourse(OTHER_USER, "Biology")).toEqual({ courseId: expect.any(Number) });
   });
 
   it(`stops at ${MAX_COURSES_PER_USER} courses`, async () => {
@@ -48,7 +48,7 @@ describe("renameCourse", () => {
   it("renames the user's own course", async () => {
     const id = await newCourse(USER, "Biology");
 
-    expect(await renameCourse(USER, id, "Chemistry")).toBe("renamed");
+    expect(await renameCourse(USER, id, "Chemistry")).toEqual({ courseId: id });
     const [course] = await db.select().from(courses).where(eq(courses.id, id));
     expect(course.name).toBe("Chemistry");
   });
@@ -57,13 +57,13 @@ describe("renameCourse", () => {
     await newCourse(USER, "Biology");
     const id = await newCourse(USER, "Chemistry");
 
-    expect(await renameCourse(USER, id, "Biology")).toBe("duplicate");
+    expect(await renameCourse(USER, id, "Biology")).toEqual({ error: "duplicate" });
   });
 
   it("doesn't touch another user's course", async () => {
     const id = await newCourse(OTHER_USER, "Biology");
 
-    expect(await renameCourse(USER, id, "Mine now")).toBe("not-found");
+    expect(await renameCourse(USER, id, "Mine now")).toEqual({ error: "not-found" });
     const [course] = await db.select().from(courses).where(eq(courses.id, id));
     expect(course.name).toBe("Biology");
   });
@@ -118,7 +118,7 @@ describe('the "My quizzes" folder', () => {
   it("can't be renamed or deleted", async () => {
     const folderId = await getOrCreateDefaultCourse(USER, db);
 
-    expect(await renameCourse(USER, folderId, "Biology")).toBe("not-found");
+    expect(await renameCourse(USER, folderId, "Biology")).toEqual({ error: "not-found" });
     expect(await deleteCourse(USER, folderId)).toBe(false);
     expect(await getCourse(USER, folderId)).toEqual(
       expect.objectContaining({ name: "My quizzes", isDefault: true }),
