@@ -109,7 +109,7 @@ describe("POST /api/courses/[courseId]/sources", () => {
   });
 
   it('refuses the "My quizzes" folder: it holds quick quizzes only', async () => {
-    const folderId = await getOrCreateDefaultCourse(db, USER);
+    const folderId = await getOrCreateDefaultCourse(USER, db);
 
     expect((await upload(folderId, makePdf(["Text."]))).status).toBe(404);
     expect(await db.select().from(chapters).where(eq(chapters.courseId, folderId))).toEqual([]);
