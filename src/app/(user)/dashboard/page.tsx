@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
 import { Skeleton } from "@/components/ui/skeleton";
+import { utcDate } from "@/lib/time";
 import { listQuizzes } from "@/server/services/quizzes";
 import { getAttemptActivity, getUserMetrics, summarizeActivity } from "@/server/services/stats";
 import { requireUser } from "@/server/session";
@@ -47,7 +48,7 @@ async function OverviewContent({ userId }: { userId: string }) {
     getUserMetrics(userId),
     getAttemptActivity(userId),
   ]);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = utcDate();
 
   return (
     <>

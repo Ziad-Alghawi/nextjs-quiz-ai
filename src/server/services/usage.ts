@@ -3,6 +3,7 @@ import { and, count, eq, gte, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { quizGenerations } from "@/db/schema";
 import { DAILY_GENERATION_LIMIT, GENERATION_BURST_LIMIT, PLANS, type PlanId } from "@/lib/plans";
+import { utcDate } from "@/lib/time";
 import { isSubscribed } from "./billing";
 import type { ModelUsage } from "./generation";
 import { consumeRateLimit } from "./rate-limit";
@@ -89,8 +90,7 @@ export async function reserveGeneration(userId: string) {
 
     // Last, so a request the user's own limits reject doesn't take one of the shared slots. Throwing
     // rolls the transaction back, so a request stopped here doesn't count toward the user's quota.
-    const today = new Date().toISOString().slice(0, 10);
-    const key = `generation-daily:${today}`;
+    const key = `generation-daily:${utcDate()}`;
     // The key changes at midnight UTC, so its window never needs to end within the day.
     const limit = { max: DAILY_GENERATION_LIMIT, windowMinutes: 24 * 60 };
     if (!(await consumeRateLimit(key, limit, tx))) {
