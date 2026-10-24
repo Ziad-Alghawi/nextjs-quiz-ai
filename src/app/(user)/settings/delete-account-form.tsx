@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/ui/form-error";
+import { Spinner } from "@/components/ui/spinner";
 import { TextField } from "@/components/ui/text-field";
 import { useZodForm } from "@/hooks/use-zod-form";
 import { authClient, authErrorMessage } from "@/lib/auth-client";
@@ -65,9 +66,16 @@ export function DeleteAccountForm({ hasPassword }: { hasPassword: boolean }) {
       />
       <div className="flex gap-3">
         <Button type="submit" variant="destructive" disabled={pending}>
-          {pending ? "Deleting…" : "Delete my account"}
+          {pending ? (
+            <>
+              <Spinner className="mr-2" />
+              Deleting…
+            </>
+          ) : (
+            "Delete my account"
+          )}
         </Button>
-        <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+        <Button type="button" variant="ghost" onClick={() => setOpen(false)} disabled={pending}>
           Cancel
         </Button>
       </div>
