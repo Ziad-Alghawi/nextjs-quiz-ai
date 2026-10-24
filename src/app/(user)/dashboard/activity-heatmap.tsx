@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
 import { pluralize } from "@/lib/pluralize";
-import { DAY_MS } from "@/lib/time";
+import { DAY_MS, utcDate } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
 const WEEKS = 53;
@@ -35,7 +35,7 @@ function buildWeeks(activity: { date: string; count: number }[], today: string):
     Array.from({ length: 7 }, (_, weekday) => {
       const time = firstSunday + (week * 7 + weekday) * DAY_MS;
       if (time > todayTime) return null;
-      return { time, count: counts.get(new Date(time).toISOString().slice(0, 10)) ?? 0 };
+      return { time, count: counts.get(utcDate(new Date(time))) ?? 0 };
     }),
   );
 }

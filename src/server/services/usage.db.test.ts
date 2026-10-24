@@ -3,6 +3,7 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db";
 import { quizGenerations, rateLimits, users } from "@/db/schema";
 import { DAILY_GENERATION_LIMIT, GENERATION_BURST_LIMIT, PLANS } from "@/lib/plans";
+import { utcDate } from "@/lib/time";
 import { createUsers, deleteUsers } from "@/test/db-fixtures";
 import {
   finishGeneration,
@@ -41,7 +42,7 @@ const limitError = (promise: Promise<unknown>) =>
     (error: unknown) => (error instanceof GenerationLimitError ? error.status : error),
   );
 
-const dailyKey = () => `generation-daily:${new Date().toISOString().slice(0, 10)}`;
+const dailyKey = () => `generation-daily:${utcDate()}`;
 
 beforeEach(async () => {
   await createUsers(USER);
