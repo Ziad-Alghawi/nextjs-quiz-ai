@@ -41,6 +41,11 @@ function MoveQuizForm({
             required
             value={courseId}
             onChange={(event) => setCourseId(event.target.value)}
+            // React resets the form after the action and, unlike for text fields, leaves a controlled
+            // select on its first option; this puts the choice back after a failed move.
+            ref={(select) => {
+              if (select) select.value = courseId;
+            }}
             className="h-10 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
           >
             <option value="" disabled>
