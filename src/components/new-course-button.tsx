@@ -5,6 +5,7 @@ import { useActionState, useState } from "react";
 import { createCourse } from "@/app/actions/courses";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
+import { Spinner } from "@/components/ui/spinner";
 import { TextField } from "@/components/ui/text-field";
 import { IDLE, type FormState } from "@/lib/form-state";
 
@@ -22,11 +23,18 @@ function NewCourseForm({ onCancel }: { onCancel: () => void }) {
         error={state.status === "error" ? state.error : undefined}
       />
       <div className="flex justify-end gap-3">
-        <Button type="button" variant="ghost" onClick={onCancel}>
+        <Button type="button" variant="ghost" onClick={onCancel} disabled={pending}>
           Cancel
         </Button>
         <Button type="submit" disabled={pending}>
-          {pending ? "Creating…" : "Create course"}
+          {pending ? (
+            <>
+              <Spinner className="mr-2" />
+              Creating…
+            </>
+          ) : (
+            "Create course"
+          )}
         </Button>
       </div>
     </form>
