@@ -3,13 +3,11 @@ import { useActionState } from "react";
 import { addPassword } from "@/app/actions/account";
 import { Button } from "@/components/ui/button";
 import { TextField } from "@/components/ui/text-field";
-import type { FormState } from "@/lib/form-state";
+import { IDLE, type FormState } from "@/lib/form-state";
 import { PASSWORD_MIN_LENGTH } from "@/lib/validations/auth";
 
 export function AddPasswordForm({ email }: { email: string }) {
-  const [state, action, pending] = useActionState<FormState, FormData>(addPassword, {
-    status: "idle",
-  });
+  const [state, action, pending] = useActionState<FormState, FormData>(addPassword, IDLE);
 
   return (
     <form action={action} className="flex flex-col gap-3">

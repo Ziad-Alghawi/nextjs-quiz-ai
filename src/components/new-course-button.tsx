@@ -6,12 +6,10 @@ import { createCourse } from "@/app/actions/courses";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { TextField } from "@/components/ui/text-field";
-import type { FormState } from "@/lib/form-state";
+import { IDLE, type FormState } from "@/lib/form-state";
 
 function NewCourseForm({ onCancel }: { onCancel: () => void }) {
-  const [state, action, pending] = useActionState<FormState, FormData>(createCourse, {
-    status: "idle",
-  });
+  const [state, action, pending] = useActionState<FormState, FormData>(createCourse, IDLE);
 
   return (
     <form action={action} className="flex flex-col gap-4 p-6">
