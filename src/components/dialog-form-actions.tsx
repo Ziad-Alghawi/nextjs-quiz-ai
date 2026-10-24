@@ -2,6 +2,7 @@
 import type { ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/button";
+import { useDialogBusy } from "@/components/ui/dialog";
 import { FormError } from "@/components/ui/form-error";
 
 type DialogFormActionsProps = {
@@ -16,6 +17,8 @@ type DialogFormActionsProps = {
 export function DialogFormActions({ error, onCancel, children }: DialogFormActionsProps) {
   // useFormStatus only works in a component rendered inside the form.
   const { pending } = useFormStatus();
+  // Closing mid-save would hide the result; a failed save unlocks the dialog again.
+  useDialogBusy(pending);
 
   return (
     <>
