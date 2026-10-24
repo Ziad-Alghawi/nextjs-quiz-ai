@@ -9,7 +9,7 @@ import { missedQuestions } from "@/lib/practice";
 import { scorePercent } from "@/lib/scoring";
 import { cn } from "@/lib/utils";
 
-type Props = { params: Promise<{ attemptId: string }> };
+type Props = PageProps<"/attempts/[attemptId]">;
 
 const dateFormat = new Intl.DateTimeFormat("en", { dateStyle: "long", timeZone: "UTC" });
 
