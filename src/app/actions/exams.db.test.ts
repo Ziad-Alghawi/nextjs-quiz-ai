@@ -151,7 +151,7 @@ describe("createExam", () => {
     expect(await createExam(IDLE, form(2147483000, 10))).toEqual(notFound);
     // Quick quizzes land in the "My quizzes" folder, which isn't a course.
     await createQuiz(USER, generatedQuiz(30));
-    expect(await createExam(IDLE, form(await getOrCreateDefaultCourse(db, USER), 10))).toEqual(
+    expect(await createExam(IDLE, form(await getOrCreateDefaultCourse(USER, db), 10))).toEqual(
       notFound,
     );
     for (const count of [15, 25]) {

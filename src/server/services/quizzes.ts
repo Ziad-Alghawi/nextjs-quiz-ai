@@ -30,7 +30,7 @@ export async function createQuiz(
   origin?: { courseId: number; chapterIds: number[]; kind?: "review" | "exam" },
 ) {
   return db.transaction(async (tx) => {
-    const courseId = origin?.courseId ?? (await getOrCreateDefaultCourse(tx, userId));
+    const courseId = origin?.courseId ?? (await getOrCreateDefaultCourse(userId, tx));
     const [{ quizId }] = await tx
       .insert(quizzes)
       .values({

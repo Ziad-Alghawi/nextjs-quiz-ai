@@ -64,7 +64,7 @@ describe("moveQuiz", () => {
     const quizId = await createQuiz(USER, generatedQuiz(5));
     const folderId = await courseOf(quizId);
     const othersCourse = await addCourse(OTHER_USER);
-    const othersFolder = await getOrCreateDefaultCourse(db, OTHER_USER);
+    const othersFolder = await getOrCreateDefaultCourse(OTHER_USER, db);
 
     for (const courseId of [othersCourse, othersFolder, folderId, 2147483000]) {
       expect(await moveQuiz(IDLE, formData({ quizId, courseId }))).toEqual(NOT_FOUND);

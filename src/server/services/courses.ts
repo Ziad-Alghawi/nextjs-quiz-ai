@@ -19,8 +19,8 @@ const isDuplicateName = (error: unknown) =>
  * on conflict makes RETURNING give the existing id, also when two requests create it at once.
  */
 export async function getOrCreateDefaultCourse(
-  executor: Pick<typeof db, "insert">,
   userId: string,
+  executor: Pick<typeof db, "insert">,
 ) {
   const [{ id }] = await executor
     .insert(courses)

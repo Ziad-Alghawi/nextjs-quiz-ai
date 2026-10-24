@@ -93,7 +93,7 @@ describe("deleteCourse", () => {
 describe("getOrCreateDefaultCourse", () => {
   it("creates one course, also for parallel requests", async () => {
     const ids = await Promise.all(
-      Array.from({ length: 10 }, () => getOrCreateDefaultCourse(db, USER)),
+      Array.from({ length: 10 }, () => getOrCreateDefaultCourse(USER, db)),
     );
 
     const rows = await db.select().from(courses).where(eq(courses.userId, USER));
@@ -109,14 +109,14 @@ describe("getOrCreateDefaultCourse", () => {
       .values({ userId: USER, name: "Renamed long ago", isDefault: true })
       .returning({ id: courses.id });
 
-    expect(await getOrCreateDefaultCourse(db, USER)).toBe(folder.id);
+    expect(await getOrCreateDefaultCourse(USER, db)).toBe(folder.id);
     expect(await db.select().from(courses).where(eq(courses.userId, USER))).toHaveLength(1);
   });
 });
 
 describe('the "My quizzes" folder', () => {
   it("can't be renamed or deleted", async () => {
-    const folderId = await getOrCreateDefaultCourse(db, USER);
+    const folderId = await getOrCreateDefaultCourse(USER, db);
 
     expect(await renameCourse(USER, folderId, "Biology")).toBe("not-found");
     expect(await deleteCourse(USER, folderId)).toBe(false);
@@ -140,7 +140,7 @@ describe("listCourses and getCourse", () => {
 
   it('flag the "My quizzes" folder', async () => {
     await newCourse(USER, "Biology");
-    await getOrCreateDefaultCourse(db, USER);
+    await getOrCreateDefaultCourse(USER, db);
 
     expect(await listCourses(USER)).toEqual([
       expect.objectContaining({ name: "Biology", isDefault: false }),
