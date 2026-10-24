@@ -35,12 +35,33 @@ function NewCourseForm({ onCancel }: { onCancel: () => void }) {
   );
 }
 
-/** The "+" next to the course list. The dialog closes by itself when the new course's page opens. */
-export function NewCourseButton() {
+/** Open state for the dialog; it closes by itself when the new course's page opens. */
+export function useNewCourseDialog() {
   const pathname = usePathname();
   // Remembering where it was opened closes it on any navigation, without an effect.
   const [openedAt, setOpenedAt] = useState<string | null>(null);
-  const open = openedAt === pathname;
+  return {
+    open: openedAt === pathname,
+    show: () => setOpenedAt(pathname),
+    close: () => setOpenedAt(null),
+  };
+}
+
+export function NewCourseDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  return (
+    <Dialog open={open} onClose={onClose} label="New course">
+      {/* Mounted only while open, so every opening starts with an empty form and no old error. */}
+      {open ? <NewCourseForm onCancel={onClose} /> : null}
+    </Dialog>
+  );
+}
+
+/**
+ * The "+" next to the course list. With `onOpen` the caller shows the dialog itself, as the phone
+ * menu does: the dialog can't sit inside the menu, which closes when the button is tapped.
+ */
+export function NewCourseButton({ onOpen }: { onOpen?: () => void }) {
+  const dialog = useNewCourseDialog();
 
   return (
     <>
@@ -49,14 +70,11 @@ export function NewCourseButton() {
         size="icon"
         className="size-8"
         aria-label="New course"
-        onClick={() => setOpenedAt(pathname)}
+        onClick={onOpen ?? dialog.show}
       >
         <Plus className="size-4" aria-hidden />
       </Button>
-      <Dialog open={open} onClose={() => setOpenedAt(null)} label="New course">
-        {/* Mounted only while open, so every opening starts with an empty form and no old error. */}
-        {open ? <NewCourseForm onCancel={() => setOpenedAt(null)} /> : null}
-      </Dialog>
+      {onOpen ? null : <NewCourseDialog open={dialog.open} onClose={dialog.close} />}
     </>
   );
 }

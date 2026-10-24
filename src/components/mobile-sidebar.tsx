@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
+import { NewCourseDialog, useNewCourseDialog } from "./new-course-button";
 import { SidebarNav, type SidebarCourse } from "./sidebar-nav";
 
 /** Below the md breakpoint the sidebar opens as a drawer from the ☰ button in the header. */
@@ -11,6 +12,7 @@ export function MobileSidebar({ courses }: { courses: SidebarCourse[] }) {
   const pathname = usePathname();
   // Closes when a link inside is followed (the path changes).
   const [openedAt, setOpenedAt] = useState<string | null>(null);
+  const newCourse = useNewCourseDialog();
 
   return (
     <div className="md:hidden">
@@ -39,10 +41,18 @@ export function MobileSidebar({ courses }: { courses: SidebarCourse[] }) {
             <X className="size-4" aria-hidden />
           </Button>
           <div className="min-h-0 flex-1">
-            <SidebarNav courses={courses} />
+            <SidebarNav
+              courses={courses}
+              onNewCourse={() => {
+                setOpenedAt(null);
+                newCourse.show();
+              }}
+            />
           </div>
         </div>
       </Dialog>
+      {/* Outside the menu, which is closed by now. */}
+      <NewCourseDialog open={newCourse.open} onClose={newCourse.close} />
     </div>
   );
 }
