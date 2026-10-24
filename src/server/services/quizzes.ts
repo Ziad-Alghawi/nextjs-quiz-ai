@@ -6,7 +6,6 @@ import { examName } from "@/lib/exam";
 import { EXAM_BURST_LIMIT, isQuestionCountAllowed, REVIEW_BURST_LIMIT } from "@/lib/plans";
 import { pluralize } from "@/lib/pluralize";
 import { pickReviewQuestions, reviewName } from "@/lib/review";
-import { MINUTE_MS } from "@/lib/time";
 import type { GeneratedQuiz } from "@/lib/validations/quiz";
 import { getOrCreateDefaultCourse } from "./courses";
 import { consumeRateLimit } from "./rate-limit";
@@ -172,8 +171,7 @@ export async function createReviewQuiz(
   userId: string,
   input: { courseId: number; quizIds: number[]; questionCount: number },
 ): Promise<ReviewResult> {
-  const { max, windowMinutes } = REVIEW_BURST_LIMIT;
-  if (!(await consumeRateLimit(`review:${userId}`, max, windowMinutes * MINUTE_MS))) {
+  if (!(await consumeRateLimit(`review:${userId}`, REVIEW_BURST_LIMIT))) {
     return { error: "rate-limit" };
   }
 
@@ -205,8 +203,7 @@ export async function createExamQuiz(
   userId: string,
   input: { courseId: number; questionCount: number },
 ): Promise<ExamResult> {
-  const { max, windowMinutes } = EXAM_BURST_LIMIT;
-  if (!(await consumeRateLimit(`exam:${userId}`, max, windowMinutes * MINUTE_MS))) {
+  if (!(await consumeRateLimit(`exam:${userId}`, EXAM_BURST_LIMIT))) {
     return { error: "rate-limit" };
   }
 

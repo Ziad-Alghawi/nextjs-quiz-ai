@@ -58,7 +58,7 @@ export const MAX_COURSES_PER_USER = 30;
 export const MAX_CHAPTERS_PER_COURSE = 15;
 
 /** At most `max` requests per user in each window of `windowMinutes`. */
-type RateLimit = { max: number; windowMinutes: number };
+export type RateLimit = { max: number; windowMinutes: number };
 
 /** On every plan, failed uploads included: reading a PDF costs server time even when it fails. */
 export const CHAPTER_UPLOAD_LIMIT = { max: 20, windowMinutes: 10 } as const satisfies RateLimit;
@@ -80,7 +80,7 @@ export const REVIEW_BURST_LIMIT = { max: 10, windowMinutes: 10 } as const satisf
 export const EXAM_BURST_LIMIT = { max: 10, windowMinutes: 10 } as const satisfies RateLimit;
 
 /** On every plan: at most this many generation attempts per user in the window. */
-export const GENERATION_BURST_LIMIT = { attempts: 3, windowMinutes: 10 } as const;
+export const GENERATION_BURST_LIMIT = { max: 3, windowMinutes: 10 } as const satisfies RateLimit;
 
 /**
  * Generation attempts per UTC day across all users. Gemini's paid tier has no per-day request

@@ -2,6 +2,8 @@ import "server-only";
 import { sql } from "drizzle-orm";
 import { db } from "@/db";
 import { rateLimits } from "@/db/schema";
+import type { RateLimit } from "@/lib/plans";
+import { MINUTE_MS } from "@/lib/time";
 
 /**
  * Counts one attempt for `key` and says whether it is within `max` attempts per window. Rejected
@@ -12,12 +14,11 @@ import { rateLimits } from "@/db/schema";
  */
 export async function consumeRateLimit(
   key: string,
-  max: number,
-  windowMs: number,
+  { max, windowMinutes }: RateLimit,
   executor: Pick<typeof db, "insert"> = db,
 ) {
   const now = Date.now();
-  const windowOver = sql`${rateLimits.lastRequest} < ${now - windowMs}`;
+  const windowOver = sql`${rateLimits.lastRequest} < ${now - windowMinutes * MINUTE_MS}`;
   const [{ count }] = await executor
     .insert(rateLimits)
     .values({ id: crypto.randomUUID(), key, count: 1, lastRequest: now })

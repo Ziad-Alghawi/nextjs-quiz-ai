@@ -85,7 +85,7 @@ describe("usage service", () => {
   });
 
   it("limits bursts with 429, counting failed attempts too", async () => {
-    await addGenerations(GENERATION_BURST_LIMIT.attempts, {
+    await addGenerations(GENERATION_BURST_LIMIT.max, {
       status: "failed",
       createdAt: sql`now()`,
     });

@@ -3,7 +3,6 @@ import { and, count, eq, gte, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { quizGenerations } from "@/db/schema";
 import { DAILY_GENERATION_LIMIT, GENERATION_BURST_LIMIT, PLANS, type PlanId } from "@/lib/plans";
-import { DAY_MS } from "@/lib/time";
 import { isSubscribed } from "./billing";
 import type { ModelUsage } from "./generation";
 import { consumeRateLimit } from "./rate-limit";
@@ -81,9 +80,9 @@ export async function reserveGeneration(userId: string) {
           ),
         ),
       );
-    if (recent >= GENERATION_BURST_LIMIT.attempts) {
+    if (recent >= GENERATION_BURST_LIMIT.max) {
       throw new GenerationLimitError(
-        `You can generate up to ${GENERATION_BURST_LIMIT.attempts} quizzes per ${GENERATION_BURST_LIMIT.windowMinutes} minutes. Please wait a few minutes.`,
+        `You can generate up to ${GENERATION_BURST_LIMIT.max} quizzes per ${GENERATION_BURST_LIMIT.windowMinutes} minutes. Please wait a few minutes.`,
         429,
       );
     }
@@ -93,7 +92,8 @@ export async function reserveGeneration(userId: string) {
     const today = new Date().toISOString().slice(0, 10);
     const key = `generation-daily:${today}`;
     // The key changes at midnight UTC, so its window never needs to end within the day.
-    if (!(await consumeRateLimit(key, DAILY_GENERATION_LIMIT, DAY_MS, tx))) {
+    const limit = { max: DAILY_GENERATION_LIMIT, windowMinutes: 24 * 60 };
+    if (!(await consumeRateLimit(key, limit, tx))) {
       throw new GenerationLimitError("Daily limit reached. Please try again tomorrow.", 429);
     }
 
