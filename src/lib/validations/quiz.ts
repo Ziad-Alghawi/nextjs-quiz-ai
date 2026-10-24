@@ -34,6 +34,10 @@ const nonEmptyText = () =>
 
 // Size limits are refinements instead of .min()/.max(): Gemini rejects array-length
 // constraints in its response schema, while LangChain still runs every refinement.
+// Generous on purpose: questions beyond the requested count are dropped after generation, instead
+// of failing the whole quiz.
+export const MAX_GENERATED_QUESTIONS = 2 * MAX_QUESTIONS;
+
 export const generatedQuizSchema = z.object({
   name: nonEmptyText().describe("Short title of the quiz"),
   description: nonEmptyText().describe("One-sentence summary of what the quiz covers"),
@@ -56,11 +60,9 @@ export const generatedQuizSchema = z.object({
         ),
       }),
     )
-    // Generous on purpose: questions beyond the requested count are dropped after generation,
-    // instead of failing the whole quiz.
     .refine(
-      (questions) => questions.length >= 1 && questions.length <= 2 * MAX_QUESTIONS,
-      `A quiz needs 1 to ${2 * MAX_QUESTIONS} questions`,
+      (questions) => questions.length >= 1 && questions.length <= MAX_GENERATED_QUESTIONS,
+      `A quiz needs 1 to ${MAX_GENERATED_QUESTIONS} questions`,
     ),
 });
 

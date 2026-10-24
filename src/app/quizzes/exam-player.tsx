@@ -8,7 +8,7 @@ import { Spinner } from "@/components/ui/spinner";
 import type { ExamPaper } from "@/lib/exam";
 import { pluralize } from "@/lib/pluralize";
 import { cn } from "@/lib/utils";
-import { submitQuiz } from "../actions/attempts";
+import { submitQuiz } from "@/app/actions/attempts";
 import { AnswerOption } from "./answer-option";
 import { PlayerTopBar } from "./player-top-bar";
 import { QuestionHeading } from "./question-heading";

@@ -7,7 +7,7 @@ import { missedQuestions, shuffleRound } from "@/lib/practice";
 import { scoreAttempt, type SelectedAnswer } from "@/lib/scoring";
 import { cn } from "@/lib/utils";
 import type { QuizWithQuestions } from "@/server/services/quizzes";
-import { submitQuiz } from "../actions/attempts";
+import { submitQuiz } from "@/app/actions/attempts";
 import { AnswerOption, LETTERS } from "./answer-option";
 import { PlayerTopBar } from "./player-top-bar";
 import { QuestionHeading } from "./question-heading";
