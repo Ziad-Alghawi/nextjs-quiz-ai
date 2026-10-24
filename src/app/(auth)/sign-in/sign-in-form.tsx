@@ -69,6 +69,7 @@ export function SignInForm({
             Forgot password?
           </Link>
         </div>
+        <FormError>{error}</FormError>
         <Button type="submit" disabled={pending}>
           {pending ? (
             <>
@@ -81,7 +82,6 @@ export function SignInForm({
         </Button>
       </form>
       <GoogleSignIn callbackURL={callbackURL} onError={setError} />
-      <FormError>{error}</FormError>
     </>
   );
 }

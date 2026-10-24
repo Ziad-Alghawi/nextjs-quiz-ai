@@ -45,6 +45,7 @@ export function SignUpForm({ callbackURL }: { callbackURL: string }) {
           placeholder={`At least ${PASSWORD_MIN_LENGTH} characters`}
           error={errors.password}
         />
+        <FormError>{error}</FormError>
         <Button type="submit" disabled={pending}>
           {pending ? (
             <>
@@ -57,7 +58,6 @@ export function SignUpForm({ callbackURL }: { callbackURL: string }) {
         </Button>
       </form>
       <GoogleSignIn callbackURL={callbackURL} onError={setError} />
-      <FormError>{error}</FormError>
     </>
   );
 }
