@@ -12,7 +12,7 @@ export function QuestionHeading({
     <h2
       ref={ref}
       tabIndex={-1}
-      className="text-xl font-semibold leading-snug wrap-break-word outline-none sm:text-2xl"
+      className="text-xl leading-snug font-semibold wrap-break-word outline-none sm:text-2xl"
     >
       {children}
     </h2>

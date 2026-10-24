@@ -46,7 +46,7 @@ function MoveQuizForm({
             ref={(select) => {
               if (select) select.value = courseId;
             }}
-            className="h-10 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+            className="h-10 rounded-md border border-input bg-background px-3 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
           >
             <option value="" disabled>
               Choose a course
