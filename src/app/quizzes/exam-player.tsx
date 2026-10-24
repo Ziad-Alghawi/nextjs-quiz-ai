@@ -192,7 +192,12 @@ export function ExamPlayer({ exam, exitHref }: ExamPlayerProps) {
         </nav>
       </div>
 
-      <Dialog open={confirming} onClose={() => setConfirming(false)} label="Finish the exam">
+      <Dialog
+        open={confirming}
+        onClose={() => setConfirming(false)}
+        label="Finish the exam"
+        busy={submitting}
+      >
         <div className="flex flex-col gap-4 p-6">
           <h2 className="text-lg font-semibold">Finish the exam?</h2>
           <p className="text-sm">
