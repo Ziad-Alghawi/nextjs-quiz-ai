@@ -60,7 +60,7 @@ export async function Header() {
                           className="rounded-full"
                         />
                       ) : (
-                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
+                        <span className="flex size-8 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
                           {user.name.charAt(0).toUpperCase()}
                         </span>
                       )}
