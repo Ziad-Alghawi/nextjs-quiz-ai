@@ -80,7 +80,7 @@ export async function createQuiz(
  * The quiz with its questions and answers in the order they were created, only if it belongs to the
  * user. Without orderBy, Postgres may return the rows in a different order on every load.
  */
-export function getQuizWithQuestions(quizId: number, userId: string) {
+export function getQuizWithQuestions(userId: string, quizId: number) {
   return db.query.quizzes.findFirst({
     columns: { id: true, name: true, kind: true, courseId: true },
     where: and(eq(quizzes.id, quizId), eq(quizzes.userId, userId)),
