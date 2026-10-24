@@ -58,6 +58,7 @@ export function ForgotPasswordForm() {
             autoComplete="email"
             error={codeRequest.errors.email}
           />
+          <FormError>{error}</FormError>
           <Button type="submit" disabled={codeRequest.pending}>
             {codeRequest.pending ? (
               <>
@@ -105,6 +106,7 @@ export function ForgotPasswordForm() {
             placeholder={`At least ${PASSWORD_MIN_LENGTH} characters`}
             error={passwordReset.errors.password}
           />
+          <FormError>{error}</FormError>
           <Button type="submit" disabled={passwordReset.pending}>
             {passwordReset.pending ? (
               <>
@@ -120,7 +122,6 @@ export function ForgotPasswordForm() {
           </Button>
         </form>
       )}
-      <FormError>{error}</FormError>
     </>
   );
 }
