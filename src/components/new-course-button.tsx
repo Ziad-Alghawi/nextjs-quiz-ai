@@ -12,6 +12,9 @@ import { IDLE, type FormState } from "@/lib/form-state";
 
 function NewCourseForm({ onCancel }: { onCancel: () => void }) {
   const [state, action] = useActionState<FormState, FormData>(createCourse, IDLE);
+  // Controlled, so a failed save keeps what was typed: React resets uncontrolled fields after
+  // an action.
+  const [name, setName] = useState("");
 
   return (
     <form action={action} className="flex flex-col gap-4 p-6">
@@ -21,6 +24,8 @@ function NewCourseForm({ onCancel }: { onCancel: () => void }) {
         name="name"
         autoComplete="off"
         autoFocus
+        value={name}
+        onChange={(event) => setName(event.target.value)}
         error={state.status === "error" ? state.error : undefined}
       />
       <DialogFormActions onCancel={onCancel}>

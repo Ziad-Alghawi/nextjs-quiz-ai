@@ -1,5 +1,6 @@
 "use client";
 import { Pencil, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { deleteCourse, renameCourse } from "@/app/actions/courses";
 import { ConfirmDeleteForm } from "@/components/confirm-delete-form";
 import { DialogButton } from "@/components/dialog-button";
@@ -23,6 +24,9 @@ function RenameForm({
   onDone: () => void;
 }) {
   const [state, action] = useDialogForm(renameCourse, onDone);
+  // Controlled, so a failed save keeps what was typed: React resets uncontrolled fields after
+  // an action.
+  const [name, setName] = useState(course.name);
 
   return (
     <form action={action} className="flex flex-col gap-4 p-6">
@@ -33,7 +37,8 @@ function RenameForm({
         name="name"
         autoComplete="off"
         autoFocus
-        defaultValue={course.name}
+        value={name}
+        onChange={(event) => setName(event.target.value)}
         error={state.status === "error" ? state.error : undefined}
       />
       <DialogFormActions onCancel={onDone}>
