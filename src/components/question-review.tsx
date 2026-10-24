@@ -40,7 +40,7 @@ export function QuestionReview({
                 )}
               </span>
               <div className="min-w-0 flex-1">
-                <h3 className="font-medium leading-snug wrap-break-word">
+                <h3 className="leading-snug font-medium wrap-break-word">
                   {index + 1}. {question.questionText}
                 </h3>
                 <dl className="mt-3 flex flex-col gap-2 text-sm">

@@ -69,7 +69,7 @@ export function SidebarNav({
       {folder ? <NavLink href={`/courses/${folder.id}`} icon={Folder} label={folder.name} /> : null}
 
       <div className="mt-4 flex items-center justify-between pl-3">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <h2 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
           Courses
         </h2>
         <NewCourseButton onOpen={onNewCourse} />

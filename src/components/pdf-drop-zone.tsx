@@ -55,7 +55,7 @@ export function PdfDropZone({
           if (!disabled) choose(event.dataTransfer.files);
         }}
         className={cn(
-          "flex cursor-pointer flex-col items-center gap-1 rounded-lg border-2 border-dashed px-4 text-center text-sm text-muted-foreground transition-colors hover:bg-accent/50 peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-disabled:cursor-not-allowed peer-disabled:opacity-60",
+          "flex cursor-pointer flex-col items-center gap-1 rounded-lg border-2 border-dashed px-4 text-center text-sm text-muted-foreground transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-disabled:cursor-not-allowed peer-disabled:opacity-60 hover:bg-accent/50",
           dragging && "border-primary bg-primary/5 text-primary",
           className,
         )}

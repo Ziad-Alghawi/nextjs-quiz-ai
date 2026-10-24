@@ -19,7 +19,7 @@ export default async function UserPagesLayout({ children }: LayoutProps<"/">) {
           </div>
         </aside>
       ) : null}
-      <div className="mx-auto min-w-0 w-full max-w-[1600px] flex-1 p-4 md:p-6 lg:p-8">
+      <div className="mx-auto w-full max-w-[1600px] min-w-0 flex-1 p-4 md:p-6 lg:p-8">
         {children}
       </div>
     </div>
