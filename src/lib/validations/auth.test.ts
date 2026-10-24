@@ -103,4 +103,28 @@ describe("safeReturnPath", () => {
       expect(safeReturnPath(path)).toBe("/dashboard");
     },
   );
+
+  // Spelled as in the link; the pages get the value decoded, as URLSearchParams decodes it.
+  it.each([
+    "/\\evil.example",
+    "/%5Cevil.example",
+    "/%5C%5Cevil.example",
+    "/%09/evil.example",
+    "%2F%2Fevil.example",
+    "/%2F/evil.example",
+    "%252F%252Fevil.example",
+    "/%0A/evil.example",
+    "/%0D/evil.example",
+    "/%0D%0A/evil.example",
+    "%0A//evil.example",
+    "/%5C/evil.example",
+    "/%09%5Cevil.example",
+  ])("falls back to the dashboard for ?callbackUrl=%s", (spelling) => {
+    const path = new URLSearchParams(`callbackUrl=${spelling}`).get("callbackUrl");
+    expect(safeReturnPath(path)).toBe("/dashboard");
+  });
+
+  it("keeps a same-site path with a query and a hash", () => {
+    expect(safeReturnPath("/courses/1?tab=quizzes#top")).toBe("/courses/1?tab=quizzes#top");
+  });
 });
