@@ -3,9 +3,8 @@ import { FolderInput } from "lucide-react";
 import { useId, useState } from "react";
 import { moveQuiz } from "@/app/actions/quizzes";
 import { DialogButton } from "@/components/dialog-button";
-import { Button } from "@/components/ui/button";
-import { FormError } from "@/components/ui/form-error";
-import { Spinner } from "@/components/ui/spinner";
+import { DialogFormActions } from "@/components/dialog-form-actions";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { useDialogForm } from "@/hooks/use-dialog-form";
 
 type Item = { id: number; name: string };
@@ -19,7 +18,7 @@ function MoveQuizForm({
   courses: Item[];
   onClose: () => void;
 }) {
-  const [state, formAction, pending] = useDialogForm(moveQuiz, onClose);
+  const [state, formAction] = useDialogForm(moveQuiz, onClose);
   const selectId = useId();
   const [courseId, setCourseId] = useState("");
 
@@ -56,24 +55,16 @@ function MoveQuizForm({
           <p className="text-sm text-muted-foreground">Its attempts move with it.</p>
         </div>
       )}
-      <FormError>{state.status === "error" ? state.error : undefined}</FormError>
-      <div className="flex justify-end gap-3">
-        <Button type="button" variant="ghost" onClick={onClose} disabled={pending}>
-          Cancel
-        </Button>
+      <DialogFormActions
+        error={state.status === "error" ? state.error : undefined}
+        onCancel={onClose}
+      >
         {courses.length > 0 ? (
-          <Button type="submit" disabled={pending || !courseId}>
-            {pending ? (
-              <>
-                <Spinner className="mr-2" />
-                Moving…
-              </>
-            ) : (
-              "Move quiz"
-            )}
-          </Button>
+          <SubmitButton disabled={!courseId} pendingText="Moving…">
+            Move quiz
+          </SubmitButton>
         ) : null}
-      </div>
+      </DialogFormActions>
     </form>
   );
 }

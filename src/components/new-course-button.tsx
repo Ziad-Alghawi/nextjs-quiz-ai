@@ -3,14 +3,15 @@ import { Plus } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useActionState, useState } from "react";
 import { createCourse } from "@/app/actions/courses";
+import { DialogFormActions } from "@/components/dialog-form-actions";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
-import { Spinner } from "@/components/ui/spinner";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { TextField } from "@/components/ui/text-field";
 import { IDLE, type FormState } from "@/lib/form-state";
 
 function NewCourseForm({ onCancel }: { onCancel: () => void }) {
-  const [state, action, pending] = useActionState<FormState, FormData>(createCourse, IDLE);
+  const [state, action] = useActionState<FormState, FormData>(createCourse, IDLE);
 
   return (
     <form action={action} className="flex flex-col gap-4 p-6">
@@ -22,21 +23,9 @@ function NewCourseForm({ onCancel }: { onCancel: () => void }) {
         autoFocus
         error={state.status === "error" ? state.error : undefined}
       />
-      <div className="flex justify-end gap-3">
-        <Button type="button" variant="ghost" onClick={onCancel} disabled={pending}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={pending}>
-          {pending ? (
-            <>
-              <Spinner className="mr-2" />
-              Creating…
-            </>
-          ) : (
-            "Create course"
-          )}
-        </Button>
-      </div>
+      <DialogFormActions onCancel={onCancel}>
+        <SubmitButton pendingText="Creating…">Create course</SubmitButton>
+      </DialogFormActions>
     </form>
   );
 }

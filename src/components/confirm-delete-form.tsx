@@ -1,8 +1,7 @@
 "use client";
 import type { ReactNode } from "react";
-import { Button } from "@/components/ui/button";
-import { FormError } from "@/components/ui/form-error";
-import { Spinner } from "@/components/ui/spinner";
+import { DialogFormActions } from "@/components/dialog-form-actions";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { useDialogForm } from "@/hooks/use-dialog-form";
 import type { FormState } from "@/lib/form-state";
 
@@ -26,29 +25,21 @@ export function ConfirmDeleteForm({
   onClose,
   children,
 }: ConfirmDeleteFormProps) {
-  const [state, formAction, pending] = useDialogForm(action, onClose);
+  const [state, formAction] = useDialogForm(action, onClose);
 
   return (
     <form action={formAction} className="flex flex-col gap-4 p-6">
       <h2 className="text-lg font-semibold wrap-break-word">{title}</h2>
       <input type="hidden" name={field.name} value={field.value} />
       <p className="text-sm">{children}</p>
-      <FormError>{state.status === "error" ? state.error : undefined}</FormError>
-      <div className="flex justify-end gap-3">
-        <Button type="button" variant="ghost" onClick={onClose} disabled={pending}>
-          Cancel
-        </Button>
-        <Button type="submit" variant="destructive" disabled={pending}>
-          {pending ? (
-            <>
-              <Spinner className="mr-2" />
-              Deleting…
-            </>
-          ) : (
-            submitLabel
-          )}
-        </Button>
-      </div>
+      <DialogFormActions
+        error={state.status === "error" ? state.error : undefined}
+        onCancel={onClose}
+      >
+        <SubmitButton variant="destructive" pendingText="Deleting…">
+          {submitLabel}
+        </SubmitButton>
+      </DialogFormActions>
     </form>
   );
 }
