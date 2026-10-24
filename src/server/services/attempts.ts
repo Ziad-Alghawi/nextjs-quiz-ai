@@ -17,7 +17,7 @@ export async function saveAttempt(
   quizId: number,
   selected: SelectedAnswer[],
 ): Promise<SaveAttemptResult> {
-  const quiz = await getQuizWithQuestions(quizId, userId);
+  const quiz = await getQuizWithQuestions(userId, quizId);
   if (!quiz) return { error: "not-found" };
 
   const { score, total, complete, answers } = scoreAttempt(quiz.questions, selected);

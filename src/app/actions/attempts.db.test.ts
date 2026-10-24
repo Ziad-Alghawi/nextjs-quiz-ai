@@ -24,7 +24,7 @@ vi.mock("next/cache", () => ({ revalidatePath }));
 /** A quiz of `userId` with three questions; answers[0] of each question is the correct one. */
 async function addQuiz(userId = USER) {
   const quizId = await createQuiz(userId, generatedQuiz(3));
-  const quiz = await getQuizWithQuestions(quizId, userId);
+  const quiz = await getQuizWithQuestions(userId, quizId);
   return { quizId, questions: quiz!.questions };
 }
 
@@ -36,7 +36,7 @@ async function addExam(size: number) {
     chapterIds: [],
     kind: "exam",
   });
-  const quiz = await getQuizWithQuestions(quizId, USER);
+  const quiz = await getQuizWithQuestions(USER, quizId);
   return { quizId, questions: quiz!.questions };
 }
 

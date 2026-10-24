@@ -18,7 +18,7 @@ const loadQuiz = cache(async (quizId: string) => {
   if (!id.success) notFound();
 
   // Someone else's quiz is a 404 as well, so quiz ids can't be probed.
-  const quiz = await getQuizWithQuestions(id.data, user.id);
+  const quiz = await getQuizWithQuestions(user.id, id.data);
   if (!quiz || quiz.questions.length === 0) notFound();
   return quiz;
 });
