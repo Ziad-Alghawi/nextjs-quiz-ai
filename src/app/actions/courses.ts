@@ -37,7 +37,7 @@ export async function createCourse(_previous: FormState, formData: FormData): Pr
     };
   }
   refreshCourses();
-  redirect(`/courses/${result.id}`);
+  redirect(`/courses/${result.courseId}`);
 }
 
 export async function renameCourse(_previous: FormState, formData: FormData): Promise<FormState> {
@@ -50,8 +50,9 @@ export async function renameCourse(_previous: FormState, formData: FormData): Pr
   if (!parsed.success) return { status: "error", error: parsed.error.issues[0].message };
 
   const result = await courses.renameCourse(user.id, parsed.data.courseId, parsed.data.name);
-  if (result === "duplicate") return { status: "error", error: DUPLICATE_NAME };
-  if (result === "not-found") return { status: "error", error: NOT_FOUND };
+  if ("error" in result) {
+    return { status: "error", error: result.error === "duplicate" ? DUPLICATE_NAME : NOT_FOUND };
+  }
   refreshCourses();
   return { status: "saved" };
 }
