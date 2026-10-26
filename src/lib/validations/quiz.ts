@@ -20,7 +20,7 @@ const hasPdfSignature = async (file: Blob) => {
 };
 
 export const pdfUploadSchema = z
-  .instanceof(Blob, { message: "Please choose a PDF file." })
+  .instanceof(Blob, { error: "Please choose a PDF file." })
   .refine((file) => file.size > 0, "The selected file is empty.")
   .refine(
     (file) => file.size <= MAX_PDF_BYTES,

@@ -14,7 +14,7 @@ type SubmitOutcome<Values> = { error: string } | { fieldErrors: FieldErrors<Valu
  * Forms using it set `method="post"`: a submit before hydration is a native one, and as a GET it
  * would put the fields, passwords included, into the URL.
  */
-export function useZodForm<Schema extends z.ZodTypeAny>(
+export function useZodForm<Schema extends z.ZodType>(
   schema: Schema,
   onValid: (
     data: z.output<Schema>,
@@ -31,7 +31,7 @@ export function useZodForm<Schema extends z.ZodTypeAny>(
     const form = event.currentTarget;
     setError(null);
     const parsed = schema.safeParse(Object.fromEntries(new FormData(form)));
-    if (!parsed.success) return setErrors(fieldErrors(parsed.error));
+    if (!parsed.success) return setErrors(fieldErrors<z.input<Schema>>(parsed.error));
     setErrors({});
 
     setPending(true);
