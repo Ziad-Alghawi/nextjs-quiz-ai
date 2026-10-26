@@ -1,0 +1,24 @@
+image:
+  repository: ghcr.io/ziad-alghawi/nextjs-quiz-ai
+  migrateRepository: ghcr.io/ziad-alghawi/nextjs-quiz-ai-migrate
+  # Both images are published together by the Docker workflow; bump the tag by pull request.
+  tag: sha-2c5511e9db1036518947ac08909912b35a4d2acd
+  pullPolicy: IfNotPresent
+
+# Only its pg_isready runs, before the migrations job.
+waitForDbImage: postgres:17-alpine
+
+replicaCount: 1
+
+# Secret with the app's environment (see .env.example), created outside the chart.
+envSecretName: quiz-ai-env
+
+service:
+  port: 80
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    memory: 512Mi
