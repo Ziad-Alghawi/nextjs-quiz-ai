@@ -1,0 +1,24 @@
+# The app from the Helm chart. Argo CD runs the chart's pre-install/pre-upgrade migrations job as a
+# PreSync hook, so the migrations run before every sync.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: quiz-ai
+  namespace: argocd
+spec:
+  project: quiz-ai
+  source:
+    repoURL: https://github.com/Ziad-Alghawi/nextjs-quiz-ai.git
+    targetRevision: develop
+    path: deploy/helm/quiz-ai
+    helm:
+      releaseName: quiz-ai
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: quiz-ai
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

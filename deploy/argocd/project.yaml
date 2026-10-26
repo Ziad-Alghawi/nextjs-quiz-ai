@@ -1,0 +1,17 @@
+# Limits the Quiz AI applications to this repository and the quiz-ai namespace.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: quiz-ai
+  namespace: argocd
+spec:
+  description: Quiz AI on a local cluster
+  sourceRepos:
+    - https://github.com/Ziad-Alghawi/nextjs-quiz-ai.git
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: quiz-ai
+  # The only cluster-wide resource: the namespace that CreateNamespace=true creates.
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
