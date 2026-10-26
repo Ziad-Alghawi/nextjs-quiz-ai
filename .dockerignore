@@ -1,0 +1,17 @@
+# Every .env file holds real secrets; the container gets its environment at runtime.
+.env*
+
+.git
+.github
+.claude
+.vscode
+node_modules
+.next
+coverage
+notes
+docs
+*.tsbuildinfo
+next-env.d.ts
+Dockerfile
+.dockerignore
+docker-compose.yml
