@@ -1,5 +1,6 @@
 # Local development database (same major version as production: Postgres 17).
 # Start it with `npm run db:up`; the app itself runs with `npm run dev`.
+# The whole stack in containers (migrations, then the app on port 3000): `docker compose --profile app up --build`.
 services:
   db:
     image: postgres:17-alpine
@@ -16,6 +17,33 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
+  migrate:
+    profiles: ["app"]
+    build:
+      context: .
+      target: migrate
+    environment:
+      DATABASE_URL: postgres://quiz_ai:quiz_ai@db:5432/quiz_ai
+    depends_on:
+      db:
+        condition: service_healthy
+
+  app:
+    profiles: ["app"]
+    build:
+      context: .
+    # The API keys come from .env; the database, URL and email settings are fixed for the container.
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://quiz_ai:quiz_ai@db:5432/quiz_ai
+      APP_URL: http://localhost:3000
+      EMAIL_TRANSPORT: console
+    ports:
+      - "3000:3000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
 
 volumes:
   db-data:
