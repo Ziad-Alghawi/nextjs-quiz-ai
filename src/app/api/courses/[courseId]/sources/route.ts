@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/api-response";
 import { readPdfText, uploadFileName } from "@/lib/pdf";
 import { CHAPTER_UPLOAD_LIMIT, PLANS } from "@/lib/plans";
-import { MINUTE_MS } from "@/lib/time";
 import { courseIdSchema } from "@/lib/validations/course";
 import { pdfUploadSchema } from "@/lib/validations/quiz";
 import { addChapter } from "@/server/services/chapters";
@@ -20,10 +19,10 @@ export async function POST(
   if (!user) return errorResponse("Please sign in to upload a PDF.", 401);
 
   // Before anything else, so failed uploads count too: reading a PDF costs server time either way.
-  const { uploads, windowMinutes } = CHAPTER_UPLOAD_LIMIT;
-  if (!(await consumeRateLimit(`chapter-upload:${user.id}`, uploads, windowMinutes * MINUTE_MS))) {
+  const { max, windowMinutes } = CHAPTER_UPLOAD_LIMIT;
+  if (!(await consumeRateLimit(`chapter-upload:${user.id}`, CHAPTER_UPLOAD_LIMIT))) {
     return errorResponse(
-      `You can upload up to ${uploads} PDFs every ${windowMinutes} minutes. Please try again in a few minutes.`,
+      `You can upload up to ${max} PDFs every ${windowMinutes} minutes. Please try again in a few minutes.`,
       429,
     );
   }
@@ -45,10 +44,10 @@ export async function POST(
     pageCount: pdf.pageCount,
     sizeBytes: upload.data.size,
   });
-  if (!("error" in result)) return NextResponse.json({ id: result.id }, { status: 201 });
+  if (!("error" in result)) return NextResponse.json({ id: result.chapterId }, { status: 201 });
 
   switch (result.error) {
-    case "course-not-found":
+    case "not-found":
       return errorResponse(COURSE_NOT_FOUND, 404);
     case "course-full":
       return errorResponse(

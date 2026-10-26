@@ -36,7 +36,7 @@ export function CourseQuizzes({
                 <div className="min-w-0 flex-1">
                   <Link
                     href={`/quizzes/${quiz.id}`}
-                    className="font-medium text-primary underline-offset-4 wrap-break-word hover:underline"
+                    className="font-medium wrap-break-word text-primary underline-offset-4 hover:underline"
                   >
                     {quiz.name}
                   </Link>

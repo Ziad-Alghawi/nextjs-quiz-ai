@@ -6,7 +6,6 @@ import { examName } from "@/lib/exam";
 import { EXAM_BURST_LIMIT, isQuestionCountAllowed, REVIEW_BURST_LIMIT } from "@/lib/plans";
 import { pluralize } from "@/lib/pluralize";
 import { pickReviewQuestions, reviewName } from "@/lib/review";
-import { MINUTE_MS } from "@/lib/time";
 import type { GeneratedQuiz } from "@/lib/validations/quiz";
 import { getOrCreateDefaultCourse } from "./courses";
 import { consumeRateLimit } from "./rate-limit";
@@ -25,12 +24,12 @@ type NewQuiz = Omit<GeneratedQuiz, "questions"> & { questions: QuizQuestion[] };
  * without it, the quiz goes into the user's "My quizzes" folder.
  */
 export async function createQuiz(
-  quiz: NewQuiz,
   userId: string,
+  quiz: NewQuiz,
   origin?: { courseId: number; chapterIds: number[]; kind?: "review" | "exam" },
 ) {
   return db.transaction(async (tx) => {
-    const courseId = origin?.courseId ?? (await getOrCreateDefaultCourse(tx, userId));
+    const courseId = origin?.courseId ?? (await getOrCreateDefaultCourse(userId, tx));
     const [{ quizId }] = await tx
       .insert(quizzes)
       .values({
@@ -80,7 +79,7 @@ export async function createQuiz(
  * The quiz with its questions and answers in the order they were created, only if it belongs to the
  * user. Without orderBy, Postgres may return the rows in a different order on every load.
  */
-export function getQuizWithQuestions(quizId: number, userId: string) {
+export function getQuizWithQuestions(userId: string, quizId: number) {
   return db.query.quizzes.findFirst({
     columns: { id: true, name: true, kind: true, courseId: true },
     where: and(eq(quizzes.id, quizId), eq(quizzes.userId, userId)),
@@ -172,8 +171,7 @@ export async function createReviewQuiz(
   userId: string,
   input: { courseId: number; quizIds: number[]; questionCount: number },
 ): Promise<ReviewResult> {
-  const { reviews, windowMinutes } = REVIEW_BURST_LIMIT;
-  if (!(await consumeRateLimit(`review:${userId}`, reviews, windowMinutes * MINUTE_MS))) {
+  if (!(await consumeRateLimit(`review:${userId}`, REVIEW_BURST_LIMIT))) {
     return { error: "rate-limit" };
   }
 
@@ -205,8 +203,7 @@ export async function createExamQuiz(
   userId: string,
   input: { courseId: number; questionCount: number },
 ): Promise<ExamResult> {
-  const { exams, windowMinutes } = EXAM_BURST_LIMIT;
-  if (!(await consumeRateLimit(`exam:${userId}`, exams, windowMinutes * MINUTE_MS))) {
+  if (!(await consumeRateLimit(`exam:${userId}`, EXAM_BURST_LIMIT))) {
     return { error: "rate-limit" };
   }
 
@@ -275,6 +272,7 @@ async function copyQuestions(
   if (available < count) return { error: "too-few", available };
 
   const quizId = await createQuiz(
+    userId,
     {
       name: quiz.name,
       description: `${pluralize(count, "question")} from ${pluralize(sources.length, "quiz", "quizzes")}.`,
@@ -283,7 +281,6 @@ async function copyQuestions(
         count,
       ),
     },
-    userId,
     {
       courseId,
       chapterIds: [

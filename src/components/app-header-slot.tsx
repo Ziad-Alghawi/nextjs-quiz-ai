@@ -2,7 +2,10 @@
 import { useSelectedLayoutSegment } from "next/navigation";
 import type { ReactNode } from "react";
 
-/** Shows the app header everywhere except the marketing pages, whose layout has its own header. */
+const OWN_HEADER_SEGMENTS = ["(marketing)", "(auth)"];
+
+/** Shows the app header everywhere except the marketing and auth pages, whose layouts have their own. */
 export function AppHeaderSlot({ children }: { children: ReactNode }) {
-  return useSelectedLayoutSegment() === "(marketing)" ? null : children;
+  const segment = useSelectedLayoutSegment();
+  return segment && OWN_HEADER_SEGMENTS.includes(segment) ? null : children;
 }

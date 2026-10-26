@@ -18,7 +18,7 @@ export const loadAttempt = cache(async (attemptId: string, returnTo: string) => 
   // Someone else's attempt is a 404 as well, so attempt ids can't be probed.
   const attempt = await getAttempt(user.id, id.data);
   if (!attempt) notFound();
-  const quiz = await getQuizWithQuestions(attempt.quizId, user.id);
+  const quiz = await getQuizWithQuestions(user.id, attempt.quizId);
   if (!quiz) notFound();
   // Attempts saved before the chosen answers were stored have none. Exams came later, so an exam
   // attempt without answers is one where nothing was answered.

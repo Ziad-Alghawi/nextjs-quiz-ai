@@ -1,4 +1,4 @@
-import type { SelectedAnswer } from "./scoring";
+import { firstAnswers, type SelectedAnswer } from "./scoring";
 import { shuffle } from "./shuffle";
 
 type PracticeQuestion = { id: number; answers: { id: number; isCorrect: boolean }[] };
@@ -8,11 +8,7 @@ export function missedQuestions<Q extends PracticeQuestion>(
   questions: Q[],
   chosen: SelectedAnswer[],
 ) {
-  // The first answer per question counts, as in scoreAttempt.
-  const picked = new Map<number, number>();
-  for (const { questionId, answerId } of chosen) {
-    if (!picked.has(questionId)) picked.set(questionId, answerId);
-  }
+  const picked = firstAnswers(chosen);
   return questions.filter(
     (question) =>
       !question.answers.some((answer) => answer.isCorrect && answer.id === picked.get(question.id)),

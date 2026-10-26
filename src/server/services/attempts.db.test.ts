@@ -14,11 +14,11 @@ afterAll(() => deleteUsers(USER, OTHER_USER));
 
 /** A quiz with `size` questions in the course (or "My quizzes"); answers[0] is the correct one. */
 const addQuiz = (size: number, courseId?: number, userId = USER) =>
-  createQuiz(generatedQuiz(size), userId, courseId ? { courseId, chapterIds: [] } : undefined);
+  createQuiz(userId, generatedQuiz(size), courseId ? { courseId, chapterIds: [] } : undefined);
 
 /** Saves an attempt at the quiz with the first `correct` questions right and returns its id. */
 async function attempt(quizId: number, correct: number, userId = USER) {
-  const quiz = await getQuizWithQuestions(quizId, userId);
+  const quiz = await getQuizWithQuestions(userId, quizId);
   const answers = quiz!.questions.map((question, i) => ({
     questionId: question.id,
     answerId: question.answers[i < correct ? 0 : 1].id,
@@ -31,7 +31,7 @@ async function attempt(quizId: number, correct: number, userId = USER) {
 describe("getAttempt", () => {
   it("returns the user's attempt with its answers in question order", async () => {
     const quizId = await addQuiz(2);
-    const quiz = await getQuizWithQuestions(quizId, USER);
+    const quiz = await getQuizWithQuestions(USER, quizId);
     const attemptId = await attempt(quizId, 1);
 
     expect(await getAttempt(USER, attemptId)).toMatchObject({

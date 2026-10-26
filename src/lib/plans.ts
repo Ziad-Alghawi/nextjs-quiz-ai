@@ -57,8 +57,11 @@ export const MAX_COURSES_PER_USER = 30;
 /** On every plan. With the per-plan maxChapters, bounds the stored text per user. */
 export const MAX_CHAPTERS_PER_COURSE = 15;
 
+/** At most `max` requests per user in each window of `windowMinutes`. */
+export type RateLimit = { max: number; windowMinutes: number };
+
 /** On every plan, failed uploads included: reading a PDF costs server time even when it fails. */
-export const CHAPTER_UPLOAD_LIMIT = { uploads: 20, windowMinutes: 10 } as const;
+export const CHAPTER_UPLOAD_LIMIT = { max: 20, windowMinutes: 10 } as const satisfies RateLimit;
 
 /**
  * On every plan. Below Vercel's 4.5 MB request body limit, which rejects larger uploads before our
@@ -71,13 +74,13 @@ export const MAX_PDF_BYTES = MAX_PDF_MB * 1024 * 1024;
 export const MAX_REVIEW_QUIZZES = 10;
 
 /** On every plan. Reviews cost no AI, so this only stops scripted mass creation. */
-export const REVIEW_BURST_LIMIT = { reviews: 10, windowMinutes: 10 } as const;
+export const REVIEW_BURST_LIMIT = { max: 10, windowMinutes: 10 } as const satisfies RateLimit;
 
 /** On every plan. Exams cost no AI either, so this only stops scripted mass creation. */
-export const EXAM_BURST_LIMIT = { exams: 10, windowMinutes: 10 } as const;
+export const EXAM_BURST_LIMIT = { max: 10, windowMinutes: 10 } as const satisfies RateLimit;
 
 /** On every plan: at most this many generation attempts per user in the window. */
-export const GENERATION_BURST_LIMIT = { attempts: 3, windowMinutes: 10 } as const;
+export const GENERATION_BURST_LIMIT = { max: 3, windowMinutes: 10 } as const satisfies RateLimit;
 
 /**
  * Generation attempts per UTC day across all users. Gemini's paid tier has no per-day request

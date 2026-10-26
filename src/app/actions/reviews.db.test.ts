@@ -28,7 +28,7 @@ const form = (courseId: number, quizIds: number[], questionCount: number) =>
 
 /** A generated quiz in the course with `size` questions named "<name> 1?", "<name> 2?", ... */
 const addQuiz = (courseId: number, name: string, size: number, chapterIds: number[] = []) =>
-  createQuiz(generatedQuiz(size, name), USER, { courseId, chapterIds });
+  createQuiz(USER, generatedQuiz(size, name), { courseId, chapterIds });
 
 const lastRedirectId = () => Number(String(redirect.mock.lastCall?.[0]).split("/").pop());
 
@@ -126,8 +126,8 @@ describe("createReview", () => {
   });
 
   it('refuses quick quizzes in the "My quizzes" folder', async () => {
-    const cells = await createQuiz(generatedQuiz(5, "Cells"), USER);
-    const genes = await createQuiz(generatedQuiz(5, "Genes"), USER);
+    const cells = await createQuiz(USER, generatedQuiz(5, "Cells"));
+    const genes = await createQuiz(USER, generatedQuiz(5, "Genes"));
     const [{ courseId: folderId }] = await db
       .select({ courseId: quizzes.courseId })
       .from(quizzes)
@@ -174,15 +174,15 @@ describe("createReview", () => {
     expect(redirect).toHaveBeenCalledOnce();
   });
 
-  it(`stops after ${REVIEW_BURST_LIMIT.reviews} reviews in the window`, async () => {
+  it(`stops after ${REVIEW_BURST_LIMIT.max} reviews in the window`, async () => {
     const courseId = await addCourse(USER);
     const cells = await addQuiz(courseId, "Cells", 5);
     const genes = await addQuiz(courseId, "Genes", 5);
 
-    for (let i = 0; i < REVIEW_BURST_LIMIT.reviews; i++) {
+    for (let i = 0; i < REVIEW_BURST_LIMIT.max; i++) {
       await createReview(IDLE, form(courseId, [cells, genes], 5));
     }
-    expect(redirect).toHaveBeenCalledTimes(REVIEW_BURST_LIMIT.reviews);
+    expect(redirect).toHaveBeenCalledTimes(REVIEW_BURST_LIMIT.max);
     expect(await createReview(IDLE, form(courseId, [cells, genes], 5))).toEqual({
       status: "error",
       error: expect.stringContaining("Please try again in a few minutes."),

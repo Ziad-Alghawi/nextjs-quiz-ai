@@ -43,6 +43,13 @@ describe("signInSchema", () => {
       true,
     );
   });
+
+  it("trims the email before checking it", () => {
+    const padded = signInSchema.safeParse({ email: "\t ada@example.com \n", password: "x" });
+    expect(padded.data?.email).toBe("ada@example.com");
+    const invalid = signInSchema.safeParse({ email: " ada@ ", password: "x" });
+    expect(fieldErrors(invalid.error!)).toEqual({ email: "Enter a valid email address." });
+  });
 });
 
 describe("resetPasswordSchema", () => {

@@ -29,7 +29,7 @@ export async function Header() {
       <nav className={cn("px-4 py-2.5", user && "md:px-6")}>
         <div
           className={cn(
-            "flex flex-wrap items-center justify-between mx-auto",
+            "mx-auto flex flex-wrap items-center justify-between",
             user ? "max-w-none" : "max-w-(--breakpoint-xl)",
           )}
         >
@@ -60,7 +60,7 @@ export async function Header() {
                           className="rounded-full"
                         />
                       ) : (
-                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
+                        <span className="flex size-8 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
                           {user.name.charAt(0).toUpperCase()}
                         </span>
                       )}

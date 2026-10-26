@@ -8,7 +8,7 @@ import { Spinner } from "@/components/ui/spinner";
 import type { ExamPaper } from "@/lib/exam";
 import { pluralize } from "@/lib/pluralize";
 import { cn } from "@/lib/utils";
-import { submitQuiz } from "../actions/attempts";
+import { submitQuiz } from "@/app/actions/attempts";
 import { AnswerOption } from "./answer-option";
 import { PlayerTopBar } from "./player-top-bar";
 import { QuestionHeading } from "./question-heading";
@@ -192,7 +192,12 @@ export function ExamPlayer({ exam, exitHref }: ExamPlayerProps) {
         </nav>
       </div>
 
-      <Dialog open={confirming} onClose={() => setConfirming(false)} label="Finish the exam">
+      <Dialog
+        open={confirming}
+        onClose={() => setConfirming(false)}
+        label="Finish the exam"
+        busy={submitting}
+      >
         <div className="flex flex-col gap-4 p-6">
           <h2 className="text-lg font-semibold">Finish the exam?</h2>
           <p className="text-sm">

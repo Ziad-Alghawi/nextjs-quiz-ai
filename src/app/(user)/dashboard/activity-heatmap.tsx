@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
 import { pluralize } from "@/lib/pluralize";
-import { DAY_MS } from "@/lib/time";
+import { DAY_MS, utcDate } from "@/lib/time";
 import { cn } from "@/lib/utils";
 
 const WEEKS = 53;
@@ -35,7 +35,7 @@ function buildWeeks(activity: { date: string; count: number }[], today: string):
     Array.from({ length: 7 }, (_, weekday) => {
       const time = firstSunday + (week * 7 + weekday) * DAY_MS;
       if (time > todayTime) return null;
-      return { time, count: counts.get(new Date(time).toISOString().slice(0, 10)) ?? 0 };
+      return { time, count: counts.get(utcDate(new Date(time))) ?? 0 };
     }),
   );
 }
@@ -109,13 +109,13 @@ export function ActivityHeatmap({
 
   return (
     // As wide as the grid, so the legend stays right under the cells.
-    <div className="flex w-max min-w-0 max-w-full flex-col gap-2">
-      <div ref={scroller} className="relative overflow-x-auto pb-1 pt-7">
+    <div className="flex w-max max-w-full min-w-0 flex-col gap-2">
+      <div ref={scroller} className="relative overflow-x-auto pt-7 pb-1">
         {tooltip ? (
           <div
             aria-hidden
             className={cn(
-              "pointer-events-none absolute z-10 -translate-y-full whitespace-nowrap rounded-md bg-foreground px-2 py-1 text-xs text-background",
+              "pointer-events-none absolute z-10 -translate-y-full rounded-md bg-foreground px-2 py-1 text-xs whitespace-nowrap text-background",
               { start: "", center: "-translate-x-1/2", end: "-translate-x-full" }[tooltip.align],
             )}
             style={{ left: tooltip.left, top: tooltip.top - 4 }}

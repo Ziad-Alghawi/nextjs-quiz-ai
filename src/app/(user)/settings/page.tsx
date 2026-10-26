@@ -14,11 +14,7 @@ import { NameForm } from "./name-form";
 
 export const metadata: Metadata = { title: "Settings" };
 
-export default async function SettingsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ error?: string }>;
-}) {
+export default async function SettingsPage({ searchParams }: PageProps<"/settings">) {
   const user = await requireUser("/settings");
   const methods = await getSignInMethods(user.id);
   // Set when connecting Google failed and Better Auth sent the user back here.

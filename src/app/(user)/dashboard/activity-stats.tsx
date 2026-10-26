@@ -23,7 +23,7 @@ export function ActivityStats({
 
   return (
     // A container query, because the room left next to the heatmap depends on the screen and the sidebar.
-    <div className="@container flex min-w-0 flex-1 flex-col justify-center border-t pt-4 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
+    <div className="@container flex min-w-0 flex-1 flex-col justify-center border-t pt-4 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6">
       <dl className="grid gap-3 @xl:grid-cols-3 @xl:gap-4">
         {stats.map(({ label, value, unit }) => (
           <div

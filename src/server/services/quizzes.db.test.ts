@@ -14,8 +14,8 @@ afterAll(() => deleteUsers(USER, OTHER_USER));
 
 describe("createQuiz", () => {
   it("puts every quiz into the user's default course", async () => {
-    const first = await createQuiz(generatedQuiz(1), USER);
-    const second = await createQuiz(generatedQuiz(1), USER);
+    const first = await createQuiz(USER, generatedQuiz(1));
+    const second = await createQuiz(USER, generatedQuiz(1));
 
     const [course] = await db.select().from(courses).where(eq(courses.userId, USER));
     const saved = await db
@@ -36,10 +36,10 @@ describe("listReviewSources", () => {
   it("lists the course's generated quizzes oldest first, with their question counts", async () => {
     const courseId = await addCourse(USER);
     const inCourse = { courseId, chapterIds: [] };
-    const cells = await createQuiz(generatedQuiz(5, "Cells"), USER, inCourse);
-    const genes = await createQuiz(generatedQuiz(10, "Genes"), USER, inCourse);
-    await createQuiz(generatedQuiz(5, "Review"), USER, { ...inCourse, kind: "review" });
-    await createQuiz(generatedQuiz(5, "In another course"), USER, {
+    const cells = await createQuiz(USER, generatedQuiz(5, "Cells"), inCourse);
+    const genes = await createQuiz(USER, generatedQuiz(10, "Genes"), inCourse);
+    await createQuiz(USER, generatedQuiz(5, "Review"), { ...inCourse, kind: "review" });
+    await createQuiz(USER, generatedQuiz(5, "In another course"), {
       courseId: await addCourse(OTHER_USER),
       chapterIds: [],
     });

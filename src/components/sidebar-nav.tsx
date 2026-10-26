@@ -51,7 +51,14 @@ export type SidebarCourse = { id: number; name: string; isDefault: boolean };
  * The signed-in navigation: overview, quick quiz and the "My quizzes" folder it fills, the user's
  * courses, then account pages at the bottom.
  */
-export function SidebarNav({ courses }: { courses: SidebarCourse[] }) {
+export function SidebarNav({
+  courses,
+  onNewCourse,
+}: {
+  courses: SidebarCourse[];
+  /** Replaces the built-in New course dialog, for a sidebar that closes when "+" is tapped. */
+  onNewCourse?: () => void;
+}) {
   // The folder exists once the first quick quiz is saved.
   const folder = courses.find((course) => course.isDefault);
 
@@ -62,10 +69,10 @@ export function SidebarNav({ courses }: { courses: SidebarCourse[] }) {
       {folder ? <NavLink href={`/courses/${folder.id}`} icon={Folder} label={folder.name} /> : null}
 
       <div className="mt-4 flex items-center justify-between pl-3">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <h2 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
           Courses
         </h2>
-        <NewCourseButton />
+        <NewCourseButton onOpen={onNewCourse} />
       </div>
       <ul className="flex flex-col gap-1 overflow-y-auto">
         {courses

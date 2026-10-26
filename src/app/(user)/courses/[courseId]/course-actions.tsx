@@ -1,10 +1,11 @@
 "use client";
 import { Pencil, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { deleteCourse, renameCourse } from "@/app/actions/courses";
 import { ConfirmDeleteForm } from "@/components/confirm-delete-form";
 import { DialogButton } from "@/components/dialog-button";
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
+import { DialogFormActions } from "@/components/dialog-form-actions";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { TextField } from "@/components/ui/text-field";
 import { useDialogForm } from "@/hooks/use-dialog-form";
 import { pluralize } from "@/lib/pluralize";
@@ -22,7 +23,10 @@ function RenameForm({
   course: CourseActionsProps["course"];
   onDone: () => void;
 }) {
-  const [state, action, pending] = useDialogForm(renameCourse, onDone);
+  const [state, action] = useDialogForm(renameCourse, onDone);
+  // Controlled, so a failed save keeps what was typed: React resets uncontrolled fields after
+  // an action.
+  const [name, setName] = useState(course.name);
 
   return (
     <form action={action} className="flex flex-col gap-4 p-6">
@@ -33,24 +37,13 @@ function RenameForm({
         name="name"
         autoComplete="off"
         autoFocus
-        defaultValue={course.name}
+        value={name}
+        onChange={(event) => setName(event.target.value)}
         error={state.status === "error" ? state.error : undefined}
       />
-      <div className="flex justify-end gap-3">
-        <Button type="button" variant="ghost" onClick={onDone} disabled={pending}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={pending}>
-          {pending ? (
-            <>
-              <Spinner className="mr-2" />
-              Saving…
-            </>
-          ) : (
-            "Save"
-          )}
-        </Button>
-      </div>
+      <DialogFormActions onCancel={onDone}>
+        <SubmitButton pendingText="Saving…">Save</SubmitButton>
+      </DialogFormActions>
     </form>
   );
 }

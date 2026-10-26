@@ -19,8 +19,8 @@ const isDuplicateName = (error: unknown) =>
  * on conflict makes RETURNING give the existing id, also when two requests create it at once.
  */
 export async function getOrCreateDefaultCourse(
-  executor: Pick<typeof db, "insert">,
   userId: string,
+  executor: Pick<typeof db, "insert">,
 ) {
   const [{ id }] = await executor
     .insert(courses)
@@ -65,7 +65,7 @@ export function getCourse(userId: string, courseId: number) {
   });
 }
 
-type CreateCourseResult = { id: number } | { error: "duplicate" | "limit" };
+type CreateCourseResult = { courseId: number } | { error: "duplicate" | "limit" };
 
 export async function createCourse(userId: string, name: string): Promise<CreateCourseResult> {
   // Count, then insert: parallel requests can pass the cap by a few, which is fine for a cap that
@@ -77,34 +77,36 @@ export async function createCourse(userId: string, name: string): Promise<Create
   if (total >= MAX_COURSES_PER_USER) return { error: "limit" };
 
   try {
-    const [{ id }] = await db
+    const [{ courseId }] = await db
       .insert(courses)
       .values({ userId, name })
-      .returning({ id: courses.id });
-    return { id };
+      .returning({ courseId: courses.id });
+    return { courseId };
   } catch (error) {
     if (isDuplicateName(error)) return { error: "duplicate" };
     throw error;
   }
 }
 
+type RenameCourseResult = { courseId: number } | { error: "not-found" | "duplicate" };
+
 /** Renames the course if it belongs to the user. The "My quizzes" folder keeps its name. */
 export async function renameCourse(
   userId: string,
   courseId: number,
   name: string,
-): Promise<"renamed" | "not-found" | "duplicate"> {
+): Promise<RenameCourseResult> {
   try {
-    const renamed = await db
+    const [renamed] = await db
       .update(courses)
       .set({ name })
       .where(
         and(eq(courses.id, courseId), eq(courses.userId, userId), eq(courses.isDefault, false)),
       )
-      .returning({ id: courses.id });
-    return renamed.length > 0 ? "renamed" : "not-found";
+      .returning({ courseId: courses.id });
+    return renamed ?? { error: "not-found" };
   } catch (error) {
-    if (isDuplicateName(error)) return "duplicate";
+    if (isDuplicateName(error)) return { error: "duplicate" };
     throw error;
   }
 }

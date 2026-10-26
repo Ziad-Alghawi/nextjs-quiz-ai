@@ -3,7 +3,7 @@ import { and, count, eq, gte, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { quizGenerations } from "@/db/schema";
 import { DAILY_GENERATION_LIMIT, GENERATION_BURST_LIMIT, PLANS, type PlanId } from "@/lib/plans";
-import { DAY_MS } from "@/lib/time";
+import { utcDate } from "@/lib/time";
 import { isSubscribed } from "./billing";
 import type { ModelUsage } from "./generation";
 import { consumeRateLimit } from "./rate-limit";
@@ -35,7 +35,7 @@ const countsTowardQuota = or(
 const thisMonth = gte(quizGenerations.createdAt, sql`date_trunc('month', now())`);
 
 /** Generations that count toward this month's quota; also used inside the reserving transaction. */
-async function countUsedThisMonth(executor: Pick<typeof db, "select">, userId: string) {
+async function countUsedThisMonth(userId: string, executor: Pick<typeof db, "select">) {
   const [{ used }] = await executor
     .select({ used: count() })
     .from(quizGenerations)
@@ -45,7 +45,7 @@ async function countUsedThisMonth(executor: Pick<typeof db, "select">, userId: s
 
 export async function getMonthlyUsage(userId: string) {
   const plan = await getPlan(userId);
-  const used = await countUsedThisMonth(db, userId);
+  const used = await countUsedThisMonth(userId, db);
   return { plan, used, limit: PLANS[plan].monthlyQuizzes };
 }
 
@@ -60,7 +60,7 @@ export async function reserveGeneration(userId: string) {
   return db.transaction(async (tx) => {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${userId}))`);
 
-    if ((await countUsedThisMonth(tx, userId)) >= monthlyQuizzes) {
+    if ((await countUsedThisMonth(userId, tx)) >= monthlyQuizzes) {
       const upgrade = plan === "free" ? " Upgrade to Pro for more." : "";
       throw new GenerationLimitError(
         `You've used all ${monthlyQuizzes} quizzes of the ${label} plan this month.${upgrade}`,
@@ -81,19 +81,19 @@ export async function reserveGeneration(userId: string) {
           ),
         ),
       );
-    if (recent >= GENERATION_BURST_LIMIT.attempts) {
+    if (recent >= GENERATION_BURST_LIMIT.max) {
       throw new GenerationLimitError(
-        `You can generate up to ${GENERATION_BURST_LIMIT.attempts} quizzes per ${GENERATION_BURST_LIMIT.windowMinutes} minutes. Please wait a few minutes.`,
+        `You can generate up to ${GENERATION_BURST_LIMIT.max} quizzes per ${GENERATION_BURST_LIMIT.windowMinutes} minutes. Please wait a few minutes.`,
         429,
       );
     }
 
     // Last, so a request the user's own limits reject doesn't take one of the shared slots. Throwing
     // rolls the transaction back, so a request stopped here doesn't count toward the user's quota.
-    const today = new Date().toISOString().slice(0, 10);
-    const key = `generation-daily:${today}`;
+    const key = `generation-daily:${utcDate()}`;
     // The key changes at midnight UTC, so its window never needs to end within the day.
-    if (!(await consumeRateLimit(key, DAILY_GENERATION_LIMIT, DAY_MS, tx))) {
+    const limit = { max: DAILY_GENERATION_LIMIT, windowMinutes: 24 * 60 };
+    if (!(await consumeRateLimit(key, limit, tx))) {
       throw new GenerationLimitError("Daily limit reached. Please try again tomorrow.", 429);
     }
 
