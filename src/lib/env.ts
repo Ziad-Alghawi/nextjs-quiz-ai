@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 const baseSchema = z.object({
-  DATABASE_URL: z.string().url(),
+  DATABASE_URL: z.url(),
   AUTH_SECRET: z.string().min(1),
   GOOGLE_CLIENT_ID: z.string().min(1),
   GOOGLE_CLIENT_SECRET: z.string().min(1),
@@ -12,10 +12,7 @@ const baseSchema = z.object({
   STRIPE_PRICE_ID: z.string().startsWith("price_"),
   STRIPE_YEARLY_PRICE_ID: z.string().startsWith("price_"),
   // Public base URL for links that leave the app (Stripe return URLs); a trailing slash is dropped.
-  APP_URL: z
-    .string()
-    .url()
-    .transform((url) => url.replace(/\/+$/, "")),
+  APP_URL: z.url().transform((url) => url.replace(/\/+$/, "")),
 });
 
 // Emails are printed to the server log by default (development); production sets EMAIL_TRANSPORT=smtp.

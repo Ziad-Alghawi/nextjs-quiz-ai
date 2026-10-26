@@ -6,7 +6,8 @@ export const PASSWORD_MAX_LENGTH = 128;
 export const OTP_LENGTH = 6;
 export const OTP_EXPIRES_IN_MINUTES = 10;
 
-const emailSchema = z.string().trim().email("Enter a valid email address.");
+// Trim first: z.email() checks the address as soon as it parses, before any .trim() chained to it.
+const emailSchema = z.string().trim().pipe(z.email("Enter a valid email address."));
 
 export const passwordSchema = z
   .string()
@@ -53,8 +54,9 @@ export const DELETE_CONFIRMATION = "DELETE";
 export const deleteAccountSchema = (hasPassword: boolean) =>
   z.object({
     password: hasPassword
-      ? z.string({ required_error: "Enter your password." }).min(1, "Enter your password.")
-      : z.undefined(),
+      ? z.string({ error: "Enter your password." }).min(1, "Enter your password.")
+      : // Without .optional(), Zod 4 rejects the missing field even though its schema is undefined.
+        z.undefined().optional(),
     confirm: z
       .string()
       .refine(

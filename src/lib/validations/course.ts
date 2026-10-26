@@ -10,7 +10,7 @@ export const courseNameSchema = z
   .min(1, "Enter a course name.")
   .max(60, "Use at most 60 characters.")
   .refine((name) => name.toLowerCase() !== DEFAULT_COURSE_NAME.toLowerCase(), {
-    message: `"${DEFAULT_COURSE_NAME}" is the folder for your quick quizzes. Choose another name.`,
+    error: `"${DEFAULT_COURSE_NAME}" is the folder for your quick quizzes. Choose another name.`,
   });
 
 export const courseIdSchema = idSchema;
