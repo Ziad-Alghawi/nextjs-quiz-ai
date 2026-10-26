@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Only the Docker image needs the self-contained server; Vercel and `next start` use the normal output.
+  output: process.env.BUILD_STANDALONE === "true" ? "standalone" : undefined,
   // Bundling and minifying pdf.js breaks its class inheritance ("Super constructor null"),
   // so unpdf is loaded from node_modules at runtime instead.
   serverExternalPackages: ["unpdf"],
