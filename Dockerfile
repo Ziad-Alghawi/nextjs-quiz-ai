@@ -14,18 +14,16 @@ ENV SKIP_ENV_VALIDATION=true \
     NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
-# One-off job: applies the committed migrations with the same drizzle-kit command as `npm run db:migrate`.
-# Runtime dependencies plus drizzle-kit and dotenv at their locked versions, not the whole dev toolchain.
+# One-off job: applies the committed migrations (scripts/migrate.ts). Its three packages have no
+# dependencies of their own, so they are copied at their locked versions instead of installing anything.
 FROM base AS migrate
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev \
- && npm install --no-save $(node -p "const p = require('./package-lock.json').packages; \
-      ['drizzle-kit', 'dotenv'].map((n) => n + '@' + p['node_modules/' + n].version).join(' ')") \
- && npm cache clean --force
-COPY drizzle.config.ts ./
+COPY --from=deps /app/node_modules/drizzle-orm ./node_modules/drizzle-orm
+COPY --from=deps /app/node_modules/postgres ./node_modules/postgres
+COPY --from=deps /app/node_modules/zod ./node_modules/zod
 COPY drizzle ./drizzle
+COPY scripts/migrate.ts ./scripts/
 USER node
-CMD ["node", "node_modules/drizzle-kit/bin.cjs", "migrate"]
+CMD ["node", "scripts/migrate.ts"]
 
 FROM base AS runner
 ENV NODE_ENV=production \
