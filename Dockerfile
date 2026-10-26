@@ -14,9 +14,15 @@ ENV SKIP_ENV_VALIDATION=true \
     NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
+# Node without npm, npx, corepack and yarn: the containers never install packages, and the npm bundled
+# with the base image brings its own vulnerable dependencies into the scan.
+FROM base AS slim
+RUN rm -rf /usr/local/lib/node_modules /opt/yarn-* \
+      /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /usr/local/bin/yarn /usr/local/bin/yarnpkg
+
 # One-off job: applies the committed migrations (scripts/migrate.ts). Its three packages have no
 # dependencies of their own, so they are copied at their locked versions instead of installing anything.
-FROM base AS migrate
+FROM slim AS migrate
 COPY --from=deps /app/node_modules/drizzle-orm ./node_modules/drizzle-orm
 COPY --from=deps /app/node_modules/postgres ./node_modules/postgres
 COPY --from=deps /app/node_modules/zod ./node_modules/zod
@@ -25,7 +31,7 @@ COPY scripts/migrate.ts ./scripts/
 USER node
 CMD ["node", "scripts/migrate.ts"]
 
-FROM base AS runner
+FROM slim AS runner
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     HOSTNAME=0.0.0.0 \
