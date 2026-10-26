@@ -14,20 +14,24 @@ ENV SKIP_ENV_VALIDATION=true \
     NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
-# One-off job: applies the committed migrations with the same drizzle-kit command as `npm run db:migrate`.
-# Runtime dependencies plus drizzle-kit and dotenv at their locked versions, not the whole dev toolchain.
-FROM base AS migrate
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev \
- && npm install --no-save $(node -p "const p = require('./package-lock.json').packages; \
-      ['drizzle-kit', 'dotenv'].map((n) => n + '@' + p['node_modules/' + n].version).join(' ')") \
- && npm cache clean --force
-COPY drizzle.config.ts ./
-COPY drizzle ./drizzle
-USER node
-CMD ["node", "node_modules/drizzle-kit/bin.cjs", "migrate"]
+# Node without npm, npx, corepack and yarn: the containers never install packages, and the npm bundled
+# with the base image brings its own vulnerable dependencies into the scan.
+FROM base AS slim
+RUN rm -rf /usr/local/lib/node_modules /opt/yarn-* \
+      /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /usr/local/bin/yarn /usr/local/bin/yarnpkg
 
-FROM base AS runner
+# One-off job: applies the committed migrations (scripts/migrate.ts). Its three packages have no
+# dependencies of their own, so they are copied at their locked versions instead of installing anything.
+FROM slim AS migrate
+COPY --from=deps /app/node_modules/drizzle-orm ./node_modules/drizzle-orm
+COPY --from=deps /app/node_modules/postgres ./node_modules/postgres
+COPY --from=deps /app/node_modules/zod ./node_modules/zod
+COPY drizzle ./drizzle
+COPY scripts/migrate.ts ./scripts/
+USER node
+CMD ["node", "scripts/migrate.ts"]
+
+FROM slim AS runner
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     HOSTNAME=0.0.0.0 \
