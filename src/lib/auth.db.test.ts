@@ -1,4 +1,4 @@
-import { eq, like } from "drizzle-orm";
+import { eq, like, sql } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { db } from "@/db";
 import {
@@ -6,11 +6,14 @@ import {
   authSessions,
   authVerifications,
   courses,
+  quizAttempts,
   quizzes,
   rateLimits,
   users,
 } from "@/db/schema";
 import { getSignInMethods } from "@/server/services/account";
+import { createQuiz } from "@/server/services/quizzes";
+import { generatedQuiz } from "@/test/generated-quiz";
 import { auth } from "./auth";
 
 // Collects the emails instead of sending them, also when .env configures SMTP.
@@ -317,5 +320,86 @@ describe("guests", () => {
       expect(result.body).toMatchObject({ message: "Create an account to change this." });
     }
     expect(await userByEmail(email("guest"))).toBeUndefined();
+  });
+
+  /** A guest with one trial quiz and an attempt at it. */
+  async function guestWithTrial() {
+    const guest = await signInAsGuest();
+    const quizId = await createQuiz(guest.id, generatedQuiz(5));
+    await db.insert(quizAttempts).values({ quizId, userId: guest.id, score: 3, totalQuestions: 5 });
+    return { ...guest, quizId };
+  }
+
+  const quizOwner = async (quizId: number) =>
+    (await db.query.quizzes.findFirst({ where: eq(quizzes.id, quizId) }))?.userId;
+
+  it("moves the trial to the new account at the first sign-in after sign-up", async () => {
+    const guest = await guestWithTrial();
+
+    await signUp(email("from-guest"));
+    const signedIn = await post(
+      "/sign-in/email",
+      { email: email("from-guest"), password: PASSWORD },
+      guest.cookie,
+    );
+
+    expect(signedIn.status).toBe(200);
+    const account = await userByEmail(email("from-guest"));
+    expect(await quizOwner(guest.quizId)).toBe(account!.id);
+    expect(
+      await db.select().from(quizAttempts).where(eq(quizAttempts.userId, account!.id)),
+    ).toHaveLength(1);
+    expect(await db.query.users.findFirst({ where: eq(users.id, guest.id) })).toBeUndefined();
+  });
+
+  it("moves the trial into an existing account too", async () => {
+    await signUp(email("existing"));
+    await signIn(email("existing"));
+    const guest = await guestWithTrial();
+
+    const signedIn = await post(
+      "/sign-in/email",
+      { email: email("existing"), password: PASSWORD },
+      guest.cookie,
+    );
+
+    expect(signedIn.status).toBe(200);
+    expect(await quizOwner(guest.quizId)).toBe((await userByEmail(email("existing")))!.id);
+  });
+
+  it("keeps the guest and their trial when the move fails, so signing in again retries it", async () => {
+    await signUp(email("retry"));
+    const guest = await guestWithTrial();
+    await db.execute(sql`
+      create function auth_db_test_fail() returns trigger language plpgsql as
+        $$ begin raise exception 'move failed'; end $$`);
+    await db.execute(sql`
+      create trigger auth_db_test_fail before update on quizzes
+        for each row execute function auth_db_test_fail()`);
+    const dropTrigger = async () => {
+      await db.execute(sql`drop trigger if exists auth_db_test_fail on quizzes`);
+      await db.execute(sql`drop function if exists auth_db_test_fail`);
+    };
+    onTestFinished(dropTrigger);
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const credentials = { email: email("retry"), password: PASSWORD };
+
+    const failed = await post("/sign-in/email", credentials, guest.cookie);
+
+    expect(failed.status).toBe(500);
+    // No new session cookie, so the browser keeps the guest's cookie for a retry.
+    expect(failed.cookie).toBeUndefined();
+    expect(await quizOwner(guest.quizId)).toBe(guest.id);
+    // Better Auth saved the account's session before the move; its cookie was never sent, so it
+    // can't be used and expires.
+    expect(await sessionCount((await userByEmail(email("retry")))!.id)).toBe(1);
+    expect((await request("GET", "/get-session", undefined, guest.cookie)).body).toMatchObject({
+      user: { id: guest.id, isAnonymous: true },
+    });
+
+    await dropTrigger();
+    const retried = await post("/sign-in/email", credentials, guest.cookie);
+    expect(retried.status).toBe(200);
+    expect(await quizOwner(guest.quizId)).toBe((await userByEmail(email("retry")))!.id);
   });
 });
