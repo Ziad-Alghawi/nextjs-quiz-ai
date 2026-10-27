@@ -6,7 +6,7 @@ import type { FormState } from "@/lib/form-state";
 import { EXAM_BURST_LIMIT } from "@/lib/plans";
 import { examSchema } from "@/lib/validations/quiz";
 import { createExamQuiz } from "@/server/services/quizzes";
-import { requireUser } from "@/server/session";
+import { requireAccount } from "@/server/session";
 
 type ExamError = Extract<Awaited<ReturnType<typeof createExamQuiz>>, { error: string }>;
 
@@ -27,7 +27,7 @@ function errorMessage(result: ExamError) {
 
 /** Makes a course exam and opens it; the form only ever sees an error. */
 export async function createExam(_previous: FormState, formData: FormData): Promise<FormState> {
-  const user = await requireUser("/dashboard");
+  const user = await requireAccount("/dashboard");
 
   const parsed = examSchema.safeParse({
     courseId: formData.get("courseId"),

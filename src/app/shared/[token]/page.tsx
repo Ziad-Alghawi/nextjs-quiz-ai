@@ -42,11 +42,12 @@ export default async function SharedQuizPage({ params }: Props) {
             <Link href={`/quizzes/${id}`}>Open your quiz</Link>
           </Button>
         </SharedQuizBar>
-      ) : user ? (
+      ) : user && !user.isGuest ? (
         <SharedQuizBar text="Shared quiz. Save a copy to keep your results; it goes to My quizzes.">
           <SaveCopyForm token={token} />
         </SharedQuizBar>
       ) : (
+        // Visitors and guests: saving a copy needs an account.
         <SharedQuizBar text="Shared quiz. Your results aren't saved.">
           <Button variant="outline" size="sm" asChild>
             <Link href={`/sign-in?callbackUrl=${encodeURIComponent(`/shared/${token}`)}`}>

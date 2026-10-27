@@ -5,7 +5,7 @@ import { Card, CardTitle } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
 import { PLANS } from "@/lib/plans";
 import { getMonthlyUsage } from "@/server/services/usage";
-import { requireUser } from "@/server/session";
+import { requireAccount } from "@/server/session";
 import { QuickQuizForm } from "./quick-quiz-form";
 
 export const metadata: Metadata = { title: "Quick quiz" };
@@ -17,7 +17,7 @@ const nextMonthStart = () => {
 };
 
 export default async function QuickQuizPage() {
-  const user = await requireUser("/quizzes/new");
+  const user = await requireAccount("/quizzes/new");
   const { plan, used, limit } = await getMonthlyUsage(user.id);
   const remaining = Math.max(limit - used, 0);
   const resetDate = new Intl.DateTimeFormat("en", {

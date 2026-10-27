@@ -1,6 +1,7 @@
 import "server-only";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { APIError, createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
 import { anonymous, customSession, emailOTP } from "better-auth/plugins";
 import { after } from "next/server";
@@ -17,6 +18,14 @@ import { getSignInMethods } from "@/server/services/account";
 import { cancelSubscriptions } from "@/server/services/billing";
 import { sendEmail } from "@/server/services/mail";
 import { consumeRateLimit } from "@/server/services/rate-limit";
+
+// Account changes that need an account: a guest has no real email or password to change.
+const ACCOUNT_ONLY_PATHS = [
+  "/change-email",
+  "/change-password",
+  "/update-user",
+  "/email-otp/request-email-change",
+];
 
 // The code emails the app sends; the plugin's other code types are disabled below.
 const otpEmails: Partial<Record<string, { subject: string; ignoreNote: string }>> = {
@@ -120,6 +129,15 @@ export const auth = betterAuth({
     // Emails are sent after the response, so an existing account doesn't answer noticeably slower
     // than an unknown email. after() keeps the serverless function alive until the email is sent.
     backgroundTasks: { handler: after },
+  },
+  hooks: {
+    before: createAuthMiddleware(async (ctx) => {
+      if (!ACCOUNT_ONLY_PATHS.includes(ctx.path)) return;
+      const session = await getSessionFromCtx(ctx);
+      if (session?.user.isAnonymous) {
+        throw new APIError("FORBIDDEN", { message: "Create an account to change this." });
+      }
+    }),
   },
   user: {
     deleteUser: {

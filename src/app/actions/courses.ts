@@ -7,7 +7,7 @@ import type { FormState } from "@/lib/form-state";
 import { MAX_COURSES_PER_USER } from "@/lib/plans";
 import { courseIdSchema, courseNameSchema } from "@/lib/validations/course";
 import * as courses from "@/server/services/courses";
-import { requireUser } from "@/server/session";
+import { requireAccount } from "@/server/session";
 
 const DUPLICATE_NAME = "You already have a course with this name.";
 const NOT_FOUND = "This course doesn't exist anymore. Reload the page.";
@@ -21,7 +21,7 @@ const refreshCourses = () => revalidatePath("/", "layout");
 
 /** Creates the course and opens its page; the form only ever sees an error. */
 export async function createCourse(_previous: FormState, formData: FormData): Promise<FormState> {
-  const user = await requireUser("/dashboard");
+  const user = await requireAccount("/dashboard");
 
   const parsed = createSchema.safeParse({ name: formData.get("name") });
   if (!parsed.success) return { status: "error", error: parsed.error.issues[0].message };
@@ -41,7 +41,7 @@ export async function createCourse(_previous: FormState, formData: FormData): Pr
 }
 
 export async function renameCourse(_previous: FormState, formData: FormData): Promise<FormState> {
-  const user = await requireUser("/dashboard");
+  const user = await requireAccount("/dashboard");
 
   const parsed = renameSchema.safeParse({
     courseId: formData.get("courseId"),
@@ -59,7 +59,7 @@ export async function renameCourse(_previous: FormState, formData: FormData): Pr
 
 /** Deletes the course with its chapters and quizzes, then leaves its (now missing) page. */
 export async function deleteCourse(_previous: FormState, formData: FormData): Promise<FormState> {
-  const user = await requireUser("/dashboard");
+  const user = await requireAccount("/dashboard");
 
   const parsed = deleteSchema.safeParse({ courseId: formData.get("courseId") });
   if (!parsed.success) return { status: "error", error: NOT_FOUND };

@@ -10,14 +10,14 @@ import { openBillingPortal } from "@/app/actions/billing";
 import { PLANS, PRO_LABELS } from "@/lib/plans";
 import { getSubscriptionSummary } from "@/server/services/billing";
 import { getMonthlyUsage } from "@/server/services/usage";
-import { requireUser } from "@/server/session";
+import { requireAccount } from "@/server/session";
 
 export const metadata: Metadata = { title: "Billing" };
 
 const dateFormat = new Intl.DateTimeFormat("en", { dateStyle: "long", timeZone: "UTC" });
 
 export default async function BillingPage() {
-  const user = await requireUser("/billing");
+  const user = await requireAccount("/billing");
   const { plan, used, limit } = await getMonthlyUsage(user.id);
 
   return (

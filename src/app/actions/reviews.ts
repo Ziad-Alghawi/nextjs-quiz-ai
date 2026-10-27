@@ -6,7 +6,7 @@ import type { FormState } from "@/lib/form-state";
 import { questionCountUpgradeMessage, REVIEW_BURST_LIMIT } from "@/lib/plans";
 import { reviewQuizSchema } from "@/lib/validations/quiz";
 import { createReviewQuiz } from "@/server/services/quizzes";
-import { requireUser } from "@/server/session";
+import { requireAccount } from "@/server/session";
 
 type ReviewError = Extract<Awaited<ReturnType<typeof createReviewQuiz>>, { error: string }>;
 
@@ -27,7 +27,7 @@ function errorMessage(result: ReviewError, questionCount: number) {
 
 /** Makes a review quiz from quizzes of one course and opens it; the form only ever sees an error. */
 export async function createReview(_previous: FormState, formData: FormData): Promise<FormState> {
-  const user = await requireUser("/dashboard");
+  const user = await requireAccount("/dashboard");
 
   const parsed = reviewQuizSchema.safeParse({
     courseId: formData.get("courseId"),
