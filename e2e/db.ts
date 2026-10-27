@@ -7,6 +7,14 @@ export const connect = () => postgres(E2E_DATABASE_URL, { max: 1, onnotice: () =
 
 type Sql = ReturnType<typeof connect>;
 
+/** Adds a course for the account with this email and returns its id. */
+export async function insertCourse(sql: Sql, email: string, name: string) {
+  const [course] = await sql<{ id: number }[]>`
+    insert into courses (user_id, name) select id, ${name} from "user" where email = ${email}
+    returning id`;
+  return course.id;
+}
+
 /**
  * Saves a quiz into the course the way a generation would, so tests can stand in for Gemini. Every
  * question has four options and the first one ("Right answer N") is correct.
