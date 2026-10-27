@@ -58,7 +58,7 @@ export function getCourse(userId: string, courseId: number) {
         orderBy: asc(chapters.id),
       },
       quizzes: {
-        columns: { id: true, name: true, description: true, kind: true },
+        columns: { id: true, name: true, description: true, kind: true, shareToken: true },
         orderBy: desc(quizzes.createdAt),
       },
     },
