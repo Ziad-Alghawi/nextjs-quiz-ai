@@ -6,7 +6,7 @@ import type { FormState } from "@/lib/form-state";
 import { courseIdSchema } from "@/lib/validations/course";
 import { quizIdSchema } from "@/lib/validations/quiz";
 import { moveQuizToCourse } from "@/server/services/quizzes";
-import { requireUser } from "@/server/session";
+import { requireAccount } from "@/server/session";
 
 const NOT_FOUND = "This quiz or course doesn't exist anymore. Reload the page.";
 
@@ -14,7 +14,7 @@ const moveSchema = z.object({ quizId: quizIdSchema, courseId: courseIdSchema });
 
 /** Moves a quick quiz from the "My quizzes" folder into a course the user picked. */
 export async function moveQuiz(_previous: FormState, formData: FormData): Promise<FormState> {
-  const user = await requireUser("/dashboard");
+  const user = await requireAccount("/dashboard");
 
   const parsed = moveSchema.safeParse({
     quizId: formData.get("quizId"),

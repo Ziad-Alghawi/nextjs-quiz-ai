@@ -9,11 +9,11 @@ import { auth } from "@/lib/auth";
 import type { FormState } from "@/lib/form-state";
 import { nameSchema, passwordSchema } from "@/lib/validations/auth";
 import { updateName } from "@/server/services/account";
-import { requireUser } from "@/server/session";
+import { requireAccount } from "@/server/session";
 
 /** Changes the signed-in user's display name (form action for useActionState). */
 export async function saveName(_previous: FormState, formData: FormData): Promise<FormState> {
-  const user = await requireUser("/settings");
+  const user = await requireAccount("/settings");
 
   const parsed = z.object({ name: nameSchema }).safeParse({ name: formData.get("name") });
   if (!parsed.success) return { status: "error", error: parsed.error.issues[0].message };
@@ -30,7 +30,7 @@ export async function saveName(_previous: FormState, formData: FormData): Promis
  * requires the current password.
  */
 export async function addPassword(_previous: FormState, formData: FormData): Promise<FormState> {
-  await requireUser("/settings");
+  await requireAccount("/settings");
 
   const parsed = z.object({ password: passwordSchema }).safeParse({
     password: formData.get("password"),
