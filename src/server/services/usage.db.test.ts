@@ -1,8 +1,8 @@
-import { eq, like, sql, type SQL } from "drizzle-orm";
+import { eq, inArray, like, sql, type SQL } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db";
 import { quizGenerations, rateLimits, users } from "@/db/schema";
-import { DAILY_GENERATION_LIMIT, GENERATION_BURST_LIMIT, PLANS } from "@/lib/plans";
+import { DAILY_GENERATION_LIMIT, GENERATION_BURST_LIMIT, GUEST_TRIAL, PLANS } from "@/lib/plans";
 import { utcDate } from "@/lib/time";
 import { createUsers, deleteUsers } from "@/test/db-fixtures";
 import {
@@ -14,12 +14,18 @@ import {
 } from "./usage";
 
 const USER = "usage-db-test-user";
+// More guests than the daily trial slots, to race for them.
+const GUESTS = Array.from(
+  { length: GUEST_TRIAL.dailyQuizzes + 1 },
+  (_, i) => `usage-db-test-guest-${i}`,
+);
 
 // Old enough not to count towards the burst limit, recent enough to be this month (unless the
 // month started less than an hour ago, which the tests accept).
 const anHourAgo = sql`now() - interval '1 hour'`;
 
 type GenerationOverrides = {
+  userId?: string;
   plan?: "free" | "pro";
   status?: "pending" | "succeeded" | "failed";
   createdAt?: SQL;
@@ -43,13 +49,17 @@ const limitError = (promise: Promise<unknown>) =>
   );
 
 const dailyKey = () => `generation-daily:${utcDate()}`;
+const guestDailyKey = () => `guest-generation-daily:${utcDate()}`;
+const counter = async (key: string) =>
+  (await db.select().from(rateLimits).where(eq(rateLimits.key, key)))[0]?.count ?? 0;
 
 beforeEach(async () => {
-  await createUsers(USER);
+  await createUsers(USER, ...GUESTS);
+  await db.update(users).set({ isAnonymous: true }).where(inArray(users.id, GUESTS));
   // Repeated test runs would otherwise use up the day's shared generation slots.
-  await db.delete(rateLimits).where(like(rateLimits.key, "generation-daily:%"));
+  await db.delete(rateLimits).where(like(rateLimits.key, "%generation-daily:%"));
 });
-afterAll(() => deleteUsers(USER));
+afterAll(() => deleteUsers(USER, ...GUESTS));
 
 describe("usage service", () => {
   it("counts pending and succeeded generations, not failed ones", async () => {
@@ -156,5 +166,47 @@ describe("usage service", () => {
       { status: "succeeded", model: "model-b", inputTokens: 2500, outputTokens: 500 },
       { status: "failed", model: "model-a", inputTokens: 900, outputTokens: 100 },
     ]);
+  });
+});
+
+describe("guest trial", () => {
+  const [GUEST] = GUESTS;
+
+  it("stops a guest after their trial quizzes in total, not per month, failed ones not counted", async () => {
+    const lastYear = sql`now() - interval '1 year'`;
+    await addGenerations(GUEST_TRIAL.quizzes - 1, { userId: GUEST, createdAt: lastYear });
+    await addGenerations(2, { userId: GUEST, status: "failed" });
+
+    await reserveGeneration(GUEST);
+    expect(await limitError(reserveGeneration(GUEST))).toBe(403);
+  });
+
+  it("shares the daily trial slots between all guests, also when they ask at the same moment", async () => {
+    const results = await Promise.all(GUESTS.map((guest) => limitError(reserveGeneration(guest))));
+
+    expect(results.filter((status) => status === null)).toHaveLength(GUEST_TRIAL.dailyQuizzes);
+    expect(results.filter((status) => status === 429)).toHaveLength(1);
+    // The rejected request rolled back its slot; every reserved one also took a global slot.
+    expect(await counter(guestDailyKey())).toBe(GUEST_TRIAL.dailyQuizzes);
+    expect(await counter(dailyKey())).toBe(GUEST_TRIAL.dailyQuizzes);
+  });
+
+  it("gives the guest slot back when the global daily limit stops the request", async () => {
+    await db.insert(rateLimits).values({
+      id: crypto.randomUUID(),
+      key: dailyKey(),
+      count: DAILY_GENERATION_LIMIT,
+      lastRequest: Date.now(),
+    });
+
+    expect(await limitError(reserveGeneration(GUEST))).toBe(429);
+    expect(await counter(guestDailyKey())).toBe(0);
+  });
+
+  it("leaves the trial slots to guests", async () => {
+    await reserveGeneration(USER);
+
+    expect(await counter(guestDailyKey())).toBe(0);
+    expect(await counter(dailyKey())).toBe(1);
   });
 });

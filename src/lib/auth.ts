@@ -8,6 +8,7 @@ import { after } from "next/server";
 import { db } from "@/db";
 import { authAccounts, authSessions, authVerifications, rateLimits, users } from "@/db/schema";
 import { env } from "@/lib/env";
+import { GUEST_TRIAL } from "@/lib/plans";
 import {
   OTP_EXPIRES_IN_MINUTES,
   OTP_LENGTH,
@@ -106,6 +107,8 @@ export const auth = betterAuth({
       // Slows down password guessing; each attempt also costs a scrypt hash on the server.
       "/sign-in/email": { window: 5 * 60, max: 5 },
       "/sign-up/email": { window: 60 * 60, max: 5 },
+      // Every guest gets trial quizzes; the daily trial cap holds anyway, this slows down farming.
+      "/sign-in/anonymous": { window: 60 * 60, max: GUEST_TRIAL.signInsPerHour },
       // Asks for the current password, so someone with a stolen session could guess it here.
       "/change-password": { window: 5 * 60, max: 5 },
       "/delete-user": { window: 5 * 60, max: 5 },
@@ -122,8 +125,6 @@ export const auth = betterAuth({
     "/email-otp/check-verification-otp",
     "/email-otp/verify-email",
     "/forget-password/email-otp",
-    // Guests can't be created until the guest trial limits what they can do.
-    "/sign-in/anonymous",
   ],
   advanced: {
     // Emails are sent after the response, so an existing account doesn't answer noticeably slower

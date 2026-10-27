@@ -3,8 +3,8 @@ import { MAX_DOCUMENT_CHARS } from "@/lib/plans";
 
 type PdfText = { text: string; truncated: boolean; pageCount: number } | { error: string };
 
-/** The PDF's text, cut to MAX_DOCUMENT_CHARS, or what to tell the user when it has none to use. */
-export async function readPdfText(file: Blob): Promise<PdfText> {
+/** The PDF's text, cut to `maxChars`, or what to tell the user when it has none to use. */
+export async function readPdfText(file: Blob, maxChars = MAX_DOCUMENT_CHARS): Promise<PdfText> {
   let pdf: { text: string; totalPages: number };
   try {
     pdf = await extractText(new Uint8Array(await file.arrayBuffer()), { mergePages: true });
@@ -12,7 +12,7 @@ export async function readPdfText(file: Blob): Promise<PdfText> {
     // pdf.js throws on damaged or password-protected files; the user can fix those.
     return { error: "We couldn't read this PDF. It may be damaged or password-protected." };
   }
-  const { text, truncated } = limitDocumentText(pdf.text.trim());
+  const { text, truncated } = limitDocumentText(pdf.text.trim(), maxChars);
   if (!text) {
     return {
       error: "We couldn't find any text in this PDF. Scanned documents aren't supported yet.",
