@@ -25,6 +25,8 @@ export const users = pgTable("user", {
   // One Stripe customer per user; the unique index also serves the webhook, which looks users up by it.
   stripeCustomerId: text("stripeCustomerId").unique(),
   subscribed: boolean("subscribed").default(false),
+  // A guest trying the app without an account (Better Auth's anonymous plugin).
+  isAnonymous: boolean("is_anonymous").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }).enableRLS();

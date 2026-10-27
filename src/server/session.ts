@@ -11,6 +11,8 @@ export type CurrentUser = {
   name: string;
   email: string;
   image: string | null;
+  /** A guest trying the app without an account; guests can't use account features. */
+  isGuest: boolean;
 };
 
 /**
@@ -29,13 +31,23 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
     return null;
   }
 
-  const { id, name, email, image } = session.user;
-  return { id, name, email, image: image ?? null };
+  const { id, name, email, image, isAnonymous } = session.user;
+  return { id, name, email, image: image ?? null, isGuest: isAnonymous };
 });
 
 /** The signed-in user; otherwise redirects to sign-in, which returns to `returnTo` afterwards. */
 export async function requireUser(returnTo: string): Promise<CurrentUser> {
   const user = await getCurrentUser();
   if (!user) redirect(`/sign-in?callbackUrl=${encodeURIComponent(returnTo)}`);
+  return user;
+}
+
+/**
+ * A user with an account, not a guest. Guests are sent to sign-up, which returns to `returnTo`;
+ * visitors without a session are handled like requireUser.
+ */
+export async function requireAccount(returnTo: string): Promise<CurrentUser> {
+  const user = await requireUser(returnTo);
+  if (user.isGuest) redirect(`/sign-up?callbackUrl=${encodeURIComponent(returnTo)}`);
   return user;
 }
