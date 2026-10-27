@@ -74,7 +74,8 @@
   "knip": {
     "entry": [
       "scripts/migrate.ts",
-      "e2e/reset-db.ts"
+      "e2e/reset-db.ts",
+      "e2e/auth.setup.ts"
     ]
   }
 }
