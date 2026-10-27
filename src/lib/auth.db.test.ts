@@ -283,16 +283,28 @@ describe("account settings", () => {
 });
 
 describe("guests", () => {
-  it("can't change the email, password or profile", async () => {
-    // Guest sign-in is off over HTTP until the guest trial; the server API still creates one.
-    const { headers, response } = await auth.api.signInAnonymous({ returnHeaders: true });
+  /** Signs in a new guest over HTTP, deleted again after the test. */
+  async function signInAsGuest() {
+    const guest = await post("/sign-in/anonymous", {});
+    const id = (guest.body?.user as { id: string }).id;
     onTestFinished(async () => {
-      await db.delete(users).where(eq(users.id, response!.user.id));
+      await db.delete(users).where(eq(users.id, id));
     });
-    const cookie = headers
-      .getSetCookie()
-      .map((header) => header.split(";")[0])
-      .find((pair) => pair.startsWith("better-auth.session_token="));
+    return { ...guest, id };
+  }
+
+  it("signs in without an account as a guest", async () => {
+    const { status, cookie, id } = await signInAsGuest();
+
+    expect(status).toBe(200);
+    const session = await request("GET", "/get-session", undefined, cookie);
+    expect(session.body).toMatchObject({ user: { id, isAnonymous: true } });
+    const [row] = await db.select().from(users).where(eq(users.id, id));
+    expect(row.isAnonymous).toBe(true);
+  });
+
+  it("can't change the email, password or profile", async () => {
+    const { cookie } = await signInAsGuest();
 
     for (const [path, body] of [
       ["/change-password", { currentPassword: PASSWORD, newPassword: "second password" }],
