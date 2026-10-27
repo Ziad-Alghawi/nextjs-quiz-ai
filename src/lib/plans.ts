@@ -79,6 +79,9 @@ export const REVIEW_BURST_LIMIT = { max: 10, windowMinutes: 10 } as const satisf
 /** On every plan. Exams cost no AI either, so this only stops scripted mass creation. */
 export const EXAM_BURST_LIMIT = { max: 10, windowMinutes: 10 } as const satisfies RateLimit;
 
+/** On every plan. Copies of shared quizzes cost no AI either, so this only stops mass copying. */
+export const SHARED_COPY_BURST_LIMIT = { max: 10, windowMinutes: 10 } as const satisfies RateLimit;
+
 /** On every plan: at most this many generation attempts per user in the window. */
 export const GENERATION_BURST_LIMIT = { max: 3, windowMinutes: 10 } as const satisfies RateLimit;
 
