@@ -1,5 +1,5 @@
 import { eq, like } from "drizzle-orm";
-import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { db } from "@/db";
 import {
   authAccounts,
@@ -279,5 +279,31 @@ describe("account settings", () => {
     expect(await userByEmail(email("delete"))).toBeUndefined();
     expect(await db.select().from(quizzes).where(eq(quizzes.userId, user!.id))).toHaveLength(0);
     expect(await db.select().from(courses).where(eq(courses.userId, user!.id))).toHaveLength(0);
+  });
+});
+
+describe("guests", () => {
+  it("can't change the email, password or profile", async () => {
+    // Guest sign-in is off over HTTP until the guest trial; the server API still creates one.
+    const { headers, response } = await auth.api.signInAnonymous({ returnHeaders: true });
+    onTestFinished(async () => {
+      await db.delete(users).where(eq(users.id, response!.user.id));
+    });
+    const cookie = headers
+      .getSetCookie()
+      .map((header) => header.split(";")[0])
+      .find((pair) => pair.startsWith("better-auth.session_token="));
+
+    for (const [path, body] of [
+      ["/change-password", { currentPassword: PASSWORD, newPassword: "second password" }],
+      ["/change-email", { newEmail: email("guest") }],
+      ["/update-user", { name: "Guest" }],
+      ["/email-otp/request-email-change", { newEmail: email("guest") }],
+    ] as const) {
+      const result = await post(path, body, cookie);
+      expect(result.status, path).toBe(403);
+      expect(result.body).toMatchObject({ message: "Create an account to change this." });
+    }
+    expect(await userByEmail(email("guest"))).toBeUndefined();
   });
 });
