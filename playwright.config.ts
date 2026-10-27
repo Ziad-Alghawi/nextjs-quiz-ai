@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { E2E_DATABASE_URL } from "./e2e/db";
 
 const PORT = 3100;
 const baseURL = `http://localhost:${PORT}`;
@@ -18,7 +19,7 @@ export default defineConfig({
     timeout: 5 * 60_000,
     // Process variables win over .env, so nothing from a local .env (real keys, SMTP) is used.
     env: {
-      DATABASE_URL: "postgres://quiz_ai:quiz_ai@localhost:5432/quiz_ai_e2e",
+      DATABASE_URL: E2E_DATABASE_URL,
       AUTH_SECRET: "e2e-secret-used-only-by-the-end-to-end-tests",
       GOOGLE_CLIENT_ID: "e2e-client-id",
       GOOGLE_CLIENT_SECRET: "e2e-client-secret",

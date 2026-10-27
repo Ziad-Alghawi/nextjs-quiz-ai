@@ -1,15 +1,21 @@
 import { randomUUID } from "node:crypto";
-import { test as base, expect, type Page } from "@playwright/test";
+import { test as base, expect, type BrowserContext, type Page } from "@playwright/test";
 
 export { expect };
 
+/**
+ * Generation calls Gemini, which costs money, so it is blocked in every context. A test that needs a
+ * generated quiz answers the request itself with page.route, which takes precedence over these.
+ */
+export async function blockPaidRoutes(context: BrowserContext) {
+  await context.route("**/api/quizzes/generate", (route) => route.abort());
+  await context.route("**/api/courses/*/quizzes", (route) => route.abort());
+}
+
 export const test = base.extend<{ blockPaidCalls: void }>({
-  // Generation calls Gemini, which costs money. Blocked in every test; a test that needs a generated
-  // quiz answers the request itself with page.route, which takes precedence over these.
   blockPaidCalls: [
     async ({ context }, use) => {
-      await context.route("**/api/quizzes/generate", (route) => route.abort());
-      await context.route("**/api/courses/*/quizzes", (route) => route.abort());
+      await blockPaidRoutes(context);
       await use();
     },
     { auto: true },
