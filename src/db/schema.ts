@@ -167,6 +167,8 @@ export const quizzes = pgTable(
     courseId: integer("course_id")
       .notNull()
       .references(() => courses.id, { onDelete: "cascade" }),
+    // Set while the quiz is shared: anyone with the link can play it. Unique, so a link opens one quiz.
+    shareToken: text("share_token").unique(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [
