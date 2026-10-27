@@ -16,7 +16,11 @@ type QuizQuestion = Omit<GeneratedQuiz["questions"][number], "explanation"> & {
   explanation: string | null;
 };
 
-type NewQuiz = Omit<GeneratedQuiz, "questions"> & { questions: QuizQuestion[] };
+type NewQuiz = Omit<GeneratedQuiz, "description" | "questions"> & {
+  // Copies of quizzes made before descriptions existed have none.
+  description: string | null;
+  questions: QuizQuestion[];
+};
 
 /**
  * Stores a generated quiz with its questions and answers in one transaction. `origin` puts it in a
