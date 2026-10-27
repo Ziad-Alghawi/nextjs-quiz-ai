@@ -1,8 +1,8 @@
 import { eq, like } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
-import { courses, quizGenerations, quizzes, rateLimits } from "@/db/schema";
-import { DEFAULT_QUESTION_COUNT, PLANS } from "@/lib/plans";
+import { courses, quizGenerations, quizzes, rateLimits, users } from "@/db/schema";
+import { DEFAULT_QUESTION_COUNT, GUEST_TRIAL, PLANS } from "@/lib/plans";
 import { getMonthlyUsage } from "@/server/services/usage";
 import { createUsers, deleteUsers } from "@/test/db-fixtures";
 import { model, modelResponse, resetModel } from "@/test/gemini-mock";
@@ -12,11 +12,31 @@ import { POST } from "./route";
 
 const USER = "generate-route-db-test-user";
 
-const session = vi.hoisted(() => ({ signedIn: true }));
+const session = vi.hoisted(() => ({ signedIn: true, isGuest: false }));
 vi.mock("@/server/session", () => ({
   getCurrentUser: async () =>
-    session.signedIn ? { id: USER, name: "Test", email: "t@example.com", image: null } : null,
+    session.signedIn
+      ? { id: USER, name: "Test", email: "t@example.com", image: null, isGuest: session.isGuest }
+      : null,
 }));
+
+/** Makes the test user a guest, in the session and in the database. */
+const becomeGuest = async () => {
+  session.isGuest = true;
+  await db.update(users).set({ isAnonymous: true }).where(eq(users.id, USER));
+};
+
+/** A PDF with about 60k characters of text, more than the trial takes. */
+const longPdf = () =>
+  makePdf(
+    Array.from({ length: 15 }, (_, page) =>
+      Array.from(
+        { length: 50 },
+        (_, line) => `Page ${page} line ${line} ${"cell ".repeat(15)}`,
+      ).join("\n"),
+    ),
+  );
+
 vi.mock("@langchain/google/node", () => import("@/test/gemini-mock"));
 
 const generate = async (
@@ -38,8 +58,9 @@ const generate = async (
 beforeEach(async () => {
   await createUsers(USER);
   // Repeated test runs would otherwise use up the day's shared generation slots.
-  await db.delete(rateLimits).where(like(rateLimits.key, "generation-daily:%"));
+  await db.delete(rateLimits).where(like(rateLimits.key, "%generation-daily:%"));
   session.signedIn = true;
+  session.isGuest = false;
   resetModel();
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
@@ -140,5 +161,30 @@ describe("POST /api/quizzes/generate", () => {
 
     expect(response.status).toBe(403);
     expect(model.invoke).not.toHaveBeenCalled();
+  });
+
+  it("lets guests choose only the trial's question counts", async () => {
+    await becomeGuest();
+
+    expect(await generate(makePdf(["Text."]), 15)).toEqual({
+      status: 403,
+      body: {
+        error: "The trial makes quizzes with 5 or 10 questions. Create an account for more.",
+      },
+    });
+    expect(model.invoke).not.toHaveBeenCalled();
+  });
+
+  it("sends the AI only the first part of a long document for guests", async () => {
+    model.invoke.mockResolvedValue(modelResponse(generatedQuiz(5)));
+    const sentText = () => (model.invoke.mock.lastCall![0] as { content: string }[])[1].content;
+
+    expect((await generate(longPdf(), 5)).body).toMatchObject({ truncated: false });
+    expect(sentText().length).toBeGreaterThan(GUEST_TRIAL.maxDocumentChars);
+
+    await becomeGuest();
+    expect((await generate(longPdf(), 5)).body).toMatchObject({ truncated: true });
+    // The document plus its <document> wrapper.
+    expect(sentText().length).toBeLessThan(GUEST_TRIAL.maxDocumentChars + 200);
   });
 });

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { errorResponse } from "@/lib/api-response";
 import { readPdfText, uploadFileName } from "@/lib/pdf";
-import { isQuestionCountAllowed, questionCountUpgradeMessage } from "@/lib/plans";
+import { GUEST_TRIAL, isQuestionCountAllowed, questionCountUpgradeMessage } from "@/lib/plans";
+import { formatOrList } from "@/lib/utils";
 import { pdfUploadSchema, quickQuizSchema } from "@/lib/validations/quiz";
 import { generateAndSaveQuiz } from "@/server/services/generation";
 import { getPlan } from "@/server/services/usage";
@@ -25,11 +26,22 @@ export async function POST(request: Request) {
   if (!quick.success) return errorResponse(quick.error.issues[0].message, 400);
   const { questionCount } = quick.data;
 
-  if (!isQuestionCountAllowed(await getPlan(user.id), questionCount)) {
+  if (user.isGuest) {
+    if (!GUEST_TRIAL.questionCounts.some((count) => count === questionCount)) {
+      return errorResponse(
+        `The trial makes quizzes with ${formatOrList(GUEST_TRIAL.questionCounts)} questions. Create an account for more.`,
+        403,
+      );
+    }
+  } else if (!isQuestionCountAllowed(await getPlan(user.id), questionCount)) {
     return errorResponse(questionCountUpgradeMessage(questionCount), 403);
   }
 
-  const pdf = await readPdfText(upload.data);
+  // Guests get only the first part of long documents, which bounds what a trial quiz costs.
+  const pdf = await readPdfText(
+    upload.data,
+    user.isGuest ? GUEST_TRIAL.maxDocumentChars : undefined,
+  );
   if ("error" in pdf) return errorResponse(pdf.error, 422);
 
   // Reserved only after the cheap checks above, right before the call that costs money.
