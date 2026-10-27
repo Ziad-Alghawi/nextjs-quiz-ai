@@ -24,6 +24,18 @@ export const test = base.extend<{ blockPaidCalls: void }>({
 
 export type Account = { name: string; email: string; password: string };
 
+/**
+ * Signed in once by auth.setup.ts and shared by the specs through STORAGE_STATE: sign-in allows only
+ * 5 per 5 minutes per IP, and auth.spec.ts uses 4 of them.
+ */
+export const E2E_USER: Account = {
+  name: "E2E User",
+  email: "e2e-user@example.com",
+  password: "correct-horse-battery",
+};
+
+export const STORAGE_STATE = "playwright/.auth/user.json";
+
 export const newAccount = (): Account => ({
   name: "E2E Tester",
   email: `e2e-${randomUUID()}@example.com`,

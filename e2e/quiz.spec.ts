@@ -1,10 +1,9 @@
 import type { Page } from "@playwright/test";
 import { makePdf } from "@/test/make-pdf";
 import { connect, insertQuiz } from "./db";
-import { blockPaidRoutes, expect, newAccount, signIn, signUp, test } from "./fixtures";
+import { blockPaidRoutes, expect, STORAGE_STATE, test } from "./fixtures";
 
-// The tests build on each other in one signed-in page: sign-in allows 5 per 5 minutes per IP, and
-// auth.spec.ts already uses 4 of them.
+// The tests build on each other in one page, signed in with the shared account.
 test.describe.configure({ mode: "serial" });
 
 const sql = connect();
@@ -13,13 +12,10 @@ let courseUrl: string;
 let generated = 0;
 
 test.beforeAll(async ({ browser }) => {
-  const context = await browser.newContext();
+  const context = await browser.newContext({ storageState: STORAGE_STATE });
   await blockPaidRoutes(context);
   page = await context.newPage();
-  const account = newAccount();
-  await signUp(page, account);
-  await signIn(page, account);
-  await expect(page).toHaveURL("/dashboard");
+  await page.goto("/dashboard");
 });
 
 test.afterAll(async () => {
