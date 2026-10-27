@@ -1,0 +1,21 @@
+# Local Postgres and the sealed app environment (deploy/k8s).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: quiz-ai-infra
+  namespace: argocd
+spec:
+  project: quiz-ai
+  source:
+    repoURL: https://github.com/Ziad-Alghawi/nextjs-quiz-ai.git
+    targetRevision: develop
+    path: deploy/k8s
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: quiz-ai
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

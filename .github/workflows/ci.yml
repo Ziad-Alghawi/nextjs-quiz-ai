@@ -52,3 +52,19 @@ jobs:
       - run: npm run test:db
 
       - run: npm run build
+
+  helm:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+        with:
+          version: v4.3.0
+
+      - run: helm lint --strict deploy/helm/quiz-ai
+      # Renders every template, so a broken template fails here instead of on the cluster.
+      - run: helm template quiz-ai deploy/helm/quiz-ai > /dev/null

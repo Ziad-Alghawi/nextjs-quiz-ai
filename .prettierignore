@@ -2,3 +2,5 @@
 drizzle/
 package-lock.json
 public/
+# Helm templates are Go templates, not YAML Prettier can parse.
+deploy/helm/*/templates/

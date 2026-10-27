@@ -1,0 +1,61 @@
+# Applies the migrations before the new app version starts. It stays for an hour after it finishes so its
+# logs can be read (helm uninstall leaves hook resources behind), and is replaced on the next upgrade.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-migrate
+  labels:
+    {{- include "quiz-ai.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 3600
+  activeDeadlineSeconds: 600
+  template:
+    metadata:
+      # Not the app's selector labels: the Deployment and Service must not select this pod.
+      labels:
+        app.kubernetes.io/name: {{ .Chart.Name }}-migrate
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      # On a first install the database may still be starting; wait for it instead of failing the job.
+      initContainers:
+        - name: wait-for-db
+          image: {{ .Values.waitForDbImage }}
+          command: ["sh", "-c", 'until pg_isready -q -d "$DATABASE_URL"; do sleep 2; done']
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.envSecretName }}
+                  key: DATABASE_URL
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
+          securityContext:
+            {{- include "quiz-ai.containerSecurityContext" . | nindent 12 }}
+      containers:
+        - name: migrate
+          image: "{{ .Values.image.migrateRepository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.envSecretName }}
+                  key: DATABASE_URL
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+          securityContext:
+            {{- include "quiz-ai.containerSecurityContext" . | nindent 12 }}

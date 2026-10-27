@@ -1,0 +1,5 @@
+apiVersion: v2
+name: quiz-ai
+description: Quiz AI web app with a migrations job that runs before every install and upgrade.
+type: application
+version: 0.1.0
