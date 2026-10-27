@@ -2,7 +2,7 @@ import "server-only";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
-import { customSession, emailOTP } from "better-auth/plugins";
+import { anonymous, customSession, emailOTP } from "better-auth/plugins";
 import { after } from "next/server";
 import { db } from "@/db";
 import { authAccounts, authSessions, authVerifications, rateLimits, users } from "@/db/schema";
@@ -113,6 +113,8 @@ export const auth = betterAuth({
     "/email-otp/check-verification-otp",
     "/email-otp/verify-email",
     "/forget-password/email-otp",
+    // Guests can't be created until the guest trial limits what they can do.
+    "/sign-in/anonymous",
   ],
   advanced: {
     // Emails are sent after the response, so an existing account doesn't answer noticeably slower
@@ -130,12 +132,22 @@ export const auth = betterAuth({
     google: { clientId: env.GOOGLE_CLIENT_ID, clientSecret: env.GOOGLE_CLIENT_SECRET },
   },
   plugins: [
+    anonymous(),
     // /api/auth/get-session would otherwise return the session token itself, which the httpOnly
     // cookie is meant to keep away from JavaScript; expose only what the app needs.
-    customSession(async ({ user, session }) => ({
-      user: { id: user.id, name: user.name, email: user.email, image: user.image ?? null },
-      session: { expiresAt: session.expiresAt },
-    })),
+    customSession(
+      async ({ user, session }) => ({
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          image: user.image ?? null,
+          isAnonymous: user.isAnonymous ?? false,
+        },
+        session: { expiresAt: session.expiresAt },
+      }),
+      { plugins: [anonymous()] },
+    ),
     emailOTP({
       otpLength: OTP_LENGTH,
       expiresIn: OTP_EXPIRES_IN_MINUTES * 60,
