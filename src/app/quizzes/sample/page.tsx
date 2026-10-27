@@ -47,5 +47,5 @@ const sampleQuiz: PlayerQuiz = {
 };
 
 export default function SampleQuizPage() {
-  return <QuizPlayer quiz={sampleQuiz} exitHref="/" isSample />;
+  return <QuizPlayer quiz={sampleQuiz} exitHref="/" unsaved />;
 }
