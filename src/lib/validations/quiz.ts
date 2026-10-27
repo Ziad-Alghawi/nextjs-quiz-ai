@@ -90,6 +90,9 @@ export const chapterQuizSchema = z.object({
 export const quizIdSchema = idSchema;
 export const attemptIdSchema = idSchema;
 
+/** The token in a shared quiz's link: 24 random bytes in base64url (see services/shares.ts). */
+export const shareTokenSchema = z.string().regex(/^[\w-]{32}$/);
+
 /** A review quiz from 2 or more quizzes of one course, as the form sends it. Repeated ids count once. */
 export const reviewQuizSchema = z.object({
   courseId: courseIdSchema,
