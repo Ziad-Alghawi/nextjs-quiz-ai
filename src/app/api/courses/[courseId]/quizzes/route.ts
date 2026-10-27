@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { errorResponse } from "@/lib/api-response";
+import { COURSES_NEED_ACCOUNT, errorResponse } from "@/lib/api-response";
 import { shareDocumentBudget } from "@/lib/pdf";
 import { isQuestionCountAllowed, questionCountUpgradeMessage } from "@/lib/plans";
 import { courseIdSchema } from "@/lib/validations/course";
@@ -22,6 +22,7 @@ export async function POST(
 ) {
   const user = await getCurrentUser();
   if (!user) return errorResponse("Please sign in to generate a quiz.", 401);
+  if (user.isGuest) return errorResponse(COURSES_NEED_ACCOUNT, 403);
 
   const courseId = courseIdSchema.safeParse((await context.params).courseId);
   if (!courseId.success) return errorResponse(CHAPTERS_NOT_FOUND, 404);

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { errorResponse } from "@/lib/api-response";
+import { COURSES_NEED_ACCOUNT, errorResponse } from "@/lib/api-response";
 import { readPdfText, uploadFileName } from "@/lib/pdf";
 import { CHAPTER_UPLOAD_LIMIT, PLANS } from "@/lib/plans";
 import { courseIdSchema } from "@/lib/validations/course";
@@ -17,6 +17,7 @@ export async function POST(
 ) {
   const user = await getCurrentUser();
   if (!user) return errorResponse("Please sign in to upload a PDF.", 401);
+  if (user.isGuest) return errorResponse(COURSES_NEED_ACCOUNT, 403);
 
   // Before anything else, so failed uploads count too: reading a PDF costs server time either way.
   const { max, windowMinutes } = CHAPTER_UPLOAD_LIMIT;
