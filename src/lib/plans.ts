@@ -92,6 +92,20 @@ export const GENERATION_BURST_LIMIT = { max: 3, windowMinutes: 10 } as const sat
 export const DAILY_GENERATION_LIMIT = 50;
 
 /**
+ * The guest trial, without an account. `dailyQuizzes` is shared by all guests and comes out of
+ * DAILY_GENERATION_LIMIT, so new guests (new cookies, other IPs) can't raise the daily cost.
+ */
+export const GUEST_TRIAL = {
+  /** Generations per guest, in total. */
+  quizzes: 3,
+  dailyQuizzes: 5,
+  questionCounts: [5, 10],
+  maxDocumentChars: 50_000,
+  /** Guest sign-ins per IP address and hour. */
+  signInsPerHour: 3,
+} as const;
+
+/**
  * Document text sent to Gemini, in characters: about 40k tokens (4 characters per token in English,
  * fewer in other languages). Bounds the cost of one generation; longer documents use the first part.
  */
