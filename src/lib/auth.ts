@@ -16,6 +16,7 @@ import {
   PASSWORD_MIN_LENGTH,
 } from "@/lib/validations/auth";
 import { getSignInMethods } from "@/server/services/account";
+import { moveGuestData } from "@/server/services/guests";
 import { cancelSubscriptions } from "@/server/services/billing";
 import { sendEmail } from "@/server/services/mail";
 import { consumeRateLimit } from "@/server/services/rate-limit";
@@ -151,7 +152,12 @@ export const auth = betterAuth({
     google: { clientId: env.GOOGLE_CLIENT_ID, clientSecret: env.GOOGLE_CLIENT_SECRET },
   },
   plugins: [
-    anonymous(),
+    anonymous({
+      // On the first sign-in after a guest signs up (or signs in), the trial moves to the account;
+      // the plugin deletes the guest only after this succeeds.
+      onLinkAccount: ({ anonymousUser, newUser }) =>
+        moveGuestData(anonymousUser.user.id, newUser.user.id),
+    }),
     // /api/auth/get-session would otherwise return the session token itself, which the httpOnly
     // cookie is meant to keep away from JavaScript; expose only what the app needs.
     customSession(
