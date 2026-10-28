@@ -1,7 +1,8 @@
 import "server-only";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, lt, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { quizAttempts, quizGenerations, quizzes } from "@/db/schema";
+import { quizAttempts, quizGenerations, quizzes, users } from "@/db/schema";
+import { GUEST_TRIAL } from "@/lib/plans";
 import { getOrCreateDefaultCourse } from "./courses";
 
 /**
@@ -26,4 +27,22 @@ export async function moveGuestData(guestId: string, userId: string) {
       })
       .where(eq(quizGenerations.userId, guestId));
   });
+}
+
+/**
+ * Deletes guests whose trial started more than GUEST_TRIAL.keepDays ago, and returns how many.
+ * Their folder, quizzes, attempts, generations and sessions go with them (ON DELETE CASCADE); a
+ * guest who signed up was already removed when the trial moved to the account.
+ */
+export async function deleteExpiredGuests() {
+  const deleted = await db
+    .delete(users)
+    .where(
+      and(
+        eq(users.isAnonymous, true),
+        lt(users.createdAt, sql`now() - make_interval(days => ${GUEST_TRIAL.keepDays})`),
+      ),
+    )
+    .returning({ id: users.id });
+  return deleted.length;
 }
