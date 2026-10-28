@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AuthHeading } from "../auth-heading";
+import { GuestNote } from "../guest-note";
 import { googleErrorMessage } from "@/lib/oauth-errors";
 import { safeReturnPath } from "@/lib/validations/auth";
 import { SignInForm } from "./sign-in-form";
@@ -37,6 +38,7 @@ export default async function SignInPage({ searchParams }: PageProps<"/sign-in">
           {notice}
         </p>
       ) : null}
+      <GuestNote>Signing in moves your trial quizzes to your account.</GuestNote>
       <SignInForm
         callbackURL={callbackURL}
         // Set when Google sent the user back here with an error.

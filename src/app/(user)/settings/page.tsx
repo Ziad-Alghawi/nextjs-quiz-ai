@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getSignInMethods } from "@/server/services/account";
 import { googleErrorMessage } from "@/lib/oauth-errors";
-import { requireUser } from "@/server/session";
+import { requireAccount } from "@/server/session";
 import { Card, CardTitle } from "@/components/ui/card";
 import { PageColumn } from "@/components/ui/page-column";
 import { PageHeading } from "@/components/ui/page-heading";
@@ -15,7 +15,7 @@ import { NameForm } from "./name-form";
 export const metadata: Metadata = { title: "Settings" };
 
 export default async function SettingsPage({ searchParams }: PageProps<"/settings">) {
-  const user = await requireUser("/settings");
+  const user = await requireAccount("/settings");
   const methods = await getSignInMethods(user.id);
   // Set when connecting Google failed and Better Auth sent the user back here.
   const { error: googleError } = await searchParams;

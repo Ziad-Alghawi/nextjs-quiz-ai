@@ -12,7 +12,7 @@ import { getCourse, listCourses } from "@/server/services/courses";
 import { listCourseAttempts } from "@/server/services/attempts";
 import { listReviewSources } from "@/server/services/quizzes";
 import { getMonthlyUsage } from "@/server/services/usage";
-import { requireUser } from "@/server/session";
+import { requireAccount } from "@/server/session";
 import { ChapterUpload } from "./chapter-upload";
 import { CourseQuizzes } from "./course-quizzes";
 import { CourseActions } from "./course-actions";
@@ -27,7 +27,7 @@ type Props = PageProps<"/courses/[courseId]">;
 // Shared by generateMetadata and the page, so a request loads the course once.
 const loadCourse = cache(async (courseId: string) => {
   const id = courseIdSchema.safeParse(courseId);
-  const user = await requireUser(`/courses/${courseId}`);
+  const user = await requireAccount(`/courses/${courseId}`);
   const course = id.success ? await getCourse(user.id, id.data) : undefined;
   if (!course) notFound();
   return course;
@@ -44,7 +44,7 @@ const formatSize = (bytes: number) =>
 
 export default async function CoursePage({ params }: Props) {
   const course = await loadCourse((await params).courseId);
-  const user = await requireUser(`/courses/${course.id}`);
+  const user = await requireAccount(`/courses/${course.id}`);
 
   // The "My quizzes" folder only lists the quick quizzes: no chapters, generating, reviews or exams.
   // Each one can move into a course.

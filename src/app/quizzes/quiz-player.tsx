@@ -17,12 +17,15 @@ export type PlayerQuiz = Pick<QuizWithQuestions, "id" | "name" | "questions">;
 
 type QuizPlayerProps = {
   quiz: PlayerQuiz;
-  /** Where ✕ leads: the quiz's course, or the landing page for the sample quiz. */
+  /** Where ✕ leads: the quiz's course, or the landing page for an unsaved quiz. */
   exitHref: string;
-  /** Defaults to "Back to course", or "Back to home" for the sample quiz. */
+  /** Defaults to "Back to course", or "Back to home" for an unsaved quiz. */
   exitLabel?: string;
-  /** The sample quiz has no database row, so its result is only shown, never saved. */
-  isSample?: boolean;
+  /**
+   * The result is only shown, never saved: the sample quiz has no database row, and a shared quiz
+   * belongs to someone else.
+   */
+  unsaved?: boolean;
   /** Starts with a practice round (questions already shuffled): its result is never saved. */
   practice?: boolean;
   /** Set when the quiz was made from only the first part of a long PDF. */
@@ -37,7 +40,7 @@ export function QuizPlayer({
   quiz,
   exitHref,
   exitLabel,
-  isSample,
+  unsaved,
   practice = false,
   truncated,
 }: QuizPlayerProps) {
@@ -68,7 +71,7 @@ export function QuizPlayer({
 
   async function finish() {
     const localResult = scoreAttempt(questions, chosen);
-    if (isSample || round.practice) return setResult(localResult);
+    if (unsaved || round.practice) return setResult(localResult);
     setSubmitting(true);
     try {
       const saved = await submitQuiz({ quizId: quiz.id, answers: chosen });
@@ -134,7 +137,7 @@ export function QuizPlayer({
         onRetry={retry}
         onPracticeMistakes={practiceMistakes}
         exitHref={exitHref}
-        exitLabel={exitLabel ?? (isSample ? "Back to home" : "Back to course")}
+        exitLabel={exitLabel ?? (unsaved ? "Back to home" : "Back to course")}
       />
     );
   }

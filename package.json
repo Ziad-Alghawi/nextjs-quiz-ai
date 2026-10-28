@@ -23,6 +23,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:db": "vitest run --config vitest.db.config.mts",
+    "test:e2e": "playwright test",
     "db:up": "docker compose up -d --wait db",
     "db:down": "docker compose down",
     "db:generate": "drizzle-kit generate",
@@ -52,6 +53,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.0",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^24.19.2",
     "@types/react": "^19.3.0",
@@ -71,7 +73,9 @@
   },
   "knip": {
     "entry": [
-      "scripts/migrate.ts"
+      "scripts/migrate.ts",
+      "e2e/reset-db.ts",
+      "e2e/auth.setup.ts"
     ]
   }
 }

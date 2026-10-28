@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { utcDate } from "@/lib/time";
 import { listQuizzes } from "@/server/services/quizzes";
 import { getAttemptActivity, getUserMetrics, summarizeActivity } from "@/server/services/stats";
-import { requireUser } from "@/server/session";
+import { requireAccount } from "@/server/session";
 import { ActivityHeatmap } from "./activity-heatmap";
 import { ActivityStats } from "./activity-stats";
 import { MetricCard } from "./metric-card";
@@ -18,7 +18,7 @@ import { QuizzesTable } from "./quizzes-table";
 export const metadata: Metadata = { title: "Overview" };
 
 export default async function DashboardPage() {
-  const { id: userId } = await requireUser("/dashboard");
+  const { id: userId } = await requireAccount("/dashboard");
 
   return (
     <div className="flex flex-col gap-6">

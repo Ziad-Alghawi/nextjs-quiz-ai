@@ -12,10 +12,12 @@ import { POST } from "./route";
 const USER = "chapter-quiz-db-test-user";
 const OTHER_USER = "chapter-quiz-db-test-other";
 
-const session = vi.hoisted(() => ({ signedIn: true }));
+const session = vi.hoisted(() => ({ signedIn: true, isGuest: false }));
 vi.mock("@/server/session", () => ({
   getCurrentUser: async () =>
-    session.signedIn ? { id: USER, name: "Test", email: "t@example.com", image: null } : null,
+    session.signedIn
+      ? { id: USER, name: "Test", email: "t@example.com", image: null, isGuest: session.isGuest }
+      : null,
 }));
 vi.mock("@langchain/google/node", () => import("@/test/gemini-mock"));
 
@@ -38,6 +40,7 @@ beforeEach(async () => {
   // Repeated test runs would otherwise use up the day's shared generation slots.
   await db.delete(rateLimits).where(like(rateLimits.key, "generation-daily:%"));
   session.signedIn = true;
+  session.isGuest = false;
   resetModel();
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
@@ -143,6 +146,11 @@ describe("POST /api/courses/[courseId]/quizzes", () => {
     ].map((response) => response.status);
 
     expect(statuses).toEqual([400, 400, 400, 404, 404, 404, 404]);
+    session.isGuest = true;
+    expect(await generate(courseId, { chapterIds: [chapterId], questionCount: 10 })).toEqual({
+      status: 403,
+      body: { error: "Create an account to use courses." },
+    });
     session.signedIn = false;
     expect((await generate(courseId, { chapterIds: [chapterId], questionCount: 10 })).status).toBe(
       401,

@@ -13,7 +13,13 @@ const USER = "quiz-actions-db-test-user";
 const OTHER_USER = "quiz-actions-db-test-other";
 
 vi.mock("@/server/session", () => ({
-  requireUser: async () => ({ id: USER, name: "Test", email: "test@example.com", image: null }),
+  requireAccount: async () => ({
+    id: USER,
+    name: "Test",
+    email: "test@example.com",
+    image: null,
+    isGuest: false,
+  }),
 }));
 const { revalidatePath } = vi.hoisted(() => ({ revalidatePath: vi.fn() }));
 vi.mock("next/cache", () => ({ revalidatePath }));

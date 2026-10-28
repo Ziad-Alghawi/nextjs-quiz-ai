@@ -25,6 +25,8 @@ export const users = pgTable("user", {
   // One Stripe customer per user; the unique index also serves the webhook, which looks users up by it.
   stripeCustomerId: text("stripeCustomerId").unique(),
   subscribed: boolean("subscribed").default(false),
+  // A guest trying the app without an account (Better Auth's anonymous plugin).
+  isAnonymous: boolean("is_anonymous").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }).enableRLS();
@@ -167,6 +169,8 @@ export const quizzes = pgTable(
     courseId: integer("course_id")
       .notNull()
       .references(() => courses.id, { onDelete: "cascade" }),
+    // Set while the quiz is shared: anyone with the link can play it. Unique, so a link opens one quiz.
+    shareToken: text("share_token").unique(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [

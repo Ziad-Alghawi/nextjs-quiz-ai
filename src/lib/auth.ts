@@ -1,12 +1,14 @@
 import "server-only";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { APIError, createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
-import { customSession, emailOTP } from "better-auth/plugins";
+import { anonymous, customSession, emailOTP } from "better-auth/plugins";
 import { after } from "next/server";
 import { db } from "@/db";
 import { authAccounts, authSessions, authVerifications, rateLimits, users } from "@/db/schema";
 import { env } from "@/lib/env";
+import { GUEST_TRIAL } from "@/lib/plans";
 import {
   OTP_EXPIRES_IN_MINUTES,
   OTP_LENGTH,
@@ -14,9 +16,18 @@ import {
   PASSWORD_MIN_LENGTH,
 } from "@/lib/validations/auth";
 import { getSignInMethods } from "@/server/services/account";
+import { moveGuestData } from "@/server/services/guests";
 import { cancelSubscriptions } from "@/server/services/billing";
 import { sendEmail } from "@/server/services/mail";
 import { consumeRateLimit } from "@/server/services/rate-limit";
+
+// Account changes that need an account: a guest has no real email or password to change.
+const ACCOUNT_ONLY_PATHS = [
+  "/change-email",
+  "/change-password",
+  "/update-user",
+  "/email-otp/request-email-change",
+];
 
 // The code emails the app sends; the plugin's other code types are disabled below.
 const otpEmails: Partial<Record<string, { subject: string; ignoreNote: string }>> = {
@@ -97,6 +108,8 @@ export const auth = betterAuth({
       // Slows down password guessing; each attempt also costs a scrypt hash on the server.
       "/sign-in/email": { window: 5 * 60, max: 5 },
       "/sign-up/email": { window: 60 * 60, max: 5 },
+      // Every guest gets trial quizzes; the daily trial cap holds anyway, this slows down farming.
+      "/sign-in/anonymous": { window: 60 * 60, max: GUEST_TRIAL.signInsPerHour },
       // Asks for the current password, so someone with a stolen session could guess it here.
       "/change-password": { window: 5 * 60, max: 5 },
       "/delete-user": { window: 5 * 60, max: 5 },
@@ -119,6 +132,15 @@ export const auth = betterAuth({
     // than an unknown email. after() keeps the serverless function alive until the email is sent.
     backgroundTasks: { handler: after },
   },
+  hooks: {
+    before: createAuthMiddleware(async (ctx) => {
+      if (!ACCOUNT_ONLY_PATHS.includes(ctx.path)) return;
+      const session = await getSessionFromCtx(ctx);
+      if (session?.user.isAnonymous) {
+        throw new APIError("FORBIDDEN", { message: "Create an account to change this." });
+      }
+    }),
+  },
   user: {
     deleteUser: {
       enabled: true,
@@ -130,12 +152,27 @@ export const auth = betterAuth({
     google: { clientId: env.GOOGLE_CLIENT_ID, clientSecret: env.GOOGLE_CLIENT_SECRET },
   },
   plugins: [
+    anonymous({
+      // On the first sign-in after a guest signs up (or signs in), the trial moves to the account;
+      // the plugin deletes the guest only after this succeeds.
+      onLinkAccount: ({ anonymousUser, newUser }) =>
+        moveGuestData(anonymousUser.user.id, newUser.user.id),
+    }),
     // /api/auth/get-session would otherwise return the session token itself, which the httpOnly
     // cookie is meant to keep away from JavaScript; expose only what the app needs.
-    customSession(async ({ user, session }) => ({
-      user: { id: user.id, name: user.name, email: user.email, image: user.image ?? null },
-      session: { expiresAt: session.expiresAt },
-    })),
+    customSession(
+      async ({ user, session }) => ({
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          image: user.image ?? null,
+          isAnonymous: user.isAnonymous ?? false,
+        },
+        session: { expiresAt: session.expiresAt },
+      }),
+      { plugins: [anonymous()] },
+    ),
     emailOTP({
       otpLength: OTP_LENGTH,
       expiresIn: OTP_EXPIRES_IN_MINUTES * 60,

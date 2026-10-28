@@ -16,11 +16,17 @@ import { POST } from "./route";
 const USER = "chapter-upload-db-test-user";
 const OTHER_USER = "chapter-upload-db-test-other";
 
-const session = vi.hoisted(() => ({ userId: null as string | null }));
+const session = vi.hoisted(() => ({ userId: null as string | null, isGuest: false }));
 vi.mock("@/server/session", () => ({
   getCurrentUser: async () =>
     session.userId
-      ? { id: session.userId, name: "Test", email: "t@example.com", image: null }
+      ? {
+          id: session.userId,
+          name: "Test",
+          email: "t@example.com",
+          image: null,
+          isGuest: session.isGuest,
+        }
       : null,
 }));
 
@@ -55,6 +61,7 @@ beforeEach(async () => {
   await createUsers(USER, OTHER_USER);
   await resetUploadLimits();
   session.userId = USER;
+  session.isGuest = false;
 });
 afterAll(async () => {
   await deleteUsers(USER, OTHER_USER);
@@ -97,9 +104,17 @@ describe("POST /api/courses/[courseId]/sources", () => {
     expect(chapter.text.length).toBeLessThanOrEqual(MAX_DOCUMENT_CHARS);
   });
 
-  it("refuses signed-out users, other users' courses and invalid ids", async () => {
+  it("refuses guests, signed-out users, other users' courses and invalid ids", async () => {
     const othersCourse = await addCourse(OTHER_USER);
+    const ownCourse = await addCourse(USER);
     const pdf = makePdf(["Text."]);
+
+    session.isGuest = true;
+    expect(await upload(ownCourse, pdf)).toEqual({
+      status: 403,
+      body: { error: "Create an account to use courses." },
+    });
+    session.isGuest = false;
 
     expect((await upload(othersCourse, pdf)).status).toBe(404);
     expect((await upload("abc", pdf)).status).toBe(404);

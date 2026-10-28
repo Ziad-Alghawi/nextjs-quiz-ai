@@ -2,7 +2,7 @@ image:
   repository: ghcr.io/ziad-alghawi/nextjs-quiz-ai
   migrateRepository: ghcr.io/ziad-alghawi/nextjs-quiz-ai-migrate
   # Both images are published together by the Docker workflow; bump the tag by pull request.
-  tag: sha-2c5511e9db1036518947ac08909912b35a4d2acd
+  tag: sha-5b345afcc67b3601e856c26f235ff1fde862e144
   pullPolicy: IfNotPresent
 
 # Only its pg_isready runs, before the migrations job.
@@ -22,3 +22,9 @@ resources:
     memory: 256Mi
   limits:
     memory: 512Mi
+
+# Deletes expired guests once a day by calling the app's cleanup route, like Vercel Cron does in
+# production. Needs CRON_SECRET in the env Secret; without it the route answers 401 and the job fails.
+guestCleanup:
+  schedule: "0 3 * * *"
+  image: curlimages/curl:8.11.1

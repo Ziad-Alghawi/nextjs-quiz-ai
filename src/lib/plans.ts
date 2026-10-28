@@ -35,6 +35,10 @@ export const QUESTION_COUNTS: readonly number[] = [
   ...new Set(Object.values(PLANS).flatMap((plan) => plan.questionCounts)),
 ];
 
+/** The quota line under a generate button. */
+export const monthlyRemainingText = (plan: PlanId, remaining: number) =>
+  `${remaining} of ${PLANS[plan].monthlyQuizzes} quizzes left this month`;
+
 export const isQuestionCountAllowed = (plan: PlanId, count: number) =>
   PLANS[plan].questionCounts.some((allowed) => allowed === count);
 
@@ -79,6 +83,9 @@ export const REVIEW_BURST_LIMIT = { max: 10, windowMinutes: 10 } as const satisf
 /** On every plan. Exams cost no AI either, so this only stops scripted mass creation. */
 export const EXAM_BURST_LIMIT = { max: 10, windowMinutes: 10 } as const satisfies RateLimit;
 
+/** On every plan. Copies of shared quizzes cost no AI either, so this only stops mass copying. */
+export const SHARED_COPY_BURST_LIMIT = { max: 10, windowMinutes: 10 } as const satisfies RateLimit;
+
 /** On every plan: at most this many generation attempts per user in the window. */
 export const GENERATION_BURST_LIMIT = { max: 3, windowMinutes: 10 } as const satisfies RateLimit;
 
@@ -87,6 +94,22 @@ export const GENERATION_BURST_LIMIT = { max: 3, windowMinutes: 10 } as const sat
  * quota, so this keeps one busy day from using up the monthly spend cap.
  */
 export const DAILY_GENERATION_LIMIT = 50;
+
+/**
+ * The guest trial, without an account. `dailyQuizzes` is shared by all guests and comes out of
+ * DAILY_GENERATION_LIMIT, so new guests (new cookies, other IPs) can't raise the daily cost.
+ */
+export const GUEST_TRIAL = {
+  /** Generations per guest, in total. */
+  quizzes: 3,
+  dailyQuizzes: 5,
+  questionCounts: [5, 10],
+  maxDocumentChars: 50_000,
+  /** Guest sign-ins per IP address and hour. */
+  signInsPerHour: 3,
+  /** Guests are deleted with their trial this many days after it started. */
+  keepDays: 7,
+} as const;
 
 /**
  * Document text sent to Gemini, in characters: about 40k tokens (4 characters per token in English,

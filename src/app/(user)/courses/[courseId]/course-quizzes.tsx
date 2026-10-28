@@ -7,10 +7,11 @@ import { Card, CardTitle } from "@/components/ui/card";
 import type { getCourse } from "@/server/services/courses";
 import type { listCourseAttempts } from "@/server/services/attempts";
 import { QuizAttempts } from "./quiz-attempts";
+import { ShareQuizButton } from "./share-quiz-button";
 
 type Course = NonNullable<Awaited<ReturnType<typeof getCourse>>>;
 
-/** The course's quizzes, newest first, each with a Start button and its attempts. */
+/** The course's quizzes, newest first, each with Share (not exams), Start and its attempts. */
 export function CourseQuizzes({
   quizzes,
   attempts,
@@ -45,6 +46,7 @@ export function CourseQuizzes({
                     <p className="mt-0.5 text-sm text-muted-foreground">{quiz.description}</p>
                   ) : null}
                 </div>
+                {quiz.kind === "exam" ? null : <ShareQuizButton quiz={quiz} />}
                 {quizAction?.(quiz)}
                 {/* Touch screens have no hover, so a visible button says where the quiz starts. */}
                 <Button variant="outline" size="sm" asChild className="shrink-0 gap-1.5">

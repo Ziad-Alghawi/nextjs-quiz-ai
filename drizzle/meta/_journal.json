@@ -148,6 +148,20 @@
       "when": 1792689889161,
       "tag": "0020_my_quizzes_flag",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1793128085297,
+      "tag": "0021_quiz_share_token",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1793136654572,
+      "tag": "0022_user_is_anonymous",
+      "breakpoints": true
     }
   ]
 }

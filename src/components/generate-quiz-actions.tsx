@@ -1,21 +1,19 @@
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { PLANS, type PlanId } from "@/lib/plans";
 
 type GenerateQuizActionsProps = {
   generating: boolean;
   /** Nothing to generate from yet, e.g. no chapter or file chosen. */
   disabled: boolean;
-  plan: PlanId;
-  remaining: number;
+  /** How many quizzes are left this month; left out where the page already says it. */
+  remainingText?: string;
 };
 
 /** The submit button of a quiz-generation form, with the progress hint and the quota left. */
 export function GenerateQuizActions({
   generating,
   disabled,
-  plan,
-  remaining,
+  remainingText,
 }: GenerateQuizActionsProps) {
   return (
     <>
@@ -34,9 +32,9 @@ export function GenerateQuizActions({
             "Generate quiz"
           )}
         </Button>
-        <span className="text-sm text-muted-foreground">
-          {remaining} of {PLANS[plan].monthlyQuizzes} quizzes left this month
-        </span>
+        {remainingText ? (
+          <span className="text-sm text-muted-foreground">{remainingText}</span>
+        ) : null}
       </div>
     </>
   );

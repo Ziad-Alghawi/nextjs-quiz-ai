@@ -31,7 +31,16 @@ export default async function MarketingLayout({ children }: LayoutProps<"/">) {
           ))}
         </nav>
         <div className="flex gap-2">
-          {user ? (
+          {user?.isGuest ? (
+            <>
+              <Button variant="ghost" className="rounded-full" asChild>
+                <Link href="/try">Continue trial</Link>
+              </Button>
+              <Button className="rounded-full px-5" asChild>
+                <Link href="/sign-up">Sign up</Link>
+              </Button>
+            </>
+          ) : user ? (
             <Button className="rounded-full px-5" asChild>
               <Link href="/dashboard">Dashboard</Link>
             </Button>

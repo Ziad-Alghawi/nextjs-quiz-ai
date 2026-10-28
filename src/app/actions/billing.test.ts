@@ -8,7 +8,13 @@ const { getUpgradeUrl, redirect } = vi.hoisted(() => ({
   redirect: vi.fn(),
 }));
 vi.mock("@/server/session", () => ({
-  requireUser: async () => ({ id: "user-1", name: "Test", email: "test@example.com", image: null }),
+  requireAccount: async () => ({
+    id: "user-1",
+    name: "Test",
+    email: "test@example.com",
+    image: null,
+    isGuest: false,
+  }),
 }));
 vi.mock("@/server/services/billing", () => ({ getUpgradeUrl }));
 vi.mock("next/navigation", () => ({ redirect }));

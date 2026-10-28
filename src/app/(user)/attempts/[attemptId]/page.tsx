@@ -21,7 +21,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function AttemptPage({ params }: Props) {
   const { attemptId } = await params;
-  const { attempt, quiz, detailed } = await loadAttempt(attemptId, `/attempts/${attemptId}`);
+  const { attempt, quiz, detailed, isGuest } = await loadAttempt(
+    attemptId,
+    `/attempts/${attemptId}`,
+  );
   const percentage = scorePercent(attempt.score, attempt.totalQuestions);
   const isExam = quiz.kind === "exam";
   // Attempts saved before the chosen answers were stored have nothing to practise.
@@ -66,7 +69,12 @@ export default async function AttemptPage({ params }: Props) {
           </Button>
         ) : null}
         <Button variant="outline" asChild>
-          <Link href={`/courses/${quiz.courseId}`}>Back to course</Link>
+          {/* Guests can't open courses; their quizzes are listed on the trial page. */}
+          {isGuest ? (
+            <Link href="/try">Back to trial</Link>
+          ) : (
+            <Link href={`/courses/${quiz.courseId}`}>Back to course</Link>
+          )}
         </Button>
       </div>
 

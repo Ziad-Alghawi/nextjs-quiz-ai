@@ -9,10 +9,18 @@ import { useQuizGeneration } from "@/hooks/use-quiz-generation";
 import { DEFAULT_QUESTION_COUNT, MAX_PDF_MB, type PlanId } from "@/lib/plans";
 import { pdfUploadSchema } from "@/lib/validations/quiz";
 
-type QuickQuizFormProps = { plan: PlanId; remaining: number };
+type QuickQuizFormProps = {
+  /** Locks the counts of a higher plan; guests have no plan and get `counts` instead. */
+  plan?: PlanId;
+  counts?: readonly number[];
+  remainingText?: string;
+};
 
-/** Generates a quiz from one PDF. The server decides what is allowed; this only displays it. */
-export function QuickQuizForm({ plan, remaining }: QuickQuizFormProps) {
+/**
+ * Generates a quiz from one PDF, for accounts and for the guest trial. The server decides what is
+ * allowed; this only displays it.
+ */
+export function QuickQuizForm({ plan, counts, remainingText }: QuickQuizFormProps) {
   const [file, setFile] = useState<File>();
   const [questionCount, setQuestionCount] = useState<number>(DEFAULT_QUESTION_COUNT);
   const { error, setError, generating, generate } = useQuizGeneration();
@@ -63,18 +71,14 @@ export function QuickQuizForm({ plan, remaining }: QuickQuizFormProps) {
 
       <QuestionCountPicker
         plan={plan}
+        counts={counts}
         value={questionCount}
         onChange={setQuestionCount}
         disabled={generating}
         hideUpgradeLink
       />
 
-      <GenerateQuizActions
-        generating={generating}
-        disabled={!file}
-        plan={plan}
-        remaining={remaining}
-      />
+      <GenerateQuizActions generating={generating} disabled={!file} remainingText={remainingText} />
     </form>
   );
 }

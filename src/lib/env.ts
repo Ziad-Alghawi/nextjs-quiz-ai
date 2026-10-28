@@ -13,6 +13,9 @@ const baseSchema = z.object({
   STRIPE_YEARLY_PRICE_ID: z.string().startsWith("price_"),
   // Public base URL for links that leave the app (Stripe return URLs); a trailing slash is dropped.
   APP_URL: z.url().transform((url) => url.replace(/\/+$/, "")),
+  // Lets the daily guest cleanup run (Vercel Cron sends it as a Bearer token). Optional, so a missing
+  // value only turns the cleanup off instead of stopping the app; empty counts as missing.
+  CRON_SECRET: z.union([z.literal(""), z.string().min(32)]).optional(),
 });
 
 // Emails are printed to the server log by default (development); production sets EMAIL_TRANSPORT=smtp.

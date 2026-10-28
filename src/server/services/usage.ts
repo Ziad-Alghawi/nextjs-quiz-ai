@@ -1,8 +1,14 @@
 import "server-only";
 import { and, count, eq, gte, or, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { quizGenerations } from "@/db/schema";
-import { DAILY_GENERATION_LIMIT, GENERATION_BURST_LIMIT, PLANS, type PlanId } from "@/lib/plans";
+import { quizGenerations, users } from "@/db/schema";
+import {
+  DAILY_GENERATION_LIMIT,
+  GENERATION_BURST_LIMIT,
+  GUEST_TRIAL,
+  PLANS,
+  type PlanId,
+} from "@/lib/plans";
 import { utcDate } from "@/lib/time";
 import { isSubscribed } from "./billing";
 import type { ModelUsage } from "./generation";
@@ -34,24 +40,40 @@ const countsTowardQuota = or(
 
 const thisMonth = gte(quizGenerations.createdAt, sql`date_trunc('month', now())`);
 
-/** Generations that count toward this month's quota; also used inside the reserving transaction. */
-async function countUsedThisMonth(userId: string, executor: Pick<typeof db, "select">) {
+/**
+ * Generations that count toward the quota, this month or (`allTime`, for guests) ever; also used
+ * inside the reserving transaction.
+ */
+async function countUsed(
+  userId: string,
+  executor: Pick<typeof db, "select">,
+  { allTime = false } = {},
+) {
   const [{ used }] = await executor
     .select({ used: count() })
     .from(quizGenerations)
-    .where(and(eq(quizGenerations.userId, userId), thisMonth, countsTowardQuota));
+    .where(
+      and(eq(quizGenerations.userId, userId), allTime ? undefined : thisMonth, countsTowardQuota),
+    );
   return used;
 }
 
 export async function getMonthlyUsage(userId: string) {
   const plan = await getPlan(userId);
-  const used = await countUsedThisMonth(userId, db);
+  const used = await countUsed(userId, db);
   return { plan, used, limit: PLANS[plan].monthlyQuizzes };
+}
+
+/** How many of the trial's quizzes a guest has used, out of how many. */
+export async function getTrialUsage(userId: string) {
+  return { used: await countUsed(userId, db, { allTime: true }), limit: GUEST_TRIAL.quizzes };
 }
 
 /**
  * Reserves one generation for the user and returns its id, or throws GenerationLimitError.
  * A per-user advisory lock makes parallel requests queue up, so they can't both take the last slot.
+ * Guests also have the trial limits; whether the user is a guest is read here, not trusted from the
+ * caller.
  */
 export async function reserveGeneration(userId: string) {
   const plan = await getPlan(userId);
@@ -60,7 +82,18 @@ export async function reserveGeneration(userId: string) {
   return db.transaction(async (tx) => {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${userId}))`);
 
-    if ((await countUsedThisMonth(userId, tx)) >= monthlyQuizzes) {
+    const [{ isGuest }] = await tx
+      .select({ isGuest: users.isAnonymous })
+      .from(users)
+      .where(eq(users.id, userId));
+    if (isGuest && (await countUsed(userId, tx, { allTime: true })) >= GUEST_TRIAL.quizzes) {
+      throw new GenerationLimitError(
+        `You've used your ${GUEST_TRIAL.quizzes} trial quizzes. Create an account to keep going.`,
+        403,
+      );
+    }
+
+    if ((await countUsed(userId, tx)) >= monthlyQuizzes) {
       const upgrade = plan === "free" ? " Upgrade to Pro for more." : "";
       throw new GenerationLimitError(
         `You've used all ${monthlyQuizzes} quizzes of the ${label} plan this month.${upgrade}`,
@@ -89,7 +122,17 @@ export async function reserveGeneration(userId: string) {
     }
 
     // Last, so a request the user's own limits reject doesn't take one of the shared slots. Throwing
-    // rolls the transaction back, so a request stopped here doesn't count toward the user's quota.
+    // rolls the transaction back, so a request stopped here doesn't count toward the user's quota,
+    // and a guest slot taken just before the global limit is given back. Each counter is one row
+    // updated atomically, so parallel requests from any number of guests take slots one at a time.
+    const guestKey = `guest-generation-daily:${utcDate()}`;
+    const guestLimit = { max: GUEST_TRIAL.dailyQuizzes, windowMinutes: 24 * 60 };
+    if (isGuest && !(await consumeRateLimit(guestKey, guestLimit, tx))) {
+      throw new GenerationLimitError(
+        "Today's trial quizzes are used up. Create an account, or try again tomorrow.",
+        429,
+      );
+    }
     const key = `generation-daily:${utcDate()}`;
     // The key changes at midnight UTC, so its window never needs to end within the day.
     const limit = { max: DAILY_GENERATION_LIMIT, windowMinutes: 24 * 60 };
