@@ -35,6 +35,7 @@ export default defineConfig({
       STRIPE_YEARLY_PRICE_ID: "price_e2e_year",
       APP_URL: baseURL,
       EMAIL_TRANSPORT: "console",
+      CRON_SECRET: "e2e-cron-secret-with-at-least-32-characters",
     },
   },
 });
