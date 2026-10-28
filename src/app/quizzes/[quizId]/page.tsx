@@ -20,7 +20,7 @@ const loadQuiz = cache(async (quizId: string) => {
   // Someone else's quiz is a 404 as well, so quiz ids can't be probed.
   const quiz = await getQuizWithQuestions(user.id, id.data);
   if (!quiz || quiz.questions.length === 0) notFound();
-  return quiz;
+  return { ...quiz, isGuest: user.isGuest };
 });
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -30,12 +30,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function QuizPage({ params, searchParams }: Props) {
   const quiz = await loadQuiz((await params).quizId);
-  const exitHref = `/courses/${quiz.courseId}`;
+  // Guests can't open courses; their quizzes are listed on the trial page.
+  const exitHref = quiz.isGuest ? "/try" : `/courses/${quiz.courseId}`;
   // Everything passed to a client component is sent to the browser, so an exam gets only its paper.
   if (quiz.kind === "exam") return <ExamPlayer exam={examPaper(quiz)} exitHref={exitHref} />;
 
   // Set by the upload form when the document was longer than the text limit.
   const { notice } = await searchParams;
 
-  return <QuizPlayer quiz={quiz} exitHref={exitHref} truncated={notice === "truncated"} />;
+  return (
+    <QuizPlayer
+      quiz={quiz}
+      exitHref={exitHref}
+      exitLabel={quiz.isGuest ? "Back to trial" : undefined}
+      truncated={notice === "truncated"}
+    />
+  );
 }
