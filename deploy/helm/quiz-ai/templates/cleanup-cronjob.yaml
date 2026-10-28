@@ -1,0 +1,55 @@
+# Calls the guest cleanup route inside the cluster, through the Service, with the Bearer secret.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Release.Name }}-guest-cleanup
+  labels:
+    {{- include "quiz-ai.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.guestCleanup.schedule | quote }}
+  timeZone: Etc/UTC
+  # One run at a time; a run missed while the cluster was off isn't caught up, the next one does it.
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 3600
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 300
+      template:
+        metadata:
+          # Not the app's selector labels: the Deployment and Service must not select this pod.
+          labels:
+            app.kubernetes.io/name: {{ .Chart.Name }}-guest-cleanup
+            app.kubernetes.io/instance: {{ .Release.Name }}
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          containers:
+            - name: cleanup
+              image: {{ .Values.guestCleanup.image }}
+              command: ["curl"]
+              # -f fails the job on a 401 or 500, so a missing secret shows up in the job history.
+              args:
+                - "-fsS"
+                - "--max-time"
+                - "60"
+                - "-H"
+                - "Authorization: Bearer $(CRON_SECRET)"
+                - "http://{{ .Release.Name }}:{{ .Values.service.port }}/api/cron/cleanup-guests"
+              env:
+                - name: CRON_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.envSecretName }}
+                      key: CRON_SECRET
+                      optional: true
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 16Mi
+                limits:
+                  memory: 32Mi
+              securityContext:
+                {{- include "quiz-ai.containerSecurityContext" . | nindent 16 }}

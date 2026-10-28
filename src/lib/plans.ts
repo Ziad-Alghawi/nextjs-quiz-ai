@@ -107,6 +107,8 @@ export const GUEST_TRIAL = {
   maxDocumentChars: 50_000,
   /** Guest sign-ins per IP address and hour. */
   signInsPerHour: 3,
+  /** Guests are deleted with their trial this many days after it started. */
+  keepDays: 7,
 } as const;
 
 /**

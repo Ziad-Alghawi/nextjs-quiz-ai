@@ -1,16 +1,17 @@
 import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it, onTestFinished } from "vitest";
 import { db } from "@/db";
-import { courses, quizAttempts, quizGenerations, quizzes } from "@/db/schema";
+import { courses, quizAttempts, quizGenerations, quizzes, users } from "@/db/schema";
 import { createUsers, deleteUsers } from "@/test/db-fixtures";
 import { generatedQuiz } from "@/test/generated-quiz";
 import { getOrCreateDefaultCourse } from "./courses";
-import { moveGuestData } from "./guests";
+import { deleteExpiredGuests, moveGuestData } from "./guests";
 import { createQuiz } from "./quizzes";
 import { getMonthlyUsage } from "./usage";
 
 const GUEST = "guests-db-test-guest";
 const USER = "guests-db-test-user";
+const YOUNG_GUEST = "guests-db-test-young-guest";
 
 /** The guest's trial: two quick quizzes, an attempt and their generations, one from last month. */
 async function addTrial() {
@@ -39,8 +40,8 @@ const ownerOf = async (quizId: number) => {
   return quiz;
 };
 
-beforeEach(() => createUsers(GUEST, USER));
-afterAll(() => deleteUsers(GUEST, USER));
+beforeEach(() => createUsers(GUEST, USER, YOUNG_GUEST));
+afterAll(() => deleteUsers(GUEST, USER, YOUNG_GUEST));
 
 describe("moveGuestData", () => {
   it("moves quizzes, attempts and generations to a new account", async () => {
@@ -97,5 +98,33 @@ describe("moveGuestData", () => {
       1,
     );
     expect(await db.select().from(courses).where(eq(courses.userId, USER))).toEqual([]);
+  });
+});
+
+describe("deleteExpiredGuests", () => {
+  const age = (id: string, days: number, isAnonymous: boolean) =>
+    db
+      .update(users)
+      .set({ isAnonymous, createdAt: sql`now() - make_interval(days => ${days})` })
+      .where(eq(users.id, id));
+  const exists = async (id: string) =>
+    (await db.select().from(users).where(eq(users.id, id))).length === 1;
+
+  it("deletes guests older than 7 days with their trial, and keeps the rest", async () => {
+    const [quizId] = await addTrial();
+    await age(GUEST, 8, true);
+    await age(YOUNG_GUEST, 6, true);
+    await age(USER, 8, false);
+
+    expect(await deleteExpiredGuests()).toBeGreaterThanOrEqual(1);
+
+    expect(await exists(GUEST)).toBe(false);
+    expect(await db.select().from(quizzes).where(eq(quizzes.id, quizId))).toEqual([]);
+    expect(await db.select().from(quizAttempts).where(eq(quizAttempts.userId, GUEST))).toEqual([]);
+    expect(
+      await db.select().from(quizGenerations).where(eq(quizGenerations.userId, GUEST)),
+    ).toEqual([]);
+    expect(await exists(YOUNG_GUEST)).toBe(true);
+    expect(await exists(USER)).toBe(true);
   });
 });

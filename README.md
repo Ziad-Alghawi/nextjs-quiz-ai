@@ -143,6 +143,7 @@ required only with `EMAIL_TRANSPORT=smtp`.
 | `STRIPE_PRICE_ID`        | The Pro monthly price (`price_…`)                 |
 | `STRIPE_YEARLY_PRICE_ID` | The Pro yearly price (`price_…`)                  |
 | `APP_URL`                | Public base URL (auth and Stripe return links)    |
+| `CRON_SECRET`            | Optional: lets the daily guest cleanup run        |
 | `EMAIL_TRANSPORT`        | `console` (default) or `smtp`                     |
 | `SMTP_HOST`              | SMTP server (only with `EMAIL_TRANSPORT=smtp`)    |
 | `SMTP_PORT`              | SMTP port (only with `EMAIL_TRANSPORT=smtp`)      |

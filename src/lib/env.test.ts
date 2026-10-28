@@ -38,6 +38,21 @@ describe("env", () => {
     ).resolves.toBeDefined();
   });
 
+  it("starts without CRON_SECRET, but rejects one shorter than 32 characters", async () => {
+    for (const value of [undefined, ""]) {
+      await expect(importEnv({ CRON_SECRET: value })).resolves.toBeDefined();
+    }
+    const secret = "s".repeat(32);
+    expect((await importEnv({ CRON_SECRET: secret })).CRON_SECRET).toBe(secret);
+
+    const error = await importEnv({
+      CRON_SECRET: "too-short",
+      SKIP_ENV_VALIDATION: undefined,
+    }).catch((e: Error) => e);
+    expect((error as Error).message).toMatch(/CRON_SECRET/);
+    expect((error as Error).message).not.toMatch(/too-short/);
+  });
+
   it("prints emails to the console unless SMTP is configured", async () => {
     const env = await importEnv({ EMAIL_TRANSPORT: undefined });
     expect(env.EMAIL_TRANSPORT).toBe("console");

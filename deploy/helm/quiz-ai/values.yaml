@@ -22,3 +22,9 @@ resources:
     memory: 256Mi
   limits:
     memory: 512Mi
+
+# Deletes expired guests once a day by calling the app's cleanup route, like Vercel Cron does in
+# production. Needs CRON_SECRET in the env Secret; without it the route answers 401 and the job fails.
+guestCleanup:
+  schedule: "0 3 * * *"
+  image: curlimages/curl:8.11.1
