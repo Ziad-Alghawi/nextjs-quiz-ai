@@ -53,10 +53,11 @@ function OverviewScreenshot() {
 
 export default async function HomePage() {
   const user = await getCurrentUser();
-  // Signed-out visitors sign up first and choose monthly or yearly on the billing page.
-  const upgrade = user
-    ? "checkout"
-    : { href: `/sign-up?callbackUrl=${encodeURIComponent("/billing")}` };
+  // Signed-out visitors and guests sign up first and choose monthly or yearly on the billing page.
+  const upgrade =
+    user && !user.isGuest
+      ? "checkout"
+      : { href: `/sign-up?callbackUrl=${encodeURIComponent("/billing")}` };
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-col gap-24 px-4 pt-12 pb-24 sm:px-6 sm:pt-16">
       <section className="flex flex-col gap-14">
@@ -71,16 +72,30 @@ export default async function HomePage() {
             you&apos;ve come.
           </p>
           <div className="mt-1 flex flex-wrap justify-center gap-3">
-            <Button size="lg" className="px-7 text-base font-semibold" asChild>
-              {user ? (
+            {user?.isGuest ? (
+              <Button size="lg" className="px-7 text-base font-semibold" asChild>
+                <Link href="/try">Continue your trial</Link>
+              </Button>
+            ) : user ? (
+              <Button size="lg" className="px-7 text-base font-semibold" asChild>
                 <Link href="/dashboard">Go to dashboard</Link>
-              ) : (
-                <Link href="/sign-up">Get started free</Link>
-              )}
-            </Button>
-            <Button size="lg" variant="outline" className="px-7 text-base font-semibold" asChild>
-              <Link href="/quizzes/sample">Try a sample quiz</Link>
-            </Button>
+              </Button>
+            ) : (
+              <>
+                <Button size="lg" className="px-7 text-base font-semibold" asChild>
+                  <Link href="/sign-up">Get started free</Link>
+                </Button>
+                {/* No account needed; the trial page also links the sample quiz. */}
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="px-7 text-base font-semibold"
+                  asChild
+                >
+                  <Link href="/try">Try it free</Link>
+                </Button>
+              </>
+            )}
           </div>
         </div>
         <FeatureBoxes />
