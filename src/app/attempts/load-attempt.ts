@@ -23,5 +23,5 @@ export const loadAttempt = cache(async (attemptId: string, returnTo: string) => 
   // Attempts saved before the chosen answers were stored have none. Exams came later, so an exam
   // attempt without answers is one where nothing was answered.
   const detailed = attempt.answers.length > 0 || quiz.kind === "exam";
-  return { attempt, quiz, detailed };
+  return { attempt, quiz, detailed, isGuest: user.isGuest };
 });

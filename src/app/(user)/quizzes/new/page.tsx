@@ -3,10 +3,10 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { PageHeading } from "@/components/ui/page-heading";
-import { PLANS } from "@/lib/plans";
+import { monthlyRemainingText, PLANS } from "@/lib/plans";
 import { getMonthlyUsage } from "@/server/services/usage";
 import { requireAccount } from "@/server/session";
-import { QuickQuizForm } from "./quick-quiz-form";
+import { QuickQuizForm } from "@/components/quick-quiz-form";
 
 export const metadata: Metadata = { title: "Quick quiz" };
 
@@ -39,7 +39,7 @@ export default async function QuickQuizPage() {
           </p>
         </div>
         {remaining > 0 ? (
-          <QuickQuizForm plan={plan} remaining={remaining} />
+          <QuickQuizForm plan={plan} remainingText={monthlyRemainingText(plan, remaining)} />
         ) : (
           <p className="text-sm text-muted-foreground" role="status">
             You&apos;ve used all {limit} quizzes of the {PLANS[plan].label} plan this month. Your

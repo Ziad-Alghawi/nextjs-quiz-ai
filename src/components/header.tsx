@@ -20,8 +20,26 @@ function SignOut() {
   );
 }
 
+/** A guest's way out of the trial: an account keeps their quizzes. */
+function GuestActions() {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="hidden text-sm text-muted-foreground sm:inline">Free trial</span>
+      <Button variant="ghost" asChild>
+        <Link href="/sign-in">Sign in</Link>
+      </Button>
+      <Button asChild>
+        <Link href="/sign-up">Sign up</Link>
+      </Button>
+    </div>
+  );
+}
+
 export async function Header() {
-  const user = await getCurrentUser();
+  const current = await getCurrentUser();
+  // Guests get the app's header without the account parts: no sidebar, menu or sign-out.
+  const isGuest = current?.isGuest === true;
+  const user = isGuest ? null : current;
   return (
     <header>
       {/* Signed in, the header spans the screen: the logo sits above the sidebar, the avatar menu at
@@ -39,7 +57,9 @@ export async function Header() {
           </div>
 
           <div>
-            {user ? (
+            {isGuest ? (
+              <GuestActions />
+            ) : user ? (
               <div className="flex items-center gap-4">
                 <SignOut />
                 <DropdownMenu>

@@ -36,6 +36,12 @@ export const E2E_USER: Account = {
 
 export const STORAGE_STATE = "playwright/.auth/user.json";
 
+/**
+ * A guest started once by auth.setup.ts through the trial page: guest sign-in allows only 3 per hour
+ * per IP, so specs reuse this session.
+ */
+export const GUEST_STORAGE_STATE = "playwright/.auth/guest.json";
+
 export const newAccount = (): Account => ({
   name: "E2E Tester",
   email: `e2e-${randomUUID()}@example.com`,

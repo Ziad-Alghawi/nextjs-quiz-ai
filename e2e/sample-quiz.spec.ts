@@ -1,8 +1,8 @@
 import { expect, test } from "./fixtures";
 
 test("a visitor plays the sample quiz with the keyboard", async ({ page }) => {
-  await page.goto("/");
-  await page.getByRole("link", { name: "Try a sample quiz" }).first().click();
+  await page.goto("/try");
+  await page.getByRole("link", { name: "Try a sample quiz" }).click();
   await expect(page).toHaveURL("/quizzes/sample");
   await expect(page.getByText("Question 1 of 3")).toBeVisible();
 

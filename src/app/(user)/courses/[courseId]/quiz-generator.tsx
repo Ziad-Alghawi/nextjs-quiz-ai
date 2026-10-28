@@ -4,7 +4,7 @@ import { useState } from "react";
 import { GenerateQuizActions } from "@/components/generate-quiz-actions";
 import { FormError } from "@/components/ui/form-error";
 import { useQuizGeneration } from "@/hooks/use-quiz-generation";
-import { DEFAULT_QUESTION_COUNT, PLANS, type PlanId } from "@/lib/plans";
+import { DEFAULT_QUESTION_COUNT, monthlyRemainingText, PLANS, type PlanId } from "@/lib/plans";
 import { QuestionCountPicker } from "@/components/question-count-picker";
 
 type QuizGeneratorProps = {
@@ -103,8 +103,7 @@ export function QuizGenerator({ courseId, chapters, plan, remaining }: QuizGener
       <GenerateQuizActions
         generating={generating}
         disabled={chapterIds.length === 0}
-        plan={plan}
-        remaining={remaining}
+        remainingText={monthlyRemainingText(plan, remaining)}
       />
     </form>
   );
