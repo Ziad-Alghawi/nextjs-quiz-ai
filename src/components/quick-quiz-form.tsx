@@ -13,7 +13,7 @@ type QuickQuizFormProps = {
   /** Locks the counts of a higher plan; guests have no plan and get `counts` instead. */
   plan?: PlanId;
   counts?: readonly number[];
-  remainingText: string;
+  remainingText?: string;
 };
 
 /**

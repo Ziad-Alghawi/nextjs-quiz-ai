@@ -86,10 +86,8 @@ async function GuestTrial({ userId }: { userId: string }) {
       <Card>
         <CardTitle>Quiz from a PDF</CardTitle>
         {remaining > 0 ? (
-          <QuickQuizForm
-            counts={GUEST_TRIAL.questionCounts}
-            remainingText={`${remaining} of ${limit} trial quizzes left`}
-          />
+          // The banner above already says how many are left.
+          <QuickQuizForm counts={GUEST_TRIAL.questionCounts} />
         ) : (
           <p className="text-sm text-muted-foreground">
             You&apos;ve used your {limit} trial quizzes.{" "}

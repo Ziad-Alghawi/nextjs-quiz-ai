@@ -89,7 +89,7 @@ export default async function HomePage() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="px-7 text-base font-semibold"
+                  className="border-2 border-primary px-7 text-base font-semibold text-primary hover:bg-primary/10 hover:text-primary"
                   asChild
                 >
                   <Link href="/try">Try it free</Link>

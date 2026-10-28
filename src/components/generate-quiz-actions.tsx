@@ -5,8 +5,8 @@ type GenerateQuizActionsProps = {
   generating: boolean;
   /** Nothing to generate from yet, e.g. no chapter or file chosen. */
   disabled: boolean;
-  /** How many quizzes are left, e.g. of the month or of the trial. */
-  remainingText: string;
+  /** How many quizzes are left this month; left out where the page already says it. */
+  remainingText?: string;
 };
 
 /** The submit button of a quiz-generation form, with the progress hint and the quota left. */
@@ -32,7 +32,9 @@ export function GenerateQuizActions({
             "Generate quiz"
           )}
         </Button>
-        <span className="text-sm text-muted-foreground">{remainingText}</span>
+        {remainingText ? (
+          <span className="text-sm text-muted-foreground">{remainingText}</span>
+        ) : null}
       </div>
     </>
   );
