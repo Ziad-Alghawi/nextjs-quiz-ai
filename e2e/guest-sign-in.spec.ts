@@ -1,8 +1,8 @@
 import { GUEST_TRIAL } from "@/lib/plans";
 import { expect, test } from "./fixtures";
 
-// Uses every guest sign-in this IP gets per hour (the database is new for each run). Specs that
-// need a guest later must reuse a saved guest session.
+// Uses every guest sign-in this IP has left this hour (the database is new for each run); auth.setup.ts
+// took the first one. Specs that need a guest reuse its saved session.
 test("allows 3 guest sign-ins per hour from one IP address", async ({ playwright, baseURL }) => {
   // A new context each time, like a new visitor: a guest's own cookie would make it a second
   // sign-in of the same guest, which Better Auth refuses.
@@ -18,7 +18,7 @@ test("allows 3 guest sign-ins per hour from one IP address", async ({ playwright
     return result;
   }
 
-  for (let i = 0; i < GUEST_TRIAL.signInsPerHour; i++) {
+  for (let i = 1; i < GUEST_TRIAL.signInsPerHour; i++) {
     expect(await signInAsGuest()).toMatchObject({
       status: 200,
       body: { user: { isAnonymous: true } },

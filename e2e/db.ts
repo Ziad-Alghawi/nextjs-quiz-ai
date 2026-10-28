@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import postgres from "postgres";
 
 /** The test server's own database, recreated by reset-db.ts before every run. */
@@ -6,6 +7,19 @@ export const E2E_DATABASE_URL = "postgres://quiz_ai:quiz_ai@localhost:5432/quiz_
 export const connect = () => postgres(E2E_DATABASE_URL, { max: 1, onnotice: () => {} });
 
 type Sql = ReturnType<typeof connect>;
+
+/** The user id behind a saved Playwright session, e.g. a guest's, whose email is generated. */
+export async function userIdOfSession(sql: Sql, storageStatePath: string) {
+  const { cookies } = JSON.parse(readFileSync(storageStatePath, "utf8")) as {
+    cookies: { name: string; value: string }[];
+  };
+  const cookie = cookies.find(({ name }) => name === "better-auth.session_token");
+  // The cookie holds "<token>.<signature>"; the table stores the token.
+  const token = decodeURIComponent(cookie!.value).split(".")[0];
+  const [session] = await sql<{ userId: string }[]>`
+    select user_id as "userId" from auth_session where token = ${token}`;
+  return session.userId;
+}
 
 /** Adds a course for the account with this email and returns its id. */
 export async function insertCourse(sql: Sql, email: string, name: string) {
