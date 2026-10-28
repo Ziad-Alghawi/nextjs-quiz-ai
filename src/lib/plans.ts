@@ -35,6 +35,10 @@ export const QUESTION_COUNTS: readonly number[] = [
   ...new Set(Object.values(PLANS).flatMap((plan) => plan.questionCounts)),
 ];
 
+/** The quota line under a generate button. */
+export const monthlyRemainingText = (plan: PlanId, remaining: number) =>
+  `${remaining} of ${PLANS[plan].monthlyQuizzes} quizzes left this month`;
+
 export const isQuestionCountAllowed = (plan: PlanId, count: number) =>
   PLANS[plan].questionCounts.some((allowed) => allowed === count);
 
