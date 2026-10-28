@@ -64,6 +64,11 @@ export async function getMonthlyUsage(userId: string) {
   return { plan, used, limit: PLANS[plan].monthlyQuizzes };
 }
 
+/** How many of the trial's quizzes a guest has used, out of how many. */
+export async function getTrialUsage(userId: string) {
+  return { used: await countUsed(userId, db, { allTime: true }), limit: GUEST_TRIAL.quizzes };
+}
+
 /**
  * Reserves one generation for the user and returns its id, or throws GenerationLimitError.
  * A per-user advisory lock makes parallel requests queue up, so they can't both take the last slot.

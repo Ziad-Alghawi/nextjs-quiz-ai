@@ -9,6 +9,7 @@ import {
   finishGeneration,
   GenerationLimitError,
   getMonthlyUsage,
+  getTrialUsage,
   reserveGeneration,
   runGeneration,
 } from "./usage";
@@ -208,5 +209,13 @@ describe("guest trial", () => {
 
     expect(await counter(guestDailyKey())).toBe(0);
     expect(await counter(dailyKey())).toBe(1);
+  });
+
+  it("reports the trial quizzes a guest has used, of any month", async () => {
+    await addGenerations(1, { userId: GUEST, createdAt: sql`now() - interval '1 year'` });
+    await addGenerations(1, { userId: GUEST, status: "failed" });
+    await reserveGeneration(GUEST);
+
+    expect(await getTrialUsage(GUEST)).toEqual({ used: 2, limit: GUEST_TRIAL.quizzes });
   });
 });
