@@ -1,62 +1,92 @@
+<div align="center">
+
 # Quiz AI
 
+**A full-stack study app that turns course PDFs into AI-generated quizzes, with explanations, exams and progress tracking.**
+
+[![Live demo](https://img.shields.io/badge/Live_demo-quiz.ziadalghawi.com-1660ff)](https://quiz.ziadalghawi.com)
 [![CI](https://github.com/Ziad-Alghawi/nextjs-quiz-ai/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Ziad-Alghawi/nextjs-quiz-ai/actions/workflows/ci.yml)
 [![Docker](https://github.com/Ziad-Alghawi/nextjs-quiz-ai/actions/workflows/docker.yml/badge.svg?branch=main)](https://github.com/Ziad-Alghawi/nextjs-quiz-ai/actions/workflows/docker.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue)](LICENSE)
 
-A study app that turns course PDFs into multiple-choice quizzes. Students organise their material
-in courses, generate quizzes from chosen chapters with Google Gemini, practise with instant
-feedback and explanations, take course exams and follow their progress over time.
+[Live demo](https://quiz.ziadalghawi.com) · [Features](#features) · [Tech stack](#tech-stack) · [Architecture](#architecture) · [Run locally](#run-locally) · [Tests and CI](#tests-and-ci)
 
-**Live:** https://quiz.ziadalghawi.com ("Try it free" and the sample quiz work without an account;
-payments run in Stripe test mode: card `4242 4242 4242 4242`)
+</div>
+
+## Live demo
+
+**[quiz.ziadalghawi.com](https://quiz.ziadalghawi.com)**
+
+No account is needed: play the [sample quiz](https://quiz.ziadalghawi.com/quizzes/sample), or use
+[Try it free](https://quiz.ziadalghawi.com/try) to generate quizzes from your own PDF. Payments run
+in Stripe test mode (card `4242 4242 4242 4242`).
+
+![Quiz AI landing page: from lecture PDF to exam-ready](docs/screenshots/landing.png)
+
+| Instant feedback with an explanation                             | Results with corrections and a mistakes retry                                 |
+| ---------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| ![Quiz player after an answer](docs/screenshots/quiz-player.png) | ![Results screen with a review of every answer](docs/screenshots/results.png) |
+
+<details>
+<summary><strong>Watch the demo</strong>: guest trial, a quiz, sign-up that keeps the trial, and a share link</summary>
 
 ![Demo: guest trial, a quiz with explanations, sign-up that keeps the trial, and a share link](docs/demo.gif)
 
 <sub>Recorded on a local production build; the quiz in the demo comes from a mock instead of Gemini.</sub>
 
-`main` is the live site; new work is developed on branches and released at planned checkpoints.
+</details>
 
-![Overview with stats, activity heatmap and quiz list](docs/screenshots/overview.png)
+## Highlights
 
-| Course page                                     | Quiz player                                      |
-| ----------------------------------------------- | ------------------------------------------------ |
-| ![Course page](docs/screenshots/course.png)     | ![Quiz player](docs/screenshots/quiz-player.png) |
-| **Results**                                     | **Course exam**                                  |
-| ![Results screen](docs/screenshots/results.png) | ![Course exam](docs/screenshots/exam.png)        |
+- **A complete product, live in production:** accounts, subscriptions, a guest trial, public share
+  links and a full study workflow, running on Vercel and Supabase.
+- **AI with a controlled cost:** a cheaper model goes first, with one retry on a stronger model.
+  Output is schema-validated, and quotas, a burst limit and a global daily cap bound the spend.
+- **Tested at three levels:** 339 automated tests (unit, real Postgres and Playwright), run on
+  every push.
+- **Security on the server:** ownership checks on every read and write, server-side scoring, and
+  exams that never send the correct answers to the browser.
+- **Production-style delivery:** scanned container images, a Helm chart and GitOps with Argo CD on
+  a local Kubernetes cluster.
 
 ## Features
+
+**Study material and generation**
 
 - **Courses and chapters:** upload PDFs (up to 4 MB each) as chapters of a course. The text is
   extracted and saved; the file itself isn't stored.
 - **AI quiz generation:** pick chapters and a question count; Gemini writes questions with four
-  options and a short explanation each. The output is validated against a schema before it is saved.
+  options and a short explanation each.
 - **Quick quiz:** one PDF straight to a quiz, without setting up a course.
-- **Guest trial:** "Try it free" without an account: up to 3 quizzes from your own PDFs, with 5 or
-  10 questions each. Signing up and then signing in on the same device moves the trial quizzes,
-  their attempts and their quota use to the account. Guests are deleted after 7 days.
-- **Quiz sharing:** a public link for a generated or review quiz, which can be turned off at any
-  time. Anyone with the link can play the quiz without an account (results aren't saved, and the
-  page isn't indexed); signed-in users can save a copy to their "My quizzes" folder.
-- **Review quiz:** mix questions from 2 to 10 generated quizzes of a course. No AI call, so it is
-  instant and doesn't count toward the monthly quota.
-- **Quiz player:** one question at a time, keyboard shortcuts (1–4, Enter), the right answer and
-  its explanation right after each answer.
-- **Results and saved attempts:** score, every answer with the correct one and the explanation.
-  Each attempt is saved and can be reopened later from the course page.
-- **Practice mistakes:** retry only the questions you got wrong in an attempt.
-- **Course exam:** 10, 20 or 30 questions from all quizzes of a course, a question navigator, no
-  feedback until you finish. The server scores it; the browser never receives the correct answers.
-- **Stats:** quizzes, questions, attempts, average score, streaks and an activity heatmap (keyboard
-  accessible, no chart library).
-- **Plans and billing:** Free (10 AI quizzes a month, 5–15 questions) and Pro (50 a month, up to
-  25 questions), sold through Stripe Checkout and managed in the Stripe billing portal.
+- **Review quiz:** mix questions from 2 to 10 generated quizzes of a course. It makes no AI call, so
+  it is instant and doesn't count toward the monthly quota.
+
+**Practice and progress**
+
+- **Quiz player:** one question at a time, keyboard shortcuts (1–4, Enter), and the right answer
+  with its explanation after each answer.
+- **Results and saved attempts:** score, every answer with the correct one, and the explanation.
+  Attempts can be reopened later from the course page.
+- **Practice mistakes:** retry only the questions you got wrong.
+- **Course exam:** 10, 20 or 30 questions from all quizzes of a course, a question navigator, and no
+  feedback until you finish.
+- **Stats:** average score, streaks and an activity heatmap (keyboard accessible, no chart library).
+
+**Accounts, plans and sharing**
+
+- **Guest trial:** up to 3 quizzes without an account. Signing up and then signing in on the same
+  device moves them, their attempts and their quota use to the account.
+- **Quiz sharing:** a public link that can be turned off at any time. Anyone can play without an
+  account, and signed-in users can save a copy.
+- **Plans and billing:** Free (10 AI quizzes a month, 5–15 questions) and Pro (50 a month, up to 25
+  questions), with Stripe Checkout and the Stripe billing portal.
 - **Accounts:** email and password or Google, password reset and email change with 6-digit codes,
-  account deletion that also cancels the subscription.
-- A **sample quiz** to try without an account, light and dark mode, and layouts down to phone width.
+  and account deletion that also cancels the subscription.
+- **Interface:** light and dark mode, and layouts down to phone width.
 
 ## Tech stack
 
-| Area      | Choice                                                                                    |
+| Area      | Technology                                                                                |
 | --------- | ----------------------------------------------------------------------------------------- |
 | Framework | Next.js 16 (App Router, Server Components, Server Actions), React 19                      |
 | Language  | TypeScript (strict), Zod at every boundary                                                |
@@ -94,21 +124,23 @@ flowchart LR
 - **Reads:** Server Components call the services in `src/server/services`.
 - **Writes:** Server Actions validate the input with Zod, check the session and call a service.
 - **Route handlers** only where plain HTTP is needed: PDF upload and generation, the Stripe
-  webhook, auth, `/api/health` and the daily guest cleanup (`/api/cron/cleanup-guests`, called by
-  Vercel Cron in production).
+  webhook, auth, `/api/health` and the daily guest cleanup.
 - **Business logic and every database query** live in the services; components and handlers stay
   thin. Plan limits and question counts have one source of truth, `src/lib/plans.ts`.
-- **Generation:** the cheaper model goes first; only an error, an invalid schema or too few
-  questions trigger one retry on the stronger model. Answers are shuffled in code, and the text
-  sent to the model is capped to bound the cost per quiz.
+- **Generation:** only an error, an invalid schema or too few questions trigger the retry on the
+  stronger model. Answers are shuffled in code, and the text sent to the model is capped to bound
+  the cost per quiz.
 
-### Project structure
+<details>
+<summary><strong>Project structure</strong></summary>
 
 ```text
 src/
   app/                  routes (App Router)
+    (marketing)/        landing page, legal pages
     (auth)/             sign-in, sign-up, password reset
-    (user)/             signed-in pages: overview, courses, attempts, billing, settings
+    (user)/             signed-in pages: overview, courses, billing, settings
+    attempts/           saved attempts and their review
     quizzes/            quiz and exam players, sample quiz
     try/                guest trial
     shared/             shared quizzes, playable without an account
@@ -125,49 +157,10 @@ scripts/migrate.ts      migration runner of the migrations image
 deploy/                 Kubernetes: local Postgres, sealed env, Helm chart, Argo CD apps
 ```
 
-## Run it locally
+</details>
 
-Requirements: Node.js 24 and Docker (the database runs in a container).
-
-```bash
-npm install
-cp .env.example .env     # fill in the values, see the table below
-npm run db:up            # Postgres 17 in Docker
-npm run db:migrate       # apply the migrations in drizzle/
-npm run dev              # http://localhost:3000
-```
-
-With `EMAIL_TRANSPORT=console` (the default), emails such as reset and email-change codes are
-printed to the terminal. For the
-Stripe webhook, run `stripe listen --forward-to localhost:3000/api/stripe/webhook` and put the
-secret it prints into `STRIPE_WEBHOOK_SECRET`.
-
-### Environment variables
-
-They are validated with Zod when the server starts (`src/lib/env.ts`); the SMTP variables are
-required only with `EMAIL_TRANSPORT=smtp`.
-
-| Name                     | Purpose                                           |
-| ------------------------ | ------------------------------------------------- |
-| `DATABASE_URL`           | PostgreSQL connection                             |
-| `AUTH_SECRET`            | Signs session cookies                             |
-| `GOOGLE_CLIENT_ID`       | Google sign-in                                    |
-| `GOOGLE_CLIENT_SECRET`   | Google sign-in                                    |
-| `GEMINI_API_KEY`         | Quiz generation                                   |
-| `STRIPE_SECRET_KEY`      | Checkout and billing portal                       |
-| `STRIPE_WEBHOOK_SECRET`  | Verifies Stripe webhook signatures                |
-| `STRIPE_PRICE_ID`        | The Pro monthly price (`price_…`)                 |
-| `STRIPE_YEARLY_PRICE_ID` | The Pro yearly price (`price_…`)                  |
-| `APP_URL`                | Public base URL (auth and Stripe return links)    |
-| `CRON_SECRET`            | Optional: lets the daily guest cleanup run        |
-| `EMAIL_TRANSPORT`        | `console` (default) or `smtp`                     |
-| `SMTP_HOST`              | SMTP server (only with `EMAIL_TRANSPORT=smtp`)    |
-| `SMTP_PORT`              | SMTP port (only with `EMAIL_TRANSPORT=smtp`)      |
-| `SMTP_USER`              | SMTP account (only with `EMAIL_TRANSPORT=smtp`)   |
-| `SMTP_PASSWORD`          | SMTP password (only with `EMAIL_TRANSPORT=smtp`)  |
-| `EMAIL_FROM`             | Sender address (only with `EMAIL_TRANSPORT=smtp`) |
-
-## Security and cost control
+<details>
+<summary><strong>Security and cost control</strong></summary>
 
 - **Ownership on every read and write:** someone else's course, quiz or attempt is a 404, the same
   as a missing one, so ids can't be probed.
@@ -185,31 +178,78 @@ required only with `EMAIL_TRANSPORT=smtp`.
 - **Guest trial:** guests can't open account pages or actions (courses, billing, settings,
   sharing) and can't change an email, password or profile. Each guest gets 3 quizzes in total, all
   guests together 5 per day (part of the daily cap), documents are cut at 50,000 characters, and an
-  IP address can start 3 guest sessions per hour. The daily guest counter is one row updated in the
-  same transaction as the global cap, so new guests and parallel requests can't get past it.
+  IP address can start 3 guest sessions per hour. Guests are deleted after 7 days.
 - **Shared quizzes:** a link holds 24 random bytes, not the quiz id; a link that was turned off is
-  a 404; exams can't be shared.
+  a 404; exams can't be shared; shared pages aren't indexed.
 - **Cleanup:** the guest cleanup route runs only with `CRON_SECRET` as a Bearer token (compared in
   constant time) and answers 401 without it.
 
-## Tests and quality checks
+</details>
 
-- **Unit tests** (Vitest): validation schemas, scoring, exam and review selection, model routing,
-  error mapping, the session helper, the health route and the Stripe webhook (signed payloads).
-- **Database tests** against a real Postgres: quotas under parallel requests, courses, chapters,
-  reviews, exams, attempts, stats, billing, auth rules, sharing and the guest trial.
-- **End-to-end tests** (Playwright): sign-up and sign-in, course and quiz flows, the sample quiz,
-  sharing, saving a copy and the guest trial, against a production build on its own database.
-  Quiz generation is mocked and the Gemini and Stripe keys are invalid, so a test can't cost money.
-  One account and one guest are signed in once per run and reused, because sign-ins are
-  rate-limited per IP address.
-- **CI** (GitHub Actions, on every push and pull request): lint, format check, typecheck,
-  unused-code check (knip), unit tests, migrations plus database tests against Postgres 17, a
-  production build, `helm lint` plus `helm template` for the chart, and the end-to-end tests in
-  their own job.
-- **Docker workflow:** builds and scans the images; see
-  [Containers and Kubernetes](#containers-and-kubernetes).
-- **Duplication** is checked manually with jscpd, at the end of each development phase.
+## Run locally
+
+Requirements: Node.js 24 and Docker (the database runs in a container).
+
+```bash
+git clone https://github.com/Ziad-Alghawi/nextjs-quiz-ai.git
+cd nextjs-quiz-ai
+npm install
+cp .env.example .env     # then fill in the required values, see below
+npm run db:up            # Postgres 17 in Docker
+npm run db:migrate       # apply the migrations in drizzle/
+npm run dev              # http://localhost:3000
+```
+
+The server validates its environment with Zod when it starts (`src/lib/env.ts`) and stops if a
+required value is empty, so `.env` needs these values before the first run:
+
+| Name                     | Purpose                            | To try the app without real keys |
+| ------------------------ | ---------------------------------- | -------------------------------- |
+| `AUTH_SECRET`            | Signs session cookies              | `openssl rand -base64 32`        |
+| `GOOGLE_CLIENT_ID`       | Google sign-in                     | any text                         |
+| `GOOGLE_CLIENT_SECRET`   | Google sign-in                     | any text                         |
+| `GEMINI_API_KEY`         | Quiz generation                    | any text                         |
+| `STRIPE_SECRET_KEY`      | Checkout and billing portal        | any text                         |
+| `STRIPE_WEBHOOK_SECRET`  | Verifies Stripe webhook signatures | any text                         |
+| `STRIPE_PRICE_ID`        | The Pro monthly price              | `price_placeholder`              |
+| `STRIPE_YEARLY_PRICE_ID` | The Pro yearly price               | `price_placeholder`              |
+
+With placeholders, email sign-up, courses and the sample quiz work. Real keys are needed only for
+the features that call those services: Gemini for generation, Stripe for checkout, Google for
+Google sign-in.
+
+`DATABASE_URL`, `APP_URL` and `EMAIL_TRANSPORT` already have working local values in
+`.env.example`. With `EMAIL_TRANSPORT=console`, emails such as reset codes are printed to the
+terminal. `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` and `EMAIL_FROM` are required only
+with `EMAIL_TRANSPORT=smtp`, and `CRON_SECRET` (optional, 32+ characters) turns on the guest
+cleanup route.
+
+For Stripe webhooks, run `stripe listen --forward-to localhost:3000/api/stripe/webhook` and put the
+secret it prints into `STRIPE_WEBHOOK_SECRET`.
+
+## Tests and CI
+
+339 tests pass on `main`:
+
+| Level      | Tool       | Tests | Covers                                                                                                        |
+| ---------- | ---------- | ----- | ------------------------------------------------------------------------------------------------------------- |
+| Unit       | Vitest     | 170   | Validation schemas, scoring, exam and review selection, model routing, error mapping, Stripe webhook          |
+| Database   | Vitest     | 147   | Real Postgres: quotas under parallel requests, courses, attempts, stats, billing, auth rules, sharing, guests |
+| End-to-end | Playwright | 22    | Sign-up and sign-in, course and quiz flows, sample quiz, sharing, saving a copy, guest trial                  |
+
+The end-to-end tests run against a production build on their own database. Quiz generation is
+mocked and the Gemini and Stripe keys are invalid, so a test can't cost money.
+
+**GitHub Actions** runs on every push and pull request:
+
+| Workflow | Job          | What it does                                                                                                      |
+| -------- | ------------ | ----------------------------------------------------------------------------------------------------------------- |
+| CI       | `check`      | Lint, format check, typecheck, unused-code check (knip), unit tests, migrations, database tests, production build |
+| CI       | `e2e`        | Playwright tests against a production build and Postgres 17                                                       |
+| CI       | `helm`       | `helm lint --strict` and `helm template` for the chart                                                            |
+| Docker   | `build-scan` | Builds both images and scans them with Trivy (pull requests and pushes to `develop` and `main`)                   |
+
+Run the same checks locally:
 
 ```bash
 npm run lint
@@ -223,10 +263,11 @@ npm run build
 npx jscpd@4 src          # duplication report (manual, not in CI)
 ```
 
-## Containers and Kubernetes
+## Deployment
 
-Production runs on Vercel and Supabase. The same app is also packaged as container images and
-deployed with GitOps to a local Kubernetes cluster (kind).
+Production runs on **Vercel and Supabase**: `main` is the live site, and new work goes through pull
+requests into `develop`. The same app is also packaged as container images and deployed with
+GitOps to a local Kubernetes cluster (kind).
 
 ```mermaid
 flowchart LR
@@ -252,29 +293,28 @@ flowchart LR
   GHCR -->|images| Job
 ```
 
-| Image                                         | Contents                                                        |
-| --------------------------------------------- | --------------------------------------------------------------- |
-| `ghcr.io/ziad-alghawi/nextjs-quiz-ai`         | Next.js standalone server, health check on `/api/health`        |
-| `ghcr.io/ziad-alghawi/nextjs-quiz-ai-migrate` | `scripts/migrate.ts` and `drizzle/` (drizzle-orm's `migrate()`) |
-
 - **Images:** multi-stage build on a pinned `node:24-alpine` tag, built without secrets, run as
   the non-root `node` user, no package managers in the final images.
-- **Docker workflow:** pull requests build both images and run Trivy, failing on fixable
-  CRITICAL/HIGH findings; all findings go to the Security tab. Merges into `develop` and `main`
-  push the images, tagged `sha-<commit>` and with the branch name (`latest` from `main`). Every
+- **Docker workflow:** Trivy fails pull requests on fixable CRITICAL/HIGH findings, and all
+  findings go to the Security tab. Merges into `develop` and `main` push the images to GHCR. Every
   action is pinned to a commit SHA, and each job gets only the permissions it needs.
-- **Helm chart** (`deploy/helm/quiz-ai`): a migrations Job runs before every install and upgrade
-  and waits for the database. Pods use a read-only root filesystem and drop all capabilities.
-  Readiness checks `/api/health`, liveness only the port, so a database outage doesn't restart
-  pods. A CronJob calls the guest cleanup route once a day through the Service, with
-  `CRON_SECRET` from the app's Secret; without it the job fails visibly.
+- **Helm chart** (`deploy/helm/quiz-ai`): a migrations Job runs before every install and upgrade.
+  Pods use a read-only root filesystem and drop all capabilities. Readiness checks `/api/health`,
+  liveness only the port, so a database outage doesn't restart pods. A CronJob runs the guest
+  cleanup once a day.
 - **Argo CD** (`deploy/argocd`): an AppProject limited to this repository and the `quiz-ai`
   namespace, and two Applications that follow `develop` with automated sync, prune and self-heal.
 - **Secrets:** the app's environment is committed as a SealedSecret
   (`deploy/k8s/quiz-ai-env.sealed.yaml`); only the Sealed Secrets controller in the cluster can
   decrypt it. It holds local values only.
 
-### Docker Compose
+| Image                                         | Contents                                                        |
+| --------------------------------------------- | --------------------------------------------------------------- |
+| `ghcr.io/ziad-alghawi/nextjs-quiz-ai`         | Next.js standalone server, health check on `/api/health`        |
+| `ghcr.io/ziad-alghawi/nextjs-quiz-ai-migrate` | `scripts/migrate.ts` and `drizzle/` (drizzle-orm's `migrate()`) |
+
+<details>
+<summary><strong>Run with Docker Compose</strong></summary>
 
 ```bash
 cp .env.example .env     # the database URL, APP_URL and email are set by docker-compose.yml
@@ -285,7 +325,10 @@ docker compose --profile app down
 The keys in `.env` only need values in the right format (e.g. `price_…`) for the pages to work;
 real keys are needed only for the features that call those services.
 
-### Kubernetes with kind
+</details>
+
+<details>
+<summary><strong>Run on Kubernetes with kind</strong></summary>
 
 Requirements: Docker, [kind](https://kind.sigs.k8s.io), kubectl and Helm. Every command names the
 cluster's context, so nothing goes to another cluster by mistake.
@@ -349,15 +392,12 @@ then https://localhost:8080 as `admin` with the password from
 
 Remove everything with `kind delete cluster --name quiz-ai`.
 
-## Next
-
-- Run the Kubernetes setup on a hosted cluster with a public domain and HTTPS
-- NetworkPolicies between the app, the database and the cleanup job
-- Metrics and dashboards with Prometheus and Grafana
+</details>
 
 ## Author
 
-Built by Ziad Alghawi ([GitHub](https://github.com/Ziad-Alghawi)).
+Built by **Ziad Alghawi**: [GitHub](https://github.com/Ziad-Alghawi) ·
+[LinkedIn](https://www.linkedin.com/in/ziad-alghawi-179726289)
 
 ## License
 
