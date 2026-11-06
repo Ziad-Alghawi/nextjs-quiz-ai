@@ -10,13 +10,14 @@ const sampleQuiz: PlayerQuiz = {
   questions: [
     {
       id: 1,
-      questionText: "What is your level of understanding React?",
-      explanation: null,
+      questionText: "What does the useState hook return?",
+      explanation:
+        "useState returns a pair: the current state and a function that updates it. Calling that function makes React render the component again.",
       answers: [
-        { id: 1, answerText: "Beginner", isCorrect: true },
-        { id: 2, answerText: "Intermediate", isCorrect: false },
-        { id: 3, answerText: "Advanced", isCorrect: false },
-        { id: 4, answerText: "Expert", isCorrect: false },
+        { id: 1, answerText: "The current state and a function to update it", isCorrect: true },
+        { id: 2, answerText: "A promise that resolves to the state", isCorrect: false },
+        { id: 3, answerText: "A reference to a DOM element", isCorrect: false },
+        { id: 4, answerText: "A copy of the component's props", isCorrect: false },
       ],
     },
     {
