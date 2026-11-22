@@ -397,7 +397,7 @@ Remove everything with `kind delete cluster --name quiz-ai`.
 ## Author
 
 Built by **Ziad Alghawi**: [GitHub](https://github.com/Ziad-Alghawi) ·
-[LinkedIn](https://www.linkedin.com/in/ziad-alghawi-179726289)
+[LinkedIn](https://www.linkedin.com/in/ziad-alghawi)
 
 ## License
 
