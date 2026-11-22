@@ -16,7 +16,7 @@ export function ContactLink() {
     <>
       Contact:{" "}
       <a
-        href="https://www.linkedin.com/in/ziad-alghawi-179726289"
+        href="https://www.linkedin.com/in/ziad-alghawi"
         target="_blank"
         rel="noopener noreferrer"
         className="text-foreground underline underline-offset-4"
