@@ -14,6 +14,9 @@ updates:
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
+      # Each stripe release types a newer API version, and the code's apiVersion must match the
+      # webhook endpoint's version in the Stripe dashboard, so both are updated together by hand
+      - dependency-name: stripe
     commit-message:
       prefix: chore
   - package-ecosystem: github-actions
